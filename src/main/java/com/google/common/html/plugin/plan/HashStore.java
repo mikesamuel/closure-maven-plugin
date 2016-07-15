@@ -1,6 +1,5 @@
 package com.google.common.html.plugin.plan;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -14,6 +13,7 @@ import org.json.simple.parser.ParseException;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * A persisted store of hashes that can be used to compare previous builds of
@@ -34,6 +34,10 @@ public final class HashStore {
         Preconditions.checkNotNull(stepKey), Preconditions.checkNotNull(hash));
   }
 
+  /**
+   * Reads a hashStore from a reader which supplies JSON mapping step keys
+   * to hashes, both represented as strings.  The hashes are hex strings.
+   */
   public static HashStore read(Reader in, Log log) throws IOException {
     HashStore hs = new HashStore();
 
@@ -79,7 +83,12 @@ public final class HashStore {
     return hs;
   }
 
+  /** Writes a form that can be read by {@link #read}. */
   public void write(Writer out) throws IOException {
-    JSONObject.writeJSONString(this.hashes, out);
+    ImmutableMap.Builder<String, String> strStrMap = ImmutableMap.builder();
+    for (Map.Entry<String, Hash> e : this.hashes.entrySet()) {
+      strStrMap.put(e.getKey(), e.getValue().toString());
+    }
+    JSONObject.writeJSONString(strStrMap.build(), out);
   }
 }
