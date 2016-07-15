@@ -2,7 +2,8 @@ package com.google.common.html.plugin;
 
 import org.apache.maven.plugin.logging.Log;
 
-class TestLog implements Log {
+/** */
+public final class TestLog implements Log {
 
   public void debug(CharSequence msg) {
     // Do nothing
