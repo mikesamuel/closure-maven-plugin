@@ -146,6 +146,7 @@ public class Ingredients {
         });
   }
 
+  /** An ingredient that represents a fixed string. */
   public StringValue stringValue(final String s) {
     final String key = "str:" + s;
     return get(
@@ -159,6 +160,10 @@ public class Ingredients {
 
   }
 
+  /**
+   * Specifies how the compiler should interpret a group of source files and
+   * where to look for those source files.
+   */
   public <T extends Options> OptionsIngredient<T> options(
       Class<T> optionsType, final T options) {
     final String key = Preconditions.checkNotNull(options.getKey());
@@ -173,6 +178,11 @@ public class Ingredients {
     return ing.asSuperType(optionsType);
   }
 
+  /**
+   * An ingredient back by a file dedicated to hold a serialized object of
+   * a specific type.  Reading and writing must be done explicitly and the
+   * hash is of the version in memory.
+   */
   public <T extends Serializable>
   SerializedObjectIngredient<T> serializedObject(
       File file, Class<T> contentType)
@@ -180,6 +190,11 @@ public class Ingredients {
     return serializedObject(singletonSource(file), contentType);
   }
 
+  /**
+   * An ingredient back by a file dedicated to hold a serialized object of
+   * a specific type.  Reading and writing must be done explicitly and the
+   * hash is of the version in memory.
+   */
   public <T extends Serializable>
   SerializedObjectIngredient<T> serializedObject(
       final Source source, final Class<T> contentType) {
@@ -243,10 +258,12 @@ public class Ingredients {
       }
     }
 
+    /** Source files that should contribute to the artifact. */
     public synchronized Optional<ImmutableList<FileIngredient>> mainSources() {
       return mainSources;
     }
 
+    /** Source files that are used to test the artifact. */
     public synchronized Optional<ImmutableList<FileIngredient>> testSources() {
       return testSources;
     }
@@ -273,6 +290,10 @@ public class Ingredients {
     }
   }
 
+  /**
+   * Specifies how the compiler should interpret a group of source files and
+   * where to look for those source files.
+   */
   public static final class OptionsIngredient<T extends Options>
   extends Ingredient {
     private final T options;
@@ -286,12 +307,22 @@ public class Ingredients {
       return Optional.of(Hash.hashSerializable(options));
     }
 
+    /**
+     * An ID for the options which must be unique among a bundle of options
+     * to the same compiler.
+     */
     public String getId() { return options.getId(); }
 
+    /**
+     * A shallow copy of options since options are often mutable objects.
+     */
     public T getOptions() {
       return clone(this.options);
     }
 
+    /**
+     * Runtime recast that the underlying options value has the given type.
+     */
     public <ST extends Options>
     OptionsIngredient<ST> asSuperType(Class<ST> superType) {
       Preconditions.checkState(superType.isInstance(options));
@@ -312,6 +343,12 @@ public class Ingredients {
     }
   }
 
+
+  /**
+   * An ingredient back by a file dedicated to hold a serialized object of
+   * a specific type.  Reading and writing must be done explicitly and the
+   * hash is of the version in memory.
+   */
   public static final class SerializedObjectIngredient<T extends Serializable>
   extends Ingredient {
 
@@ -328,6 +365,7 @@ public class Ingredients {
       this.type = type;
     }
 
+    /** Runtime recast of the underlying object. */
     public <ST extends Serializable>
     SerializedObjectIngredient<ST> asSuperType(Class<ST> superType) {
       Preconditions.checkState(superType.isAssignableFrom(type));
@@ -344,6 +382,7 @@ public class Ingredients {
       return Optional.absent();
     }
 
+    /** Read the content of the file into memory. */
     public Optional<T> read() throws IOException {
       FileInputStream in;
       try {
@@ -369,14 +408,24 @@ public class Ingredients {
       }
     }
 
+    /**
+     * The in-memory version of the object if it has been {@link #read read}
+     * or {@link #setStoredObject stored}.
+     */
     public Optional<T> getStoredObject() {
       return instance;
     }
 
+    /**
+     * Sets the in-memory instance.
+     */
     public void setStoredObject(T instance) {
       this.instance = Optional.of(instance);
     }
 
+    /**
+     * Writes the in-memory instance to the {@link #source persisting file}.
+     */
     public void write() throws IOException {
       Preconditions.checkState(instance.isPresent());
       source.canonicalPath.getParentFile().mkdirs();
@@ -410,7 +459,9 @@ public class Ingredients {
     return ImmutableList.copyOf(hashedSources);
   }
 
+  /** An ingredient that represents a fixed string. */
   public static final class StringValue extends Ingredient {
+    /** The fixed string value. */
     public final String value;
     StringValue(String key, String value) {
       super(key);

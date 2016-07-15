@@ -25,10 +25,14 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
+/** A group of source files split into test and production files. */
 public final class Sources {
+  /** Files that contribute source code to the artifact. */
   public final ImmutableList<Source> mainFiles;
+  /** Files that are used in testing the artifact. */
   public final ImmutableList<Source> testFiles;
 
+  /** An empty set of source files. */
   public static final Sources EMPTY = new Sources(
       ImmutableList.<Source>of(), ImmutableList.<Source>of());
 
@@ -120,6 +124,9 @@ public final class Sources {
           + "`, relativePath=`" + relativePath + "`}";
     }
 
+    /**
+     * Resolves the given path against this source file.
+     */
     public Source resolve(String uriPath)
         throws IOException, URISyntaxException {
       if ("".equals(uriPath)) {
@@ -221,36 +228,61 @@ public final class Sources {
           .testRoots(this.testRoots.build());
     }
 
+    /**
+     * The pattern that matches suffixes of the files we're looking for.
+     */
     public Pattern suffixPattern() {
       return suffixPattern;
     }
 
+    /**
+     * Search path elements containing production files.
+     */
     public ImmutableList<File> mainRoots() {
       return mainRoots.build();
     }
 
+    /**
+     * Adds to {@link #mainRoots()}.
+     */
     public Finder mainRoots(File... roots) {
       return mainRoots(Arrays.asList(roots));
     }
 
+    /**
+     * Adds to {@link #mainRoots()}.
+     */
     public Finder mainRoots(Iterable<? extends File> roots) {
       mainRoots.addAll(roots);
       return this;
     }
 
+    /**
+     * Search path elements containing test files.
+     */
     public ImmutableList<File> testRoots() {
       return testRoots.build();
     }
 
+    /**
+     * Adds to {@link #testRoots()}.
+     */
     public Finder testRoots(File... roots) {
       return testRoots(Arrays.asList(roots));
     }
 
+    /**
+     * Adds to {@link #testRoots()}.
+     */
     public Finder testRoots(Iterable<? extends File> roots) {
       testRoots.addAll(roots);
       return this;
     }
 
+    /**
+     * Walk the file trees under the source roots looking for files matching
+     * the suffix pattern.
+     */
     @SuppressWarnings("synthetic-access")
     public Sources scan(Log log) throws IOException {
       // Using treeset to get a reliable file order makes later build stages

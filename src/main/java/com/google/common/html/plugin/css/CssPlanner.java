@@ -2,34 +2,15 @@ package com.google.common.html.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.css.SubstitutionMapProvider;
-import com.google.common.html.plugin.OutputAmbiguityChecker;
-import com.google.common.html.plugin.Sources;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
-import com.google.common.html.plugin.plan.Step;
 
 /**
  * Builds a plan that scans for CSS source files, and invokes the
@@ -144,8 +125,10 @@ public final class CssPlanner {
   }
 
 
-  public void plan(CssOptions[] css)
-  throws MojoExecutionException, IOException {
+  /**
+   * Adds steps related to CSS compilation to the master plan.
+   */
+  public void plan(CssOptions[] css) throws IOException {
     Preconditions.checkNotNull(cssRenameMap);
     Preconditions.checkNotNull(defaultCssSource);
     Preconditions.checkNotNull(defaultCssOutputPathTemplate);
@@ -159,13 +142,4 @@ public final class CssPlanner {
     planner.addStep(
         new ListOptions(this, optionsIngredients(css), optionsListFile));
   }
-
-
-  private static ImmutableList<File> orDefault(File[] files, File defaultFile) {
-    if (files == null || files.length == 0) {
-      return ImmutableList.of(defaultFile);
-    }
-    return ImmutableList.copyOf(files);
-  }
-
 }
