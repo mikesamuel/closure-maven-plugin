@@ -294,6 +294,8 @@ extends AbstractMojo {
     while (!plan.isComplete()) {
       plan.executeOneStep();
     }
+
+    log.debug("Writing hash store to " + hashStoreFile);
     try {
       hashStoreFile.getParentFile().mkdirs();
       OutputStream hashStoreOut = new FileOutputStream(hashStoreFile);
@@ -318,9 +320,5 @@ extends AbstractMojo {
       return ImmutableList.copyOf(files);
     }
     return ImmutableList.of(defaultFile);
-  }
-
-  private static File orDefault(File file, File defaultFile) {
-    return file != null ? file : defaultFile;
   }
 }
