@@ -10,12 +10,13 @@ import org.apache.maven.project.MavenProject;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.css.SubstitutionMapProvider;
+import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -146,7 +147,7 @@ extends AbstractMojo {
    * Defaults to target/css/{reldir}/rename-map{-basename}{-orient}.json
    */
   @Parameter(
-      defaultValue="${project.build.directory}/css-rename-map.json",
+      defaultValue="${project.build.directory}/css/css-rename-map.json",
       readonly=true,
       required=true)
   private File cssRenameMap;
@@ -174,9 +175,14 @@ extends AbstractMojo {
     Sources protoSources;
     Sources soySources;
 
-    // TODO: shuttle CSS renaming map to soy and JSCompiler
-    SubstitutionMapProvider substitutionMapProvider =
-        new ClosureMavenPluginSubstitutionMapProvider();
+    ClosureMavenPluginSubstitutionMapProvider substitutionMapProvider;
+    try {
+      substitutionMapProvider = new ClosureMavenPluginSubstitutionMapProvider(
+          Files.asByteSource(cssRenameMap).asCharSource(Charsets.UTF_8));
+    } catch (IOException ex) {
+      throw new MojoExecutionException(
+          "Failed to read CSS rename map " + cssRenameMap, ex);
+    }
 
     try {
       protoSources = new Sources.Finder(".proto")
@@ -312,6 +318,21 @@ extends AbstractMojo {
       }
     } catch (IOException ex) {
       log.warn("Problem writing hash store", ex);
+    }
+
+    log.debug("Writing rename map to " + cssRenameMap);
+    try {
+      cssRenameMap.getParentFile().mkdirs();
+      Writer cssRenameOut = Files.asCharSink(cssRenameMap, Charsets.UTF_8)
+          .openBufferedStream();
+      try {
+        substitutionMapProvider.get()
+             .write(OutputRenamingMapFormat.JSON, cssRenameOut);
+      } finally {
+        cssRenameOut.close();
+      }
+    } catch (IOException ex) {
+      log.warn("Problem writing CSS rename map", ex);
     }
   }
 

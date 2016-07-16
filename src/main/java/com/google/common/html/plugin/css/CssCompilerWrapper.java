@@ -17,7 +17,6 @@ import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
 import com.google.common.css.compiler.commandline.ClosureCommandLineCompiler;
 import com.google.common.html.plugin.Sources;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.io.Files;
 
 final class CssCompilerWrapper {
@@ -40,9 +39,12 @@ final class CssCompilerWrapper {
     this.outputFile = Optional.of(newOutputFile);
     return this;
   }
-  CssCompilerWrapper renameFile(
-      File newRenameFile, SubstitutionMapProvider newSubstitutionMapProvider) {
+  CssCompilerWrapper renameFile(File newRenameFile) {
     this.renameFile = Optional.of(newRenameFile);
+    return this;
+  }
+  CssCompilerWrapper substitutionMapProvider(
+      SubstitutionMapProvider newSubstitutionMapProvider) {
     this.substitutionMapProvider = newSubstitutionMapProvider;
     return this;
   }
@@ -56,7 +58,8 @@ final class CssCompilerWrapper {
       log.info("No CSS files to compile");
       return true;
     }
-    log.info("Compiling " + inputs.size() + " CSS files to " + outputFile);
+    log.info("Compiling " + inputs.size() + " CSS files" +
+        (outputFile.isPresent() ? " to " + outputFile.get().getPath() : ""));
 
     JobDescription job = cssOptions.getJobDescription(
         log, inputs, substitutionMapProvider);

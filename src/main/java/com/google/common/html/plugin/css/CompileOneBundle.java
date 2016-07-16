@@ -58,8 +58,8 @@ final class CompileOneBundle extends Step {
           .cssOptions(cssOptions)
           .inputs(bundle.inputs)
           .outputFile(cssFile.source.canonicalPath)
-          .renameFile(renameMapFile.source.canonicalPath, substMap)
           .sourceMapFile(sourceMapFile.source.canonicalPath)
+          .substitutionMapProvider(substMap)
           .compileCss(log);
     } catch (IOException ex) {
       log.error(ex);
@@ -68,6 +68,9 @@ final class CompileOneBundle extends Step {
     if (!ok) {
       throw new MojoExecutionException(
           "Failed to compile CSS " + bundle.entryPoint.relativePath);
+    }
+    if (log.isDebugEnabled()) {
+      log.debug("After " + renameMapFile.source.canonicalPath);
     }
   }
 

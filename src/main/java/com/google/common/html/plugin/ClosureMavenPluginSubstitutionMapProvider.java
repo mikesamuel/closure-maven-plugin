@@ -1,8 +1,18 @@
 package com.google.common.html.plugin;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.css.MinimalSubstitutionMap;
+import com.google.common.css.OutputRenamingMapFormat;
+import com.google.common.css.ReusableSubstitutionMap;
 import com.google.common.css.SubstitutionMap;
 import com.google.common.css.SubstitutionMapProvider;
+import com.google.common.io.CharSource;
 
 /**
  * A simple container for a minimal substitution map which tries to assign
@@ -11,9 +21,47 @@ import com.google.common.css.SubstitutionMapProvider;
 public class ClosureMavenPluginSubstitutionMapProvider
 implements SubstitutionMapProvider {
 
-  private final SubstitutionMap substitutionMap = new MinimalSubstitutionMap();
+  /** A minimal map used to do substitutions. */
+  private final ReusableSubstitutionMap substitutionMap;
 
-  public SubstitutionMap get() {
+  /**
+   * @param renameMapJson if present, the content of the renaming map as
+   *     formatted by {@link OutputRenamingMapFormat#JSON}..
+   */
+  public ClosureMavenPluginSubstitutionMapProvider(CharSource renameMapJson)
+  throws IOException {
+    SubstitutionMap underlyingMap = null;
+    try {
+      Reader reader = renameMapJson.openBufferedStream();
+      try {
+        underlyingMap = ReusableSubstitutionMap.read(
+            OutputRenamingMapFormat.JSON,
+            new MakeMinimalSubstMap(),
+            ImmutableSet.<String>of(),
+            reader);
+      } finally {
+        reader.close();
+      }
+    } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
+      // Ok.  Fallthrough to below.
+    }
+    if (underlyingMap == null) {
+      underlyingMap = new MakeMinimalSubstMap()
+          .apply(ImmutableList.<String>of());
+    }
+    this.substitutionMap = new ReusableSubstitutionMap(underlyingMap);
+  }
+
+  public ReusableSubstitutionMap get() {
     return substitutionMap;
+  }
+}
+
+
+final class MakeMinimalSubstMap
+implements Function<Iterable<? extends String>, MinimalSubstitutionMap> {
+
+  public MinimalSubstitutionMap apply(Iterable<? extends String> exclusions) {
+    return new MinimalSubstitutionMap(ImmutableSet.copyOf(exclusions));
   }
 }
