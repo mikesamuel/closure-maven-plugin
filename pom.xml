@@ -6,6 +6,9 @@
   <artifactId>closure-maven-plugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
+  <prerequisites>
+    <maven>3</maven>
+  </prerequisites>
 
   <name>Closure Maven Plugin</name>
 
@@ -13,14 +16,21 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <closure-stylesheets.version>20160212</closure-stylesheets.version>
+    <closure-stylesheets.version>21060712-SNAPSHOT</closure-stylesheets.version>
+    <protoc-plugin.version>1.4.55</protoc-plugin.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>2.0</version>
+      <version>3.0.5</version>
+      <exclusions>
+        <exclusion>  <!-- clobbers guava with an older crappier one. -->
+          <groupId>org.sonatype.sisu</groupId>
+          <artifactId>sisu-guava</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
@@ -42,7 +52,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
+      <version>19.0</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -58,7 +68,7 @@
     <dependency>
       <groupId>com.comoyo.maven.plugins</groupId>
       <artifactId>protoc-bundled-plugin</artifactId>
-      <version>1.4.55</version>
+      <version>${protoc-plugin.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.closure-stylesheets</groupId>
