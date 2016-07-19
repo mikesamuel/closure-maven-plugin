@@ -1,6 +1,7 @@
 package com.google.common.html.plugin.common;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -16,17 +17,23 @@ public class CommonPlanner {
   public final File outputDir;
   public final SubstitutionMapProvider substitutionMapProvider;
   public final Ingredients ingredients;
+  public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
+
   private final HashStore hashStore;
   private final ImmutableList.Builder<Step> steps;
 
   public CommonPlanner(
       Log log, File outputDir,
       SubstitutionMapProvider substitutionMapProvider,
-      HashStore hashStore) {
+      HashStore hashStore)
+  throws IOException {
     this.log = log;
     this.outputDir = outputDir;
     this.substitutionMapProvider = substitutionMapProvider;
     this.ingredients = new Ingredients();
+    this.genfiles = ingredients.serializedObject(
+        new File(outputDir, "closure-genfiles.ser"), GenfilesDirs.class);
+
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();
   }

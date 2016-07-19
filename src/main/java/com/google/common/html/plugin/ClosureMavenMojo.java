@@ -1,21 +1,33 @@
 package com.google.common.html.plugin;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
+import org.codehaus.plexus.component.repository.ComponentDependency;
+
+import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.html.plugin.common.CommonPlanner;
+import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
+import com.google.common.html.plugin.proto.ProtoOptions;
+import com.google.common.html.plugin.proto.ProtoPlanner;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -28,11 +40,17 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.List;
 
 /**
  *
  */
-@Mojo(name="generate-sources", defaultPhase=LifecyclePhase.PROCESS_SOURCES)
+@Mojo(
+    name="generate-sources", defaultPhase=LifecyclePhase.PROCESS_SOURCES,
+    // Required because ProtocBundledMojo requires dependency resolution
+    // so it can figure out which protobufVersion to use.
+    requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
+)
 public class ClosureMavenMojo
 extends AbstractMojo {
   @Parameter(
@@ -164,6 +182,17 @@ extends AbstractMojo {
       required=true)
   private File hashStoreFile;
 
+  @Parameter(
+      defaultValue="${project.build.directory}/src/main/proto/descriptors.pd",
+      readonly=true,
+      required=true)
+  private File defaultMainDescriptorFile;
+
+  @Parameter(
+      defaultValue="${project.build.directory}/src/test/proto/descriptors.pd",
+      readonly=true,
+      required=true)
+  private File defaultTestDescriptorFile;
 
   public void execute() throws MojoExecutionException {
     if (!outputDir.exists()) {
@@ -172,30 +201,13 @@ extends AbstractMojo {
 
     Log log = this.getLog();
 
-    Sources protoSources;
-    Sources soySources;
-
     ClosureMavenPluginSubstitutionMapProvider substitutionMapProvider;
     try {
       substitutionMapProvider = new ClosureMavenPluginSubstitutionMapProvider(
-          Files.asByteSource(cssRenameMap).asCharSource(Charsets.UTF_8));
+          Files.asCharSource(cssRenameMap, Charsets.UTF_8));
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to read CSS rename map " + cssRenameMap, ex);
-    }
-
-    try {
-      protoSources = new Sources.Finder(".proto")
-          .mainRoots(orDefault(proto.source, defaultProtoSource))
-          .testRoots(orDefault(proto.testSource, defaultProtoTestSource))
-          .scan(log);
-
-      soySources = new Sources.Finder(".proto")
-          .mainRoots(orDefault(soySource, defaultSoySource))
-          .scan(log);
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to enumerate closure source files", ex);
     }
 
     File jsGenfiles = defaultJsGenfiles;
@@ -234,8 +246,18 @@ extends AbstractMojo {
       hashStore = new HashStore();
     }
 
-    CommonPlanner planner = new CommonPlanner(
-        log, outputDir, substitutionMapProvider, hashStore);
+    CommonPlanner planner;
+    try {
+      planner = new CommonPlanner(
+          log, outputDir, substitutionMapProvider, hashStore);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("failed to initialize planner", ex);
+    }
+
+    planner.genfiles.setStoredObject(new GenfilesDirs(
+        javaGenfiles, javaTestGenfiles,
+        jsGenfiles, jsTestGenfiles));
+
     try {
       new CssPlanner(planner)
           .cssRenameMap(cssRenameMap)
@@ -245,6 +267,17 @@ extends AbstractMojo {
           .plan(css);
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan CSS compile", ex);
+    }
+
+    try {
+      new ProtoPlanner(planner, protocExecutable())
+          .defaultProtoSource(defaultProtoSource)
+          .defaultProtoTestSource(defaultProtoTestSource)
+          .defaultMainDescriptorFile(defaultMainDescriptorFile)
+          .defaultTestDescriptorFile(defaultTestDescriptorFile)
+          .plan(proto);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
 
     /*
@@ -336,10 +369,76 @@ extends AbstractMojo {
     }
   }
 
-  private static ImmutableList<File> orDefault(File[] files, File defaultFile) {
-    if (files != null) {
-      return ImmutableList.copyOf(files);
-    }
-    return ImmutableList.of(defaultFile);
+
+  // For protoc support.
+
+  @Parameter(defaultValue="${plugin}", required=true, readonly=true)
+  private PluginDescriptor pluginDescriptor;
+
+  @Component
+  private RepositorySystem repositorySystem;
+
+//  @Parameter(defaultValue="${project.remoteProjectRepositories}", readonly=true,
+//             required=true)
+  @Parameter(defaultValue="${project.remoteArtifactRepositories}",
+             required=true, readonly=true )
+  protected List<ArtifactRepository> remoteRepositories;
+
+  Function<ProtoOptions, File> protocExecutable() {
+    return new Function<ProtoOptions, File>() {
+
+      static final String PROTOC_PLUGIN_GROUP_ID = "com.comoyo.maven.plugins";
+      static final String PROTOC_PLUGIN_ARTIFACT_ID = "protoc-bundled-plugin";
+
+      @SuppressWarnings("synthetic-access")
+      public File apply(ProtoOptions options) {
+        ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
+
+        String protocPluginVersion = null;
+        for (ComponentDependency d : pluginDescriptor.getDependencies()) {
+          if (PROTOC_PLUGIN_GROUP_ID.equals(d.getGroupId())
+              && PROTOC_PLUGIN_ARTIFACT_ID.equals(d.getArtifactId())) {
+            protocPluginVersion = d.getVersion();
+          }
+        }
+        Preconditions.checkNotNull(
+            protocPluginVersion, "protoc-plugin version");
+
+        PluginDescriptor protocPluginDescriptor = new PluginDescriptor();
+        protocPluginDescriptor.setGroupId(PROTOC_PLUGIN_GROUP_ID);
+        protocPluginDescriptor.setArtifactId(PROTOC_PLUGIN_ARTIFACT_ID);
+        protocPluginDescriptor.setVersion(protocPluginVersion);
+
+        Cheats.cheatSet(
+            ProtocBundledMojo.class, protocBundledMojo,
+            "pluginDescriptor", protocPluginDescriptor);
+        Cheats.cheatSet(
+            ProtocBundledMojo.class, protocBundledMojo,
+            "project", project);
+        Cheats.cheatSet(
+            ProtocBundledMojo.class, protocBundledMojo,
+            "repositorySystem", repositorySystem);
+        Cheats.cheatSet(
+            ProtocBundledMojo.class, protocBundledMojo,
+            "remoteRepositories", remoteRepositories);
+        if (options.protobufVersion != null) {
+          Cheats.cheatSet(
+              ProtocBundledMojo.class, protocBundledMojo,
+              "protobufVersion", options.protobufVersion);
+        }
+        if (options.protocExec != null) {
+          Cheats.cheatSet(
+              ProtocBundledMojo.class, protocBundledMojo,
+              "protocExec", options.protocExec);
+        }
+        Cheats.cheatCall(
+            Void.class, ProtocBundledMojo.class,
+            protocBundledMojo, "ensureProtocBinaryPresent"
+            );
+        return Cheats.cheatGet(
+            ProtocBundledMojo.class, protocBundledMojo,
+            File.class, "protocExec");
+      }
+    };
   }
 }
