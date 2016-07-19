@@ -16,6 +16,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.css.CustomPass;
 import com.google.common.css.GssFunctionMapProvider;
 import com.google.common.css.JobDescription;
 import com.google.common.css.JobDescriptionBuilder;
@@ -38,6 +39,10 @@ public final class CssOptions implements Options {
 
   private static final long serialVersionUID = 8205371531045169081L;
 
+  /**
+   * An ID that must be unique among a bundle of options of the same kind used
+   * in a compilation batch.
+   */
   public String id;
 
   /** Allows @defs and @mixins from one file to propagate to other files. */
@@ -78,6 +83,7 @@ public final class CssOptions implements Options {
    * orientation on a per-file or per-library basis.
    */
   public JobDescription.InputOrientation inputOrientation;
+  /** The kind of optimizations to perform. */
   public JobDescription.OptimizeStrategy optimize;
   /**
    * Whether to format the output with newlines and indents so that
@@ -132,6 +138,10 @@ public final class CssOptions implements Options {
    * those associated with this vendor.
    */
   public Vendor[] vendor;
+  /**
+   * Allows extra processing of the AST.
+   */
+  public Class<? extends CustomPass>[] customPasses;
 
   public File[] source;
   /**
@@ -286,6 +296,22 @@ public final class CssOptions implements Options {
     if (vendor != null && vendor.length == 1) {
       jobDescriptionBuilder.setVendor(vendor[0]);
     }
+    ImmutableList.Builder<CustomPass> customPassesList
+        = ImmutableList.builder();
+    if (this.customPasses != null) {
+      for (Class<?> customPassClass : customPasses) {
+        Class<? extends CustomPass> customPassClassTypesafe =
+            customPassClass.asSubclass(CustomPass.class);
+        Optional<CustomPass> customPass =
+            OptionsUtils.createInstanceUsingDefaultConstructor(
+                log, CustomPass.class, customPassClassTypesafe);
+        if (customPass.isPresent()) {
+          customPassesList.add(customPass.get());
+        }
+      }
+    }
+    customPassesList.add(new RemoveInlinedImportRules(log));
+    jobDescriptionBuilder.setCustomPasses(customPassesList.build());
 
     jobDescriptionBuilder.setCreateSourceMap(true);
 
@@ -310,12 +336,26 @@ public final class CssOptions implements Options {
     return Optional.of(typedMap);
   }
 
+  /**
+   * The outputs of a compilation job.
+   */
   public static final class Outputs implements Serializable {
     private static final long serialVersionUID = -600433593903008098L;
 
+    /** The file that will contain the process CSS. */
     public final File css;
+    /** THe source map for that compilation step. */
     public final File sourceMap;
 
+    /**
+     * @param opts the options for the compilation job.
+     * @param source the entry point source file.
+     * @param defaultCssOutputPathTemplate a path template with
+     *     <tt>{basename}</tt> style interpolations that specifies the
+     *     {@link #css output file}.
+     * @param defaultCssSourceMapPathTemplate a path template that specifies the
+     *     {@link #sourceMap source map file}.
+     */
     public Outputs(
         CssOptions opts,
         Sources.Source source,
@@ -348,10 +388,12 @@ public final class CssOptions implements Options {
           .or(defaultCssSourceMapPathTemplate));
     }
 
+    /** All of the output files. */
     public ImmutableList<File> allOutputFiles() {
       return ImmutableList.of(css, sourceMap);
     }
 
+    /** All of the output files, annotated. */
     public ImmutableList<OutputAmbiguityChecker.Output> allOutputs() {
       return ImmutableList.of(
           new OutputAmbiguityChecker.Output("Compiled CSS", css),

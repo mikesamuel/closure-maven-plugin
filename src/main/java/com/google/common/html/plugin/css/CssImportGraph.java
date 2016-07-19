@@ -12,6 +12,7 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -44,9 +45,7 @@ final class CssImportGraph {
   /** Relative paths of entry style files. */
   final ImmutableList<Source> entryPoints;
 
-  static void forEachImportRule(
-      Log log, CssNode node, Function<? super Import, ?> f) {
-    System.err.println("\tnode : " + node.getClass());
+  static Optional<Import> importForNode(Log log, CssNode node) {
     List<CssValueNode> parameters = null;
     if (node instanceof CssImportRuleNode) {
       CssImportRuleNode importRuleNode = (CssImportRuleNode) node;
@@ -56,16 +55,9 @@ final class CssImportGraph {
       if ("import".equals(atRule.getName().getValue())) {
         parameters = atRule.getParameters();
       }
-    } else if (node instanceof CssNodesListNode<?>) {
-      for (CssNode child : ((CssNodesListNode<?>) node).getChildren()) {
-        forEachImportRule(log, child, f);
-      }
-    } else if (node instanceof CssRootNode) {
-      forEachImportRule(log, ((CssRootNode) node).getBody(), f);
     }
 
     if (parameters != null && parameters.size() == 1) {
-      System.err.println("Found import of " + parameters);
       // Conditional imports like the media query imports should not be
       // considered for inlining.
       String targetUrl = null;
@@ -86,7 +78,6 @@ final class CssImportGraph {
         }
       }
 
-      System.err.println("parameter : " + parameters.get(0).getClass());
       if (targetUrl != null) {
         URI targetUri;
         try {
@@ -95,11 +86,30 @@ final class CssImportGraph {
           log.error("Bad CSS @import url : `" + targetUrl + "`", ex);
           targetUri = null;
         }
-        System.err.println("target : " + targetUrl);
-        f.apply(new Import(targetUri, node.getSourceCodeLocation()));
+        if (targetUri != null) {
+          return Optional.of(
+              new Import(targetUri, node.getSourceCodeLocation()));
+        }
       }
     }
+    return Optional.absent();
+  }
 
+  // TODO(mikesamuel): When constructing the import graph, should we skip
+  // imports in conditionals or try to interpret the conditionals?
+  static void forEachImportRule(
+      Log log, CssNode node, Function<? super Import, ?> f) {
+    Optional<Import> importFound = importForNode(log, node);
+    if (importFound.isPresent()) {
+      f.apply(importFound.get());
+    }
+    if (node instanceof CssNodesListNode<?>) {
+      for (CssNode child : ((CssNodesListNode<?>) node).getChildren()) {
+        forEachImportRule(log, child, f);
+      }
+    } else if (node instanceof CssRootNode) {
+      forEachImportRule(log, ((CssRootNode) node).getBody(), f);
+    }
   }
 
   CssImportGraph(final Log log, Iterable<? extends Source> sources)
@@ -151,6 +161,8 @@ final class CssImportGraph {
       System.err.println("looking for imports in " + input.getKey());
 
       final Source src = input.getKey();
+      // TODO: also take into account @require & @provide
+      // See CheckDependencyNodes pass and CssAtRuleNode.{REQUIRE,PROVIDE}.
       forEachImportRule(
           log,
           parseResult.getRoot(),
