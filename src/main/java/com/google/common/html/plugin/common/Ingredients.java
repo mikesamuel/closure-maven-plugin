@@ -21,6 +21,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,6 @@ import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
-import com.google.inject.Provider;
 
 /**
  * Pools ingredients based on key.
@@ -47,7 +47,7 @@ public class Ingredients {
    * Lazily allocate an ingredient with the given key based on a spec.
    */
   public <T extends Ingredient>
-  T get(Class<T> type, String key, final Provider<? extends T> maker) {
+  T get(Class<T> type, String key, final Supplier<? extends T> maker) {
     Ingredient got;
     try {
       got = ingredients.get(key, new Callable<T>() {
@@ -97,7 +97,7 @@ public class Ingredients {
     return get(
         FileIngredient.class,
         key,
-        new Provider<FileIngredient>() {
+        new Supplier<FileIngredient>() {
           @SuppressWarnings("synthetic-access")
           public FileIngredient get() {
             return new FileIngredient(key, source);
@@ -111,7 +111,7 @@ public class Ingredients {
    * which is hashable when explicitly resolved.
    */
   @SuppressWarnings("synthetic-access")
-  public FileSetIngredient fileset(Sources.Finder finder) {
+  public DirScanFileSetIngredient fileset(Sources.Finder finder) {
     final Sources.Finder finderCopy = finder.clone();
 
     List<String> mainRootStrings = Lists.newArrayList();
@@ -137,14 +137,31 @@ public class Ingredients {
 
     final String key = keyBuilder.toString();
     return get(
-        FileSetIngredient.class,
+        DirScanFileSetIngredient.class,
         key,
-        new Provider<FileSetIngredient>() {
-          public FileSetIngredient get() {
-            return new FileSetIngredient(key, finderCopy);
+        new Supplier<DirScanFileSetIngredient>() {
+          public DirScanFileSetIngredient get() {
+            return new DirScanFileSetIngredient(key, finderCopy);
           }
         });
   }
+
+  /**
+   * A file-set that has a name but whose content is derived from some
+   * computation that is not itself hashable.
+   */
+  public SettableFileSetIngredient namedFileSet(String name) {
+    final String key = "named-files:" + name;
+    return get(
+        SettableFileSetIngredient.class,
+        key,
+        new Supplier<SettableFileSetIngredient>() {
+          public SettableFileSetIngredient get() {
+            return new SettableFileSetIngredient(key);
+          }
+        });
+  }
+
 
   /** An ingredient that represents a fixed string. */
   public StringValue stringValue(final String s) {
@@ -152,7 +169,7 @@ public class Ingredients {
     return get(
         StringValue.class,
         key,
-        new Provider<StringValue>() {
+        new Supplier<StringValue>() {
           public StringValue get() {
             return new StringValue(key, s);
           }
@@ -170,7 +187,7 @@ public class Ingredients {
     OptionsIngredient<?> ing = get(
         OptionsIngredient.class,
         key,
-        new Provider<OptionsIngredient<T>>() {
+        new Supplier<OptionsIngredient<T>>() {
           public OptionsIngredient<T> get() {
             return new OptionsIngredient<T>(key, options);
           }
@@ -201,7 +218,7 @@ public class Ingredients {
     final String key = "file:" + source.canonicalPath.getPath();
     SerializedObjectIngredient<?> ing = get(
         SerializedObjectIngredient.class, key,
-        new Provider<SerializedObjectIngredient<T>>() {
+        new Supplier<SerializedObjectIngredient<T>>() {
           public SerializedObjectIngredient<T> get() {
             return new SerializedObjectIngredient<T>(key, source, contentType);
           }
@@ -229,25 +246,19 @@ public class Ingredients {
     }
   }
 
-
-  /**
-   * A set of files whose hash is the file paths, not their content, and
-   * which is hashable when explicitly resolved.
-   */
-  public final class FileSetIngredient extends Ingredient {
-    private Sources.Finder finder;
+  /** A group of files that need not be known at construct time. */
+  public abstract class FileSetIngredient extends Ingredient {
     private Optional<ImmutableList<FileIngredient>> mainSources
         = Optional.absent();
     private Optional<ImmutableList<FileIngredient>> testSources
         = Optional.absent();
     private Optional<Hash> hash = Optional.absent();
 
-    private FileSetIngredient(String key, Sources.Finder finder) {
+    FileSetIngredient(String key) {
       super(key);
-      this.finder = Preconditions.checkNotNull(finder);
     }
 
-    public synchronized Optional<Hash> hash() throws IOException {
+    public final synchronized Optional<Hash> hash() throws IOException {
       if (mainSources.isPresent() && testSources.isPresent()) {
         return Hash.hashAllHashables(
             ImmutableList.<FileIngredient>builder()
@@ -259,18 +270,107 @@ public class Ingredients {
     }
 
     /** Source files that should contribute to the artifact. */
-    public synchronized Optional<ImmutableList<FileIngredient>> mainSources() {
+    public final synchronized
+    Optional<ImmutableList<FileIngredient>> mainSources() {
       return mainSources;
     }
 
     /** Source files that are used to test the artifact. */
-    public synchronized Optional<ImmutableList<FileIngredient>> testSources() {
+    public final synchronized
+    Optional<ImmutableList<FileIngredient>> testSources() {
       return testSources;
+    }
+
+    protected final
+    void setSources(
+        Iterable<? extends FileIngredient> newMainSources,
+        Iterable<? extends FileIngredient> newTestSources)
+    throws IOException {
+      Optional<ImmutableList<FileIngredient>> newMainSourceList = Optional.of(
+          ImmutableList.copyOf(newMainSources));
+      Optional<ImmutableList<FileIngredient>> newTestSourceList = Optional.of(
+          ImmutableList.copyOf(newTestSources));
+      Hash mainHash = Hash.hashAllHashables(newMainSourceList.get()).get();
+      Hash testHash = Hash.hashAllHashables(newTestSourceList.get()).get();
+      Optional<Hash> hashOfFiles = Optional.of(
+          Hash.hashAllHashes(
+              ImmutableList.<Hash>of(mainHash, testHash)));
+      synchronized (this) {
+        Preconditions.checkState(
+            !mainSources.isPresent() && !testSources.isPresent());
+        this.mainSources = newMainSourceList;
+        this.testSources = newTestSourceList;
+        this.hash = hashOfFiles;
+      }
+    }
+
+    protected final
+    void setMainSources(Iterable<? extends FileIngredient> sources) {
+      Optional<ImmutableList<FileIngredient>> newSources = Optional.of(
+          ImmutableList.copyOf(sources));
+      synchronized (this) {
+        Preconditions.checkState(!mainSources.isPresent());
+        this.mainSources = newSources;
+      }
+    }
+
+    /**
+     * True iff the sources have been resolved to a concrete list
+     * of extant files.
+     */
+    public synchronized boolean isResolved() {
+      return hash.isPresent();
+    }
+  }
+
+  /** */
+  public final class SettableFileSetIngredient extends FileSetIngredient {
+
+    SettableFileSetIngredient(String key) {
+      super(key);
+    }
+
+    /**
+     * May be called once to specify the files in the set, as the file set
+     * transitions from being used as an input to being used as an output.
+     */
+    public void setFiles(
+        Iterable<? extends FileIngredient> newMainSources,
+        Iterable<? extends FileIngredient> newTestSources)
+    throws IOException {
+      this.setSources(newMainSources, newTestSources);
+    }
+  }
+
+  /**
+   * A set of files whose hash is the file paths, not their content, and
+   * which is hashable when explicitly resolved.
+   */
+  public final class DirScanFileSetIngredient extends FileSetIngredient {
+    private Sources.Finder finder;
+    private final ImmutableList<File> mainRoots;
+    private final ImmutableList<File> testRoots;
+
+    private DirScanFileSetIngredient(String key, Sources.Finder finder) {
+      super(key);
+      this.finder = Preconditions.checkNotNull(finder);
+      this.mainRoots = finder.mainRoots();
+      this.testRoots = finder.testRoots();
+    }
+
+    /** @see Sources.Finder#mainRoots */
+    public ImmutableList<File> mainRoots() {
+      return mainRoots;
+    }
+
+    /** @see Sources.Finder#testRoots */
+    public ImmutableList<File> testRoots() {
+      return testRoots;
     }
 
     /** Scans the file-system to find matching files. */
     public synchronized void resolve(Log log) throws IOException {
-      if (hash.isPresent()) {
+      if (isResolved()) {
         return;
       }
       Preconditions.checkNotNull(finder);
@@ -279,13 +379,7 @@ public class Ingredients {
           sources.mainFiles);
       ImmutableList<FileIngredient> testSourceList = sortedSources(
           sources.testFiles);
-      this.mainSources = Optional.of(mainSourceList);
-      this.testSources = Optional.of(testSourceList);
-      this.hash = Optional.of(Hash.hashAllHashes(
-          ImmutableList.of(
-              Hash.hashSerializable(sources.mainFiles),
-              Hash.hashSerializable(sources.testFiles))
-          ));
+      this.setSources(mainSourceList, testSourceList);
       this.finder = null;
     }
   }

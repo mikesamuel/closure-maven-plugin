@@ -18,8 +18,8 @@ import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
@@ -37,7 +37,7 @@ final class FindEntryPoints extends Step {
       Ingredients ingredients,
       File cssOutputDirectory,
       Ingredients.OptionsIngredient<CssOptions> options,
-      FileSetIngredient cssSources,
+      DirScanFileSetIngredient cssSources,
       StringValue defaultCssOutputPathTemplate,
       StringValue defaultCssSourceMapTemplate,
       StringValue renameMapFilePath,
@@ -64,7 +64,8 @@ final class FindEntryPoints extends Step {
     CssOptions cssOpts = ((OptionsIngredient<?>) inputs.get(0))
         .asSuperType(CssOptions.class)
         .getOptions();
-    FileSetIngredient cssSources = (FileSetIngredient) inputs.get(1);
+    DirScanFileSetIngredient cssSources =
+        (DirScanFileSetIngredient) inputs.get(1);
     StringValue defaultCssOutputPathTemplate = (StringValue) inputs.get(2);
     StringValue defaultCssSourceMapPathTemplate = (StringValue) inputs.get(3);
 

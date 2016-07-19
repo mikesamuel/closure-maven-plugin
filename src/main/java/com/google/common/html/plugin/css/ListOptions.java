@@ -9,7 +9,7 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -86,7 +86,7 @@ final class ListOptions extends Step {
       } else {
         roots = ImmutableList.copyOf(options.source);
       }
-      FileSetIngredient sources = ingredients.fileset(
+      DirScanFileSetIngredient sources = ingredients.fileset(
           new Sources.Finder(".css", ".gss").mainRoots(roots));
       try {
         sources.resolve(log);
