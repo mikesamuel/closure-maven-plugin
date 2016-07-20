@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
 import com.google.common.collect.ImmutableList;
@@ -33,7 +31,7 @@ public final class ExtractPlanner {
   }
 
   public void plan(Iterable<? extends Extract> extracts)
-  throws IOException, MojoExecutionException {
+  throws IOException {
     File extractsDir = new File(planner.outputDir, "extracts");
 
     Ingredients ingredients = planner.ingredients;

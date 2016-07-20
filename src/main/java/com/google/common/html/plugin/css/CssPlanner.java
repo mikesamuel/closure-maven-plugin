@@ -140,6 +140,7 @@ public final class CssPlanner {
             CssOptionsById.class);
 
     planner.addStep(
-        new ListOptions(this, optionsIngredients(css), optionsListFile));
+        new ListOptions(
+            this, optionsIngredients(css), planner.genfiles, optionsListFile));
   }
 }

@@ -76,7 +76,7 @@ public final class ProtoPlanner {
         planner.ingredients.namedFileSet("protocExec");
 
     planner.addStep(new FindProtoFilesAndProtoc(
-        protocExecSupplier, planner.ingredients,
+        planner.processRunner, protocExecSupplier, planner.ingredients,
         protoOptions,
         planner.genfiles,
         planner.ingredients.stringValue(defaultProtoSource.getPath()),

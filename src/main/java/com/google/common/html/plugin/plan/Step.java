@@ -4,6 +4,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * A step in the process of transforming inputs to outputs.
@@ -11,15 +12,25 @@ import com.google.common.collect.ImmutableList;
 public abstract class Step {
   protected final String key;
   protected final ImmutableList<Ingredient> inputs;
-  protected final ImmutableList<Ingredient> outputs;
+  protected final ImmutableSet<StepSource> reads;
+  protected final ImmutableSet<StepSource> writes;
 
+  /**
+   * @param key a key used to associate a step with a hash of its inputs in
+   *    a {@link HashStore}.
+   * @param reads used, in conjunction with writes, to establish a partial
+   *    order of steps within a {@link Plan} by ensuring that writes occur
+   *    before reads.
+   */
   protected Step(
       String key,
       ImmutableList<Ingredient> inputs,
-      ImmutableList<Ingredient> outputs) {
+      ImmutableSet<StepSource> reads,
+      ImmutableSet<StepSource> writes) {
     this.key = key;
     this.inputs = inputs;
-    this.outputs = outputs;
+    this.reads = reads;
+    this.writes = writes;
   }
 
   /**

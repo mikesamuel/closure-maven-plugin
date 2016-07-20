@@ -51,6 +51,7 @@ public class Ingredients {
     Ingredient got;
     try {
       got = ingredients.get(key, new Callable<T>() {
+        @Override
         public T call() {
           return maker.get();
         }
@@ -99,6 +100,7 @@ public class Ingredients {
         key,
         new Supplier<FileIngredient>() {
           @SuppressWarnings("synthetic-access")
+          @Override
           public FileIngredient get() {
             return new FileIngredient(key, source);
           }
@@ -140,6 +142,7 @@ public class Ingredients {
         DirScanFileSetIngredient.class,
         key,
         new Supplier<DirScanFileSetIngredient>() {
+          @Override
           public DirScanFileSetIngredient get() {
             return new DirScanFileSetIngredient(key, finderCopy);
           }
@@ -156,6 +159,7 @@ public class Ingredients {
         SettableFileSetIngredient.class,
         key,
         new Supplier<SettableFileSetIngredient>() {
+          @Override
           public SettableFileSetIngredient get() {
             return new SettableFileSetIngredient(key);
           }
@@ -170,11 +174,29 @@ public class Ingredients {
         StringValue.class,
         key,
         new Supplier<StringValue>() {
+          @Override
           public StringValue get() {
             return new StringValue(key, s);
           }
         });
 
+  }
+
+  /**
+   * An ingredient that represents a path, and hashes to a hash of that
+   * path, not the content of the file referred to by that path.
+   */
+  public PathValue pathValue(final File f) {
+    final String key = "path:" + f.getPath();
+    return get(
+        PathValue.class,
+        key,
+        new Supplier<PathValue>() {
+          @Override
+          public PathValue get() {
+            return new PathValue(key, f);
+          }
+        });
   }
 
   /**
@@ -188,8 +210,9 @@ public class Ingredients {
         OptionsIngredient.class,
         key,
         new Supplier<OptionsIngredient<T>>() {
+          @Override
           public OptionsIngredient<T> get() {
-            return new OptionsIngredient<T>(key, options);
+            return new OptionsIngredient<>(key, options);
           }
         });
     return ing.asSuperType(optionsType);
@@ -219,8 +242,9 @@ public class Ingredients {
     SerializedObjectIngredient<?> ing = get(
         SerializedObjectIngredient.class, key,
         new Supplier<SerializedObjectIngredient<T>>() {
+          @Override
           public SerializedObjectIngredient<T> get() {
-            return new SerializedObjectIngredient<T>(key, source, contentType);
+            return new SerializedObjectIngredient<>(key, source, contentType);
           }
         });
     return ing.asSuperType(contentType);
@@ -237,6 +261,7 @@ public class Ingredients {
       this.source = source;
     }
 
+    @Override
     public Optional<Hash> hash() throws IOException {
       try {
         return Optional.of(Hash.hash(source));
@@ -258,6 +283,7 @@ public class Ingredients {
       super(key);
     }
 
+    @Override
     public final synchronized Optional<Hash> hash() throws IOException {
       if (mainSources.isPresent() && testSources.isPresent()) {
         return Hash.hashAllHashables(
@@ -397,6 +423,7 @@ public class Ingredients {
       this.options = clone(options);
     }
 
+    @Override
     public Optional<Hash> hash() throws NotSerializableException {
       return Optional.of(Hash.hashSerializable(options));
     }
@@ -469,6 +496,7 @@ public class Ingredients {
       return casted;
     }
 
+    @Override
     public Optional<Hash> hash() throws IOException {
       if (instance.isPresent()) {  // These had better be equivalent.
         return Optional.of(Hash.hashSerializable(instance.get()));
@@ -485,15 +513,17 @@ public class Ingredients {
         return Optional.absent();
       }
       try {
-        ObjectInputStream objIn = new ObjectInputStream(in);
         Object deserialized;
-        try {
-          deserialized = objIn.readObject();
-        } catch (ClassNotFoundException ex) {
-          throw new IOException("Failed to deserialize", ex);
-        }
-        if (objIn.read() >= 0) {
-          throw new IOException("Extraneous content in serialized object file");
+        try (ObjectInputStream objIn = new ObjectInputStream(in)) {
+          try {
+            deserialized = objIn.readObject();
+          } catch (ClassNotFoundException ex) {
+            throw new IOException("Failed to deserialize", ex);
+          }
+          if (objIn.read() >= 0) {
+            throw new IOException(
+                "Extraneous content in serialized object file");
+          }
         }
         instance = Optional.of(type.cast(deserialized));
         return instance;
@@ -523,16 +553,10 @@ public class Ingredients {
     public void write() throws IOException {
       Preconditions.checkState(instance.isPresent());
       source.canonicalPath.getParentFile().mkdirs();
-      FileOutputStream out = new FileOutputStream(source.canonicalPath);
-      try {
-        ObjectOutputStream objOut = new ObjectOutputStream(out);
-        try {
+      try (FileOutputStream out = new FileOutputStream(source.canonicalPath)) {
+        try (ObjectOutputStream objOut = new ObjectOutputStream(out)) {
           objOut.writeObject(instance.get());
-        } finally {
-          objOut.close();
         }
-      } finally {
-        out.close();
       }
     }
   }
@@ -546,6 +570,7 @@ public class Ingredients {
     Collections.sort(
         hashedSources,
         new Comparator<FileIngredient>() {
+          @Override
           public int compare(FileIngredient a, FileIngredient b) {
             return a.source.canonicalPath.compareTo(b.source.canonicalPath);
           }
@@ -561,8 +586,37 @@ public class Ingredients {
       super(key);
       this.value = value;
     }
+    @Override
     public Optional<Hash> hash() throws IOException {
       return Optional.of(Hash.hashString(value));
+    }
+
+    @Override
+    public String toString() {
+      return "{PathValue " + value + "}";
+    }
+  }
+
+  /**
+   * An ingredient that represents a path, and hashes to a hash of that
+   * path, not the content of the file referred to by that path.
+   */
+  public static final class PathValue extends Ingredient {
+    /** The fixed string value. */
+    public final File value;
+
+    PathValue(String key, File value) {
+      super(key);
+      this.value = value;
+    }
+    @Override
+    public Optional<Hash> hash() throws IOException {
+      return Optional.of(Hash.hashString(value.getPath()));
+    }
+
+    @Override
+    public String toString() {
+      return "{PathValue " + value.getPath() + "}";
     }
   }
 

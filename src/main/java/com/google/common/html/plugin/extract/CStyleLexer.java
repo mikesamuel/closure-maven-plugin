@@ -31,18 +31,25 @@ final class CStyleLexer implements Iterable<CStyleLexer.Token> {
     this.content = content;
   }
 
-
+  @Override
   public Iterator<Token> iterator() {
     return new Iterator<Token>() {
       private int left;
       private int right;
       private TokenType type;
 
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
       public boolean hasNext() {
         lex();
         return type != null;
       }
 
+      @Override
       public Token next() {
         lex();
         if (type == null) {

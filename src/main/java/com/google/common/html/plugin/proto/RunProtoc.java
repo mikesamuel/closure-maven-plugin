@@ -1,10 +1,13 @@
 package com.google.common.html.plugin.proto;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -21,13 +24,18 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.ProcessRunner;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.Step;
+import com.google.common.html.plugin.plan.StepSource;
 
 final class RunProtoc extends Step {
+  final ProcessRunner processRunner;
   final RunProtoc.RootSet rootSet;
+  final FileIngredient descriptorSetFile;
 
   RunProtoc(
+      ProcessRunner processRunner,
       RunProtoc.RootSet rootSet,
       OptionsIngredient<ProtoOptions> options,
       DirScanFileSetIngredient protoSources,
@@ -45,9 +53,16 @@ final class RunProtoc extends Step {
                  javaGenfilesPath, jsGenfilesPath)
             .addAll(inputs)
             .build(),
-        ImmutableList.<Ingredient>of(
-            descriptorSetFile));
+        Sets.immutableEnumSet(
+            StepSource.PROTO_SRC, StepSource.PROTO_GENERATED,
+            StepSource.PROTOC),
+        Sets.immutableEnumSet(
+            StepSource.PROTO_DESCRIPTOR_SET,
+            // Compiles .proto to .js
+            StepSource.JS_GENERATED));
+    this.processRunner = processRunner;
     this.rootSet = Preconditions.checkNotNull(rootSet);
+    this.descriptorSetFile = descriptorSetFile;
   }
 
   @Override
@@ -62,7 +77,13 @@ final class RunProtoc extends Step {
     StringValue jsGenfilesPath = (StringValue) inputs.get(4);
     ImmutableList<FileIngredient> inputProtoFiles = castList(
         inputs.subList(5, inputs.size()), FileIngredient.class);
-    FileIngredient descriptorSetFile = (FileIngredient) outputs.get(0);
+
+    if (inputProtoFiles.isEmpty()) {
+      // We're done.
+      // TODO: Is it a problem that we will not generate
+      // an empty descriptor set file?
+      return;
+    }
 
     Optional<ImmutableList<FileIngredient>> sources = Optional.absent();
     switch (rootSet) {
@@ -82,8 +103,10 @@ final class RunProtoc extends Step {
         .add("--descriptor_set_out")
         .add(descriptorSetFile.source.canonicalPath.getPath());
 
-    argv.add("--java_out").add(javaGenfilesPath.value);
-    argv.add("--js_out").add(jsGenfilesPath.value);
+    // Protoc is a little finicky about requiring that output directories
+    // exist, though it will happily create directories for the packages.
+    argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
+    argv.add("--js_out").add(ensureDirExists(jsGenfilesPath.value));
 
     // Build a proto search path.
     Set<File> roots = Sets.newLinkedHashSet();
@@ -133,39 +156,29 @@ final class RunProtoc extends Step {
       }
     }
 
-    ProcessBuilder protocProcessBuilder = new ProcessBuilder(argv.build())
-        .inheritIO();
-    if (log.isDebugEnabled()) {
-      log.debug("Running protoc: " + protocProcessBuilder.command());
-    }
-    int exitCode;
-    long t0 = System.nanoTime();
+    Future<Integer> exitCodeFuture = processRunner.run(
+        log, "protoc", argv.build());
     try {
-      Process protocProcess = protocProcessBuilder.start();
-      protocProcess.waitFor(30, TimeUnit.SECONDS);
-      if (protocProcess.isAlive()) {
-        log.error("Timed-out waiting for protoc");
-        protocProcess.destroyForcibly();
-        exitCode = -1;
-      } else {
-        exitCode = protocProcess.exitValue();
-      }
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "process did not complete normally: " + protoc, ex);
-    } catch (InterruptedException ex) {
-      throw new MojoExecutionException(
-          "process did not complete normally: " + protoc, ex);
-    }
-    long t1 = System.nanoTime();
+      Integer exitCode = exitCodeFuture.get(30, TimeUnit.SECONDS);
 
-    String message = "protoc completed with exit code " + exitCode + " after "
-        + ((t1 - t0) / (1000000L /* ns / ms */)) + " ms";
-    if (exitCode == 0) {
-      log.debug(message);  // Yay!
-    } else {
-      throw new MojoExecutionException(message);
+      if (exitCode.intValue() != 0) {
+        throw new MojoExecutionException(
+            "protoc execution failed with exit code " + exitCode);
+      }
+    } catch (TimeoutException ex) {
+      throw new MojoExecutionException("protoc execution timed out", ex);
+    } catch (InterruptedException ex) {
+      throw new MojoExecutionException("protoc execution was interrupted", ex);
+    } catch (ExecutionException ex) {
+      throw new MojoExecutionException("protoc execution failed", ex);
+    } catch (CancellationException ex) {
+      throw new MojoExecutionException("protoc execution was cancelled", ex);
     }
+  }
+
+  private static String ensureDirExists(String dirPath) {
+    new File(dirPath).mkdirs();
+    return dirPath;
   }
 
   @Override

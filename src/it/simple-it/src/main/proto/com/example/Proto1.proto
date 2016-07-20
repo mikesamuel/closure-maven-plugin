@@ -7,5 +7,5 @@ import "webutil/html/types/html.proto";
 /* A user-name is either a string of text or of HTML */
 message UserName {
   optional string text = 1;
-  optional SafeHtmlProto html = 2;
+  optional webutil.html.types.SafeHtmlProto html = 2;
 }

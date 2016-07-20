@@ -10,6 +10,7 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -24,9 +25,13 @@ import com.google.common.html.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.Step;
+import com.google.common.html.plugin.plan.StepSource;
 
 final class ResolveExtracts extends Step {
   private final Ingredients ingredients;
+  private final
+  SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList;
+  private final SettableFileSetIngredient archives;
 
   ResolveExtracts(
       Ingredients ingredients,
@@ -39,8 +44,11 @@ final class ResolveExtracts extends Step {
     super(
         "resolve-extracts",
         ImmutableList.<Ingredient>of(extractsList, dependenciesList),
-        ImmutableList.<Ingredient>of(resolvedExtractsList, archives));
+        ImmutableSet.<StepSource>of(),
+        ImmutableSet.<StepSource>of());
     this.ingredients = ingredients;
+    this.resolvedExtractsList = resolvedExtractsList;
+    this.archives = archives;
   }
 
   @Override
@@ -51,12 +59,6 @@ final class ResolveExtracts extends Step {
     SerializedObjectIngredient<ResolvedExtractsList> dependenciesList =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(ResolvedExtractsList.class);
-
-    SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList =
-        ((SerializedObjectIngredient<?>) outputs.get(0))
-        .asSuperType(ResolvedExtractsList.class);
-    SettableFileSetIngredient archives =
-        (SettableFileSetIngredient) outputs.get(1);
 
     ImmutableList.Builder<ResolvedExtract> resolvedBuilder =
         ImmutableList.builder();
@@ -135,12 +137,11 @@ final class ResolveExtracts extends Step {
       throw new MojoExecutionException("failed to store resolved extracts", ex);
     }
 
-    buildResolvedExtractsList(resolved, archives);
+    buildResolvedExtractsList(resolved);
   }
 
   private void buildResolvedExtractsList(
-      ImmutableList<ResolvedExtract> resolved,
-      SettableFileSetIngredient archives)
+      ImmutableList<ResolvedExtract> resolved)
   throws MojoExecutionException {
 
     ImmutableList.Builder<FileIngredient> mainArchives =
@@ -162,12 +163,6 @@ final class ResolveExtracts extends Step {
 
   @Override
   public void skip(Log log) throws MojoExecutionException {
-    SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList =
-        ((SerializedObjectIngredient<?>) outputs.get(0))
-        .asSuperType(ResolvedExtractsList.class);
-    SettableFileSetIngredient archives =
-        (SettableFileSetIngredient) outputs.get(1);
-
     try {
       resolvedExtractsList.read();
     } catch (IOException ex) {
@@ -175,8 +170,7 @@ final class ResolveExtracts extends Step {
     }
 
     buildResolvedExtractsList(
-        resolvedExtractsList.getStoredObject().get().extracts,
-        archives);
+        resolvedExtractsList.getStoredObject().get().extracts);
   }
 
   @Override

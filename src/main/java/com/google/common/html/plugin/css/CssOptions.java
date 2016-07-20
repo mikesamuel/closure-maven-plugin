@@ -143,6 +143,9 @@ public final class CssOptions implements Options {
    */
   public Class<? extends CustomPass>[] customPasses;
 
+  /**
+   * Directories to scan for CSS sources.
+   */
   public File[] source;
   /**
    * The output CSS filename. If empty, standard output will be

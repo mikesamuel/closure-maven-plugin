@@ -11,8 +11,10 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
@@ -26,11 +28,13 @@ import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.Step;
+import com.google.common.html.plugin.plan.StepSource;
 
 final class FindEntryPoints extends Step {
   final SubstitutionMapProvider substMap;
   final Ingredients ingredients;
   final File cssOutputDirectory;
+  final SerializedObjectIngredient<CssBundleList> bundleList;
 
   FindEntryPoints(
       SubstitutionMapProvider substMap,
@@ -40,27 +44,27 @@ final class FindEntryPoints extends Step {
       DirScanFileSetIngredient cssSources,
       StringValue defaultCssOutputPathTemplate,
       StringValue defaultCssSourceMapTemplate,
-      StringValue renameMapFilePath,
-      SerializedObjectIngredient<CssBundleList> entryPointsFile) {
+      SerializedObjectIngredient<CssBundleList> bundleList) {
     super(
         "css-find-entry-points:[" + options.getId() + "]:" + cssSources.key,
         ImmutableList.<Ingredient>of(
             options,
             cssSources,
             defaultCssOutputPathTemplate,
-            defaultCssSourceMapTemplate,
-            renameMapFilePath),
-        ImmutableList.<Ingredient>of(entryPointsFile));
+            defaultCssSourceMapTemplate),
+        Sets.immutableEnumSet(StepSource.CSS_SRC, StepSource.CSS_GENERATED),
+        ImmutableSet.<StepSource>of());
     this.substMap = substMap;
     this.ingredients = ingredients;
     this.cssOutputDirectory = cssOutputDirectory;
+    this.bundleList = bundleList;
   }
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
     ImmutableList.Builder<CssBundle> b = ImmutableList.builder();
 
-    Preconditions.checkState(inputs.size() == 5);
+    Preconditions.checkState(inputs.size() == 4);
     CssOptions cssOpts = ((OptionsIngredient<?>) inputs.get(0))
         .asSuperType(CssOptions.class)
         .getOptions();
@@ -120,9 +124,6 @@ final class FindEntryPoints extends Step {
                   }
                 })));
 
-    SerializedObjectIngredient<CssBundleList> bundleList =
-        ((SerializedObjectIngredient<?>) outputs.get(0))
-        .asSuperType(CssBundleList.class);
     bundleList.setStoredObject(new CssBundleList(bundles));
     try {
       bundleList.write();
@@ -133,9 +134,6 @@ final class FindEntryPoints extends Step {
 
   @Override
   public void skip(Log log) throws MojoExecutionException {
-    SerializedObjectIngredient<CssBundleList> bundleList =
-        ((SerializedObjectIngredient<?>) outputs.get(0))
-        .asSuperType(CssBundleList.class);
     try {
       bundleList.read();
     } catch (IOException ex) {
@@ -146,32 +144,21 @@ final class FindEntryPoints extends Step {
   @Override
   public ImmutableList<Step> extraSteps(Log log)
   throws MojoExecutionException {
-    SerializedObjectIngredient<CssBundleList> bundleList =
-        ((SerializedObjectIngredient<?>) outputs.get(0))
-        .asSuperType(CssBundleList.class);
     OptionsIngredient<CssOptions> options =
         ((OptionsIngredient<?>) inputs.get(0))
         .asSuperType(CssOptions.class);
-    StringValue renameMapFilePath = (StringValue) inputs.get(4);
 
     // For each entry point, we need to schedule a compile.
     ImmutableList.Builder<Step> extraSteps = ImmutableList.builder();
     for (CssBundle b : bundleList.getStoredObject().get().bundles) {
 
       SerializedObjectIngredient<CssBundle> bundle;
-      FileIngredient cssFile;
-      FileIngredient sourceMapFile;
-      FileIngredient renameMapFile;
       try {
         bundle = ingredients.serializedObject(
             b.entryPoint.reroot(cssOutputDirectory).suffix(".bundle.ser"),
             CssBundle.class);
         bundle.setStoredObject(b);
         bundle.write();
-
-        cssFile = ingredients.file(b.outputs.css);
-        sourceMapFile = ingredients.file(b.outputs.sourceMap);
-        renameMapFile = ingredients.file(new File(renameMapFilePath.value));
       } catch (IOException ex) {
         throw new MojoExecutionException(
             "Failed to create intermediate inputs for "
@@ -186,13 +173,11 @@ final class FindEntryPoints extends Step {
       }
 
       extraSteps.add(new CompileOneBundle(
+          b.outputs.css,
           substMap,
           options,
           bundle,
-          inputFiles.build(),
-          cssFile,
-          sourceMapFile,
-          renameMapFile));
+          inputFiles.build()));
     }
     return extraSteps.build();
   }

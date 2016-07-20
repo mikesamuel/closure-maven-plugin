@@ -19,11 +19,14 @@ import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
+import com.google.common.html.plugin.extract.Extract;
+import com.google.common.html.plugin.extract.ExtractPlanner;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.proto.ProtoOptions;
@@ -107,6 +110,9 @@ extends AbstractMojo {
       defaultValue="${project.basedir}/src/main/soy",
       readonly=true, required=true)
   private File defaultSoySource;
+
+  @Parameter
+  private Extract[] extracts;
 
   /**
    * Options for the closure-stylesheets compiler.
@@ -255,8 +261,19 @@ extends AbstractMojo {
     }
 
     planner.genfiles.setStoredObject(new GenfilesDirs(
+        outputDir,
         javaGenfiles, javaTestGenfiles,
         jsGenfiles, jsTestGenfiles));
+
+    try {
+      new ExtractPlanner(planner, project)
+          .plan(extracts != null
+                ? ImmutableList.copyOf(extracts)
+                : ImmutableList.<Extract>of());
+    } catch (IOException ex) {
+      throw new MojoExecutionException(
+          "Failed to plan source file extraction", ex);
+    }
 
     try {
       new CssPlanner(planner)
@@ -378,8 +395,8 @@ extends AbstractMojo {
   @Component
   private RepositorySystem repositorySystem;
 
-//  @Parameter(defaultValue="${project.remoteProjectRepositories}", readonly=true,
-//             required=true)
+//@Parameter(defaultValue="${project.remoteProjectRepositories}", readonly=true,
+//           required=true)
   @Parameter(defaultValue="${project.remoteArtifactRepositories}",
              required=true, readonly=true )
   protected List<ArtifactRepository> remoteRepositories;

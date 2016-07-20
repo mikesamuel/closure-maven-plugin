@@ -15,13 +15,18 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
-import com.google.common.html.plugin.extract.ResolvedExtractsList.ResolvedExtract;
+import com.google.common.html.plugin.extract.ResolvedExtractsList
+    .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.Step;
+import com.google.common.html.plugin.plan.StepSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -36,7 +41,8 @@ final class ExtractFiles extends Step {
         "extract-files",
         ImmutableList.<Ingredient>of(
             resolvedExtractsList, genfiles, archives, outputDirPath),
-        ImmutableList.<Ingredient>of());
+        ImmutableSet.<StepSource>of(),
+        StepSource.ALL_GENERATED);
   }
 
   @Override
@@ -47,15 +53,13 @@ final class ExtractFiles extends Step {
     SerializedObjectIngredient<GenfilesDirs> genfiles =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
-    StringValue outputDirPath = (StringValue) inputs.get(3);
 
     GenfilesDirs gf = genfiles.getStoredObject().get();
-    File outputDir = new File(outputDirPath.value);
 
     for (ResolvedExtract e
         : resolvedExtractsList.getStoredObject().get().extracts) {
       try {
-        extract(outputDir, gf, e, log);
+        extract(gf, e, log);
       } catch (IOException ex) {
         throw new MojoExecutionException(
             "Failed to extract " + e.groupId + ":" + e.artifactId,
@@ -74,8 +78,7 @@ final class ExtractFiles extends Step {
     return ImmutableList.of();
   }
 
-  private static void extract(
-      File outputDir, GenfilesDirs gd, ResolvedExtract e, Log log)
+  private static void extract(GenfilesDirs gd, ResolvedExtract e, Log log)
   throws IOException {
     InputStream in = new FileInputStream(e.archive);
     try {
@@ -84,14 +87,16 @@ final class ExtractFiles extends Step {
         for (ZipEntry entry; (entry = zipIn.getNextEntry()) != null;) {
           if (!entry.isDirectory()) {
             String name = entry.getName();
-            if (e.suffixes.contains(FilenameUtils.getExtension(name))) {
+            String ext = FilenameUtils.getExtension(name);
+            if (e.suffixes.contains(ext)) {
               // Suffix matches.
               byte[] bytes = ByteStreams.toByteArray(zipIn);
-              File extractedLocation =
-                  locationFor(outputDir, gd, name, e.isTestScope, bytes);
+              File extractedLocation = locationFor(
+                  gd, name, e.isTestScope, bytes);
               log.debug(
                   "Extracting " + e.groupId + ":" + e.artifactId + " : " + name
                   + " to " + extractedLocation);
+              extractedLocation.getParentFile().mkdirs();
               Files.write(bytes, extractedLocation);
             }
           }
@@ -106,27 +111,14 @@ final class ExtractFiles extends Step {
   }
 
   private static File locationFor(
-      File outputDir, GenfilesDirs gd,
-      String name, boolean isTestScope, byte[] content) {
+      GenfilesDirs gd, String name, boolean isTestScope, byte[] content) {
     String suffix = FilenameUtils.getExtension(name);
     PathChooser pathChooser = EXTENSION_TO_PATH_CHOOSER.get(suffix);
     if (pathChooser == null) {
       pathChooser = new DefaultPathChooser();
     }
     String relPath = pathChooser.chooseRelativePath(name, content);
-    File base;
-    if ("js".equals(suffix)) {
-      base = isTestScope ? gd.jsTestGenfiles : gd.jsGenfiles;
-    } else if ("java".equals(suffix)) {  // Should not be reached
-      base = isTestScope ? gd.javaTestGenfiles : gd.javaGenfiles;
-    } else {
-      // suffix of css -> target/src/main/css
-      base = new File(
-          new File(
-              new File(outputDir, "src"),
-              (isTestScope ? "test" : "main")),
-          suffix);
-    }
+    File base = gd.getGeneratedSourceDirectoryForExtension(suffix, isTestScope);
 
     return new File(FilenameUtils.concat(
         base.getPath(),
