@@ -37,11 +37,15 @@
   </build>
 
   <dependencies>
+    <!-- The protoc plugin needs protobuf-java so it can figure out which
+         version of protoc to invoke. -->
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.0.0-beta-2</version>
     </dependency>
+    <!-- Above we specify that we're going to extract supporting files from this.
+         Specifically, html.proto -->
     <dependency>
       <groupId>com.google.common.html.types</groupId>
       <artifactId>proto</artifactId>

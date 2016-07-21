@@ -46,7 +46,8 @@ import java.io.Writer;
 import java.util.List;
 
 /**
- *
+ * Generates .js & .java sources from .proto and .soy and compiles .js and .css
+ * to optimized bundles.
  */
 @Mojo(
     name="generate-sources", defaultPhase=LifecyclePhase.PROCESS_SOURCES,
@@ -59,7 +60,8 @@ extends AbstractMojo {
   @Parameter(
       defaultValue="${project.build.directory}",
       property="outputDir",
-      required=true)
+      required=true,
+      readonly=true)
   private File outputDir;
 
   @Parameter(defaultValue="${project}", readonly=true, required=true)
@@ -111,6 +113,9 @@ extends AbstractMojo {
       readonly=true, required=true)
   private File defaultSoySource;
 
+  /**
+   * The dependencies from which to extract supplementary source files.
+   */
   @Parameter
   private Extract[] extracts;
 
@@ -120,20 +125,20 @@ extends AbstractMojo {
    * one stylesheet for left-to-right languages like English and one for
    * right-to-left languages like Arabic.
    */
-  @Parameter(property="css")
+  @Parameter
   public CssOptions[] css;
 
   /**
    * Options for the closure-compiler.
    * May be specified multiple times to generate different variants.
    */
-  @Parameter(required=true, property="js")
+  @Parameter
   public JsOptions[] js;
 
   /**
    * Options for the protocol buffer compiler.
    */
-  @Parameter(required=true, property="proto")
+  @Parameter
   public ProtoOptions proto;
 
   /**
@@ -147,12 +152,14 @@ extends AbstractMojo {
 
   // TODO: look for something under ${project.compileSourceRoots} that is
   // also under project.build.directory.
+  /** The source root for generated {@code .java} files. */
   @Parameter(
       defaultValue="${project.build.directory}/src/main/java",
       property="javaGenfiles",
       required=true)
   private File javaGenfiles;
 
+  /** The source root for generated {@code .java} test files. */
   @Parameter(
       defaultValue="${project.build.directory}/src/test/java",
       property="javaTestGenfiles",
@@ -182,6 +189,7 @@ extends AbstractMojo {
       required=true)
   private String defaultCssSourceMapPathTemplate;
 
+  /** Path to the file that stores hashes of intermediate outputs. */
   @Parameter(
       defaultValue="${project.build.directory}/closure-maven-plugin-hash-store.json",
       property="hashStoreFile",
@@ -200,6 +208,7 @@ extends AbstractMojo {
       required=true)
   private File defaultTestDescriptorFile;
 
+  @Override
   public void execute() throws MojoExecutionException {
     if (!outputDir.exists()) {
       outputDir.mkdirs();
@@ -231,17 +240,11 @@ extends AbstractMojo {
     HashStore hashStore = null;
     if (hashStoreFile.exists()) {
       try {
-        InputStream hashStoreIn = new FileInputStream(hashStoreFile);
-        try {
-          Reader hashStoreReader = new InputStreamReader(
-              hashStoreIn, Charsets.UTF_8);
-          try {
+        try (InputStream hashStoreIn = new FileInputStream(hashStoreFile)) {
+          try (Reader hashStoreReader = new InputStreamReader(
+                  hashStoreIn, Charsets.UTF_8)) {
             hashStore = HashStore.read(hashStoreReader, log);
-          } finally {
-            hashStoreReader.close();
           }
-        } finally {
-          hashStoreIn.close();
         }
       } catch (IOException ex) {
         log.warn("Failed to read hash store", ex);
@@ -292,7 +295,7 @@ extends AbstractMojo {
           .defaultProtoTestSource(defaultProtoTestSource)
           .defaultMainDescriptorFile(defaultMainDescriptorFile)
           .defaultTestDescriptorFile(defaultTestDescriptorFile)
-          .plan(proto);
+          .plan(proto != null ? proto : new ProtoOptions());
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
@@ -308,18 +311,6 @@ extends AbstractMojo {
         .soySources(soySources)
         .protoSources(protoSources)
         .destination(javaGenfiles)
-        .compileToJava();
-
-    new ProtoCompilerWrapper(proto)
-        .mainRoots(protoSources)
-        .destination(orDefault(jsGenfiles, defaultJsGenfiles))
-        .testDestination(orDefault(jsTestGenfiles, defaultJsTestGenfiles))
-        .compileToJs();
-
-    new ProtoCompilerWrapper(proto)
-        .mainRoots(protoSources)
-        .destination(javaGenfiles)
-        .testDestination(javaTestGenfiles)
         .compileToJava();
 
     Sources jsSources;
@@ -354,17 +345,11 @@ extends AbstractMojo {
     log.debug("Writing hash store to " + hashStoreFile);
     try {
       hashStoreFile.getParentFile().mkdirs();
-      OutputStream hashStoreOut = new FileOutputStream(hashStoreFile);
-      try {
-        Writer hashStoreWriter = new OutputStreamWriter(
-            hashStoreOut, Charsets.UTF_8);
-        try {
+      try (OutputStream hashStoreOut = new FileOutputStream(hashStoreFile)) {
+        try (Writer hashStoreWriter = new OutputStreamWriter(
+                hashStoreOut, Charsets.UTF_8)){
           hashStore.write(hashStoreWriter);
-        } finally {
-          hashStoreWriter.close();
         }
-      } finally {
-        hashStoreOut.close();
       }
     } catch (IOException ex) {
       log.warn("Problem writing hash store", ex);
@@ -373,13 +358,10 @@ extends AbstractMojo {
     log.debug("Writing rename map to " + cssRenameMap);
     try {
       cssRenameMap.getParentFile().mkdirs();
-      Writer cssRenameOut = Files.asCharSink(cssRenameMap, Charsets.UTF_8)
-          .openBufferedStream();
-      try {
+      try (Writer cssRenameOut = Files.asCharSink(cssRenameMap, Charsets.UTF_8)
+              .openBufferedStream()) {
         substitutionMapProvider.get()
              .write(OutputRenamingMapFormat.JSON, cssRenameOut);
-      } finally {
-        cssRenameOut.close();
       }
     } catch (IOException ex) {
       log.warn("Problem writing CSS rename map", ex);
@@ -408,6 +390,7 @@ extends AbstractMojo {
       static final String PROTOC_PLUGIN_ARTIFACT_ID = "protoc-bundled-plugin";
 
       @SuppressWarnings("synthetic-access")
+      @Override
       public File apply(ProtoOptions options) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
 
