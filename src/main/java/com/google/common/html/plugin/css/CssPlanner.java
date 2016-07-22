@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.html.plugin.OptionsUtils;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
@@ -90,38 +91,13 @@ public final class CssPlanner {
     // Multiple the options out so that there is at most one output
     // orientation and vendor per option.
     ImmutableList<CssOptions> cssOptionSets = CssOptions.asplode(options);
-    // Now make sure that ids are unique.
-    Set<String> ids = new HashSet<>();
-    for (CssOptions o : cssOptionSets) {
-      if (o.id != null) {
-        if (ids.contains(o.id)) {
-          o.id = uniqueIdNotIn(o.id, ids);
-        } else {
-          ids.add(o.id);
-        }
-      }
-    }
-    for (CssOptions o : cssOptionSets) {  // HACK: This is O(n**2).
-      if (o.id == null) {
-        o.id = uniqueIdNotIn("css", ids);
-      }
-    }
+    OptionsUtils.disambiguateIds(cssOptionSets);
     ImmutableList.Builder<OptionsIngredient<CssOptions>> b =
         ImmutableList.builder();
     for (CssOptions o : cssOptionSets) {
       b.add(planner.ingredients.options(CssOptions.class, o));
     }
     return b.build();
-  }
-
-  private static String uniqueIdNotIn(
-      String prefix, Collection<? extends String> exclusions) {
-    StringBuilder sb = new StringBuilder(prefix);
-    for (int counter = 1; exclusions.contains(sb.toString()); ++counter) {
-      sb.setLength(prefix.length());
-      sb.append('.').append(counter);
-    }
-    return sb.toString();
   }
 
 

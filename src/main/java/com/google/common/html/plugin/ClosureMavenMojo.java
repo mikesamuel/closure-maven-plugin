@@ -31,6 +31,8 @@ import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.proto.ProtoOptions;
 import com.google.common.html.plugin.proto.ProtoPlanner;
+import com.google.common.html.plugin.soy.SoyOptions;
+import com.google.common.html.plugin.soy.SoyPlanner;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -142,13 +144,10 @@ extends AbstractMojo {
   public ProtoOptions proto;
 
   /**
-   * Options for the Closure templates (aka Soy) compiler.
+   * Options for the closure template compiler.
    */
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/soy",
-      property="soySource",
-      required=false)
-  private File[] soySource;
+  @Parameter
+  public SoyOptions soy;
 
   // TODO: look for something under ${project.compileSourceRoots} that is
   // also under project.build.directory.
@@ -300,41 +299,13 @@ extends AbstractMojo {
       throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
 
-    /*
-    new SoyCompilerWrapper()
-        .soySources(soySources)
-        .protoSources(protoSources)
-        .destination(orDefault(jsGenfiles, defaultJsGenfiles))
-        .compileToJs();
+    try {
+      SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
+      new SoyPlanner(planner).plan(soyOptions);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to plan proto compile", ex);
+    }
 
-    new SoyCompilerWrapper()
-        .soySources(soySources)
-        .protoSources(protoSources)
-        .destination(javaGenfiles)
-        .compileToJava();
-
-    Sources jsSources;
-    Sources jsExterns;
-
-    jsSources = new Sources.Finder(".js")
-        .mainRoots(orDefault(js.source, defaultJsSource))
-        .testRoots(orDefault(js.testSource, defaultJsTestSource))
-        .mainRoots(orDefault(js.jsGenfiles, defaultJsGenfiles))
-        .testRoots(orDefault(js.jsTestGenfiles, defaultJsTestGenfiles))
-        .scan(log);
-
-    jsExterns = new Sources.Finder(".js")
-        .mainRoots(orDefault(js.externSource, defaultJsExterns))
-        .scan(log);
-
-    CompilerOptions jsOpts = js.toOptions(log, outputDir);
-
-    new JsCompilerWrapper(jsOpts)
-        .sources(jsSources)
-        .externs(jsExterns)
-        .destination(outputDir)
-        .compile(log);
-    */
 
     Plan plan = planner.toPlan();
     log.debug("Finished plan.  Executing plan");

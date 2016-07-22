@@ -2,14 +2,20 @@ package com.google.common.html.plugin;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.maven.plugin.logging.Log;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.google.common.base.Ascii;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 public final class OptionsUtils {
@@ -130,5 +136,73 @@ public final class OptionsUtils {
         parameterValue.substring(colon + 1),
     });
     return true;
+  }
+
+  /**
+   * Given a series of options, makes sure that their IDs, and thereby their
+   * keys, are unambiguous.
+   */
+  public static void disambiguateIds(Iterable<? extends Options> optionSets) {
+    ImmutableList<Options> optionSetList = ImmutableList.copyOf(optionSets);
+    int n = optionSetList.size();
+
+    // If an id is unique, then we map it to the index of the option set that
+    // has it.  Otherwise we map to -1 to indicate ambiguity.
+    Map<String, Integer> ids = new HashMap<>();
+
+    for (int i = 0; i < n; ++i) {
+      Options o = optionSetList.get(i);
+      String id = o.id;
+      if (id != null && !id.isEmpty()) {
+        Integer collisionIndex = ids.put(id, i);
+        if (collisionIndex != null) {
+          ids.put(id, -1);
+        }
+      }
+    }
+
+    // will not be assigned to option sets with missing or ambiguous ids.
+    Set<String> noAssign = new HashSet<>();
+    for (Map.Entry<String, Integer> e : ids.entrySet()) {
+      if (e.getValue().intValue() >= 0) {
+        // will not be assigned to option sets with missing or ambiguous ids.
+        noAssign.add(e.getKey());
+      }
+    }
+
+    for (int i = 0; i < n; ++i) {  // HACK: This is O(n**2).
+      Options o = optionSetList.get(i);
+      String id = o.id;
+      if (id == null || id.isEmpty()
+          || !Integer.valueOf(i).equals(ids.get(id))) {
+        String prefix;
+        if (id == null || id.isEmpty()) {
+          prefix = o.getClass().getSimpleName();
+          int optionsWordIndex = prefix.lastIndexOf("Options");
+          if (optionsWordIndex > 0) {
+            prefix = prefix.substring(0, optionsWordIndex);
+          }
+          prefix = Ascii.toLowerCase(prefix);
+        } else {
+          prefix = id;
+        }
+        id = uniqueIdNotIn(prefix, noAssign);
+      }
+      o.id = id;
+      noAssign.add(id);
+    }
+  }
+
+  private static String uniqueIdNotIn(
+      String prefix, Collection<? extends String> exclusions) {
+    StringBuilder sb = new StringBuilder(prefix);
+    for (int counter = 0; ; ++counter) {
+      sb.setLength(prefix.length());
+      sb.append('.').append(counter);
+      String candidate = sb.toString();
+      if (!exclusions.contains(candidate)) {
+        return candidate;
+      }
+    }
   }
 }

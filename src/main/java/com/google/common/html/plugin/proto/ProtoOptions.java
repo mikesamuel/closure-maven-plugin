@@ -7,14 +7,8 @@ import com.google.common.html.plugin.Options;
 /**
  * Options for protoc.
  */
-public final class ProtoOptions implements Options {
+public final class ProtoOptions extends Options {
   private static final long serialVersionUID = -5667643473298285485L;
-
-  /**
-   * An ID that must be unique among a bundle of options of the same kind used
-   * in a compilation batch.
-   */
-  public String id;
 
   /**
    * Source file roots.
@@ -51,16 +45,6 @@ public final class ProtoOptions implements Options {
    * TODO: link
    */
   public File testDescriptorSetFile;
-
-  @Override
-  public String getId() {
-    return id;
-  }
-
-  @Override
-  public String getKey() {
-    return id != null ? "proto-options:" + id : "proto-options";
-  }
 
   @Override
   public ProtoOptions clone() throws CloneNotSupportedException {

@@ -37,16 +37,9 @@ import com.google.common.io.Files;
  * Options for processing
  * <a href="https://github.com/google/closure-stylesheets">Closure Stylesheets</a>.
  */
-public final class CssOptions implements Options {
+public final class CssOptions extends Options {
 
   private static final long serialVersionUID = 8205371531045169081L;
-
-  /**
-   * An ID that must be unique among a bundle of options of the same kind used
-   * in a compilation batch.
-   */
-  @Parameter
-  public String id;
 
   /** Allows @defs and @mixins from one file to propagate to other files. */
   @Parameter
@@ -197,16 +190,6 @@ public final class CssOptions implements Options {
    */
   @Parameter
   public String sourceMapFile;
-
-  @Override
-  public String getKey() {
-    return id != null ? "css-options:" + id : null;
-  }
-
-  @Override
-  public String getId() {
-    return id;
-  }
 
   JobDescription getJobDescription(
       Log log, Iterable<? extends Sources.Source> sources,
