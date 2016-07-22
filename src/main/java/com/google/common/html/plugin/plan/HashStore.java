@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
  */
 public final class HashStore {
   private final ConcurrentHashMap<String, Hash> hashes
-      = new ConcurrentHashMap<String, Hash>();
+       = new ConcurrentHashMap<>();
 
   /** The previous hash of a step's inputs if available. */
   Optional<Hash> getHash(String stepKey) {

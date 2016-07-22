@@ -91,7 +91,7 @@ public final class CssPlanner {
     // orientation and vendor per option.
     ImmutableList<CssOptions> cssOptionSets = CssOptions.asplode(options);
     // Now make sure that ids are unique.
-    Set<String> ids = new HashSet<String>();
+    Set<String> ids = new HashSet<>();
     for (CssOptions o : cssOptionSets) {
       if (o.id != null) {
         if (ids.contains(o.id)) {

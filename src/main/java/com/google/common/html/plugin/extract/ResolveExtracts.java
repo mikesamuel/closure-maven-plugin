@@ -70,6 +70,7 @@ final class ResolveExtracts extends Step {
           Multimaps.newSetMultimap(
               Maps.<String, Collection<ResolvedExtract>>newLinkedHashMap(),
               new Supplier<Set<ResolvedExtract>>() {
+                @Override
                 public Set<ResolvedExtract> get() {
                   return Sets.newLinkedHashSet();
                 }

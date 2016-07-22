@@ -65,6 +65,7 @@ final class CssCompilerWrapper {
     final class OkUnlessNonzeroExitCodeHandler implements ExitCodeHandler {
       boolean ok = true;
 
+      @Override
       public void processExitCode(int exitCode) {
         if (exitCode != 0) {
           ok = false;
@@ -98,20 +99,24 @@ final class MavenCssErrorManager implements ErrorManager {
     this.log = log;
   }
 
+  @Override
   public void report(GssError error) {
     hasErrors = true;
     log.error(error.format());
   }
 
+  @Override
   public void reportWarning(GssError warning) {
     log.warn(warning.format());
   }
 
+  @Override
   public void generateReport() {
     // Errors reported eagerly.
     // TODO(summarize something)?
   }
 
+  @Override
   public boolean hasErrors() {
     return hasErrors;
   }

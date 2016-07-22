@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
@@ -31,6 +32,7 @@ import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
 import com.google.common.io.Files;
 
+//@Mojo(name="css")
 /**
  * Options for processing
  * <a href="https://github.com/google/closure-stylesheets">Closure Stylesheets</a>.
@@ -43,35 +45,51 @@ public final class CssOptions implements Options {
    * An ID that must be unique among a bundle of options of the same kind used
    * in a compilation batch.
    */
+  @Parameter
   public String id;
 
   /** Allows @defs and @mixins from one file to propagate to other files. */
+  @Parameter
   public Boolean allowDefPropagation;
   /** Specify a non-standard function to whitelist, like alpha() */
+  @Parameter
   public String[] allowedNonStandardFunctions;
+  @Parameter
   public String[] allowedUnrecognizedProperties;
+  @Parameter
   public Boolean allowKeyframes;
+  @Parameter
   public Boolean allowMozDocument;
+  @Parameter
   public Boolean allowUndefinedConstants;
+  @Parameter
   public Boolean allowUnrecognizedFunctions;
+  @Parameter
   public Boolean allowUnrecognizedProperties;
+  @Parameter
   public Boolean allowWebkitKeyframes;
   /**
    * JSON map from strings to integers that specify integer constants
    * to be used in for loops.
    */
+  @Parameter
   public String compileConstants;
   /** Copyright notice to prepend to the output. */
+  @Parameter
   public String copyrightNotice;
   /** Add a prefix to all renamed css class names. */
+  @Parameter
   public String cssRenamingPrefix;
+  @Parameter
   public Boolean eliminateDeadStyles;
   /** A list of CSS class names that shoudn't be renamed. */
+  @Parameter
   public String[] excludedClassesFromRenaming;
   /**
    * The fully qualified class name of a map provider of custom
    * GSS functions to resolve.
    */
+  @Parameter
   public Class<? extends GssFunctionMapProvider> gssFunctionMapProvider;
   /**
    * This specifies the display orientation the input files were
@@ -82,13 +100,16 @@ public final class CssOptions implements Options {
    * the same orientation, as there is no way to specify the
    * orientation on a per-file or per-library basis.
    */
+  @Parameter
   public JobDescription.InputOrientation inputOrientation;
   /** The kind of optimizations to perform. */
+  @Parameter
   public JobDescription.OptimizeStrategy optimize;
   /**
    * Whether to format the output with newlines and indents so that
    * it is more readable.
    */
+  @Parameter
   public JobDescription.OutputFormat outputFormat;
   /**
    * Specify this option to perform automatic right to left conversion
@@ -108,12 +129,17 @@ public final class CssOptions implements Options {
    * the {orient} can be used in the output path template to put output
    * compiled with different orientations in different output files.
    */
+  @Parameter
   public JobDescription.OutputOrientation[] outputOrientation;
   /** How to format the output from the CSS class renaming. */
+  @Parameter
   public OutputRenamingMapFormat outputRenamingMapFormat;
   /** Preserve comments from sources into pretty printed output css. */
+  @Parameter
   public Boolean preserveComments;
+  @Parameter
   public Boolean processDependencies;
+  @Parameter
   public Boolean simplifyCss;
   /**
    * The level to generate source maps. You could choose between
@@ -121,37 +147,47 @@ public final class CssOptions implements Options {
    * blocks, rules, variables and symbol mappings, and ALL, which
    * outputs mappings for all elements.
    */
+  @Parameter
   public JobDescription.SourceMapDetailLevel sourceMapLevel;
+  @Parameter
   public Boolean suppressDependencyCheck;
+  @Parameter
   public Boolean swapLeftRightInUrl;
+  @Parameter
   public Boolean swapLtrRtlInUrl;
   /**
    * Specifies the name of a true condition.
    * The condition name can be used in @if boolean expressions.  The
    * conditions are ignored if GSS extensions are not enabled.
    */
+  @Parameter
   public String[] trueConditionNames;
+  @Parameter
   public Boolean useInternalBidiFlipper;
   /**
    * Creates browser-vendor-specific output by stripping all
    * proprietary browser-vendor properties from the output except for
    * those associated with this vendor.
    */
+  @Parameter
   public Vendor[] vendor;
   /**
    * Allows extra processing of the AST.
    */
+  @Parameter
   public Class<? extends CustomPass>[] customPasses;
 
   /**
    * Directories to scan for CSS sources.
    */
+  @Parameter
   public File[] source;
   /**
    * The output CSS filename. If empty, standard output will be
    * used. The output is always UTF-8 encoded.
    * Defaults to target/css/{reldir}/compiled{-basename}{-orient}.css
    */
+  @Parameter
   public String output;
   /**
    * The source map output.
@@ -159,12 +195,15 @@ public final class CssOptions implements Options {
    * source code location.
    * Defaults to target/css/{reldir}/source-map{-basename}{-orient}.json
    */
+  @Parameter
   public String sourceMapFile;
 
+  @Override
   public String getKey() {
     return id != null ? "css-options:" + id : null;
   }
 
+  @Override
   public String getId() {
     return id;
   }

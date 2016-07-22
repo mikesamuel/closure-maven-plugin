@@ -5,9 +5,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-final class Cheats {
+public final class Cheats {
 
-  static <TT, RT> RT cheatCall(
+  public static <TT, RT> RT cheatCall(
       Class<RT> returnType,
       Class<TT> thisType, TT thisValue,
       String methodName,

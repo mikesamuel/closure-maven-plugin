@@ -118,7 +118,7 @@ final class FindEntryPoints extends Step {
             Lists.transform(
                 bundles,
                 new Function<CssBundle, List<OutputAmbiguityChecker.Output>>() {
-                  public
+                  @Override public
                   List<OutputAmbiguityChecker.Output> apply(CssBundle bundle) {
                     return bundle.outputs.allOutputs();
                   }

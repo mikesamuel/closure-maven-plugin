@@ -8,6 +8,10 @@ import com.google.common.css.compiler.ast.DefaultTreeVisitor;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.MutatingVisitController;
 
+/**
+ * Removes the same {@code @import} rules that were used to build the
+ * CssImportGraph.
+ */
 final class RemoveInlinedImportRules implements CustomPass {
   final Log log;
 
@@ -15,6 +19,7 @@ final class RemoveInlinedImportRules implements CustomPass {
     this.log = log;
   }
 
+  @Override
   public void run(
       final MutatingVisitController visitController,
       ErrorManager errorManager) {
@@ -28,6 +33,7 @@ final class RemoveInlinedImportRules implements CustomPass {
     });
   }
 
+  @Override
   public Time when() {
     return Time.SIMPLIFIED_AST;
   }

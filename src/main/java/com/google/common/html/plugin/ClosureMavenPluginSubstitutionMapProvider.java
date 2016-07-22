@@ -32,15 +32,12 @@ implements SubstitutionMapProvider {
   throws IOException {
     SubstitutionMap underlyingMap = null;
     try {
-      Reader reader = renameMapJson.openBufferedStream();
-      try {
+      try (Reader reader = renameMapJson.openBufferedStream()) {
         underlyingMap = ReusableSubstitutionMap.read(
             OutputRenamingMapFormat.JSON,
             new MakeMinimalSubstMap(),
             ImmutableSet.<String>of(),
             reader);
-      } finally {
-        reader.close();
       }
     } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
       // Ok.  Fallthrough to below.
@@ -52,6 +49,7 @@ implements SubstitutionMapProvider {
     this.substitutionMap = new ReusableSubstitutionMap(underlyingMap);
   }
 
+  @Override
   public ReusableSubstitutionMap get() {
     return substitutionMap;
   }
@@ -61,6 +59,7 @@ implements SubstitutionMapProvider {
 final class MakeMinimalSubstMap
 implements Function<Iterable<? extends String>, MinimalSubstitutionMap> {
 
+  @Override
   public MinimalSubstitutionMap apply(Iterable<? extends String> exclusions) {
     return new MinimalSubstitutionMap(ImmutableSet.copyOf(exclusions));
   }

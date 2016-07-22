@@ -80,10 +80,8 @@ final class ExtractFiles extends Step {
 
   private static void extract(GenfilesDirs gd, ResolvedExtract e, Log log)
   throws IOException {
-    InputStream in = new FileInputStream(e.archive);
-    try {
-      ZipInputStream zipIn = new ZipInputStream(in);
-      try {
+    try (InputStream in = new FileInputStream(e.archive)) {
+      try (ZipInputStream zipIn = new ZipInputStream(in)) {
         for (ZipEntry entry; (entry = zipIn.getNextEntry()) != null;) {
           if (!entry.isDirectory()) {
             String name = entry.getName();
@@ -102,11 +100,7 @@ final class ExtractFiles extends Step {
           }
           zipIn.closeEntry();
         }
-      } finally {
-        zipIn.close();
       }
-    } finally {
-      in.close();
     }
   }
 
@@ -136,12 +130,14 @@ interface PathChooser {
 }
 
 final class DefaultPathChooser implements PathChooser {
+  @Override
   public String chooseRelativePath(String entryName, byte[] content) {
     return entryName;
   }
 }
 
 final class FindProtoPackageStmt implements PathChooser {
+  @Override
   public String chooseRelativePath(String entryName, byte[] content) {
     String packageName = null;
 

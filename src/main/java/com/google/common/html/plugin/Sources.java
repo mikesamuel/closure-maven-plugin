@@ -113,6 +113,7 @@ public final class Sources {
       return canonicalPath.hashCode();
     }
 
+    @Override
     public int compareTo(Source that) {
       return this.canonicalPath.compareTo(that.canonicalPath);
     }

@@ -95,8 +95,7 @@ public final class Hash {
   public static Hash hashSerializable(Serializable ser)
   throws NotSerializableException {
     byte[] bytes;
-    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    try {
+    try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
       ObjectOutputStream oout = new ObjectOutputStream(bout);
       oout.writeObject(ser);
       bytes = bout.toByteArray();
@@ -106,14 +105,6 @@ public final class Hash {
       throw (AssertionError) new AssertionError(
           "IOException writing to in-memory buffer")
           .initCause(ex);
-    } finally {
-      try {
-        bout.close();
-      } catch (IOException ex) {
-        throw (AssertionError) new AssertionError(
-            "IOException closing an in-memory buffer")
-            .initCause(ex);
-      }
     }
 
     MessageDigest md = newDigest();

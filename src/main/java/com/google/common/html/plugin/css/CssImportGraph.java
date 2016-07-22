@@ -167,6 +167,7 @@ final class CssImportGraph {
           log,
           parseResult.getRoot(),
           new Function<Import, Void> () {
+            @Override
             public Void apply(Import dep) {
               depsBuilder.put(src, dep);
               return null;

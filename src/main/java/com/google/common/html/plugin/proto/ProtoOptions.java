@@ -52,10 +52,12 @@ public final class ProtoOptions implements Options {
    */
   public File testDescriptorSetFile;
 
+  @Override
   public String getId() {
     return id;
   }
 
+  @Override
   public String getKey() {
     return id != null ? "proto-options:" + id : "proto-options";
   }

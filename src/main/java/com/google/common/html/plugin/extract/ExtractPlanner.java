@@ -30,6 +30,7 @@ public final class ExtractPlanner {
     this.project = project;
   }
 
+  /** Adds steps to do extraction to the common planner. */
   public void plan(Iterable<? extends Extract> extracts)
   throws IOException {
     File extractsDir = new File(planner.outputDir, "extracts");
