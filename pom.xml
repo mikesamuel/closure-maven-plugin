@@ -18,6 +18,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <closure-stylesheets.version>21060712-SNAPSHOT</closure-stylesheets.version>
     <protoc-plugin.version>1.4.55</protoc-plugin.version>
+    <soy.version>2016-07-21</soy.version>
     <java.version>1.7</java.version>
   </properties>
 
@@ -75,6 +76,11 @@
       <groupId>com.google.closure-stylesheets</groupId>
       <artifactId>closure-stylesheets</artifactId>
       <version>${closure-stylesheets.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.template</groupId>
+      <artifactId>soy</artifactId>
+      <version>${soy.version}</version>
     </dependency>
   </dependencies>
 
