@@ -32,6 +32,10 @@
           <groupId>org.sonatype.sisu</groupId>
           <artifactId>sisu-guava</artifactId>
         </exclusion>
+        <exclusion>  <!-- clobbers guice with an older crappier one. -->
+          <groupId>org.sonatype.sisu</groupId>
+          <artifactId>sisu-guice</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

@@ -301,7 +301,9 @@ extends AbstractMojo {
 
     try {
       SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-      new SoyPlanner(planner).plan(soyOptions);
+      new SoyPlanner(planner)
+          .defaultSoySource(defaultSoySource)
+          .plan(soyOptions);
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
