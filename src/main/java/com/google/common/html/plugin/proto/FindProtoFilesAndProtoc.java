@@ -31,7 +31,7 @@ final class FindProtoFilesAndProtoc extends Step {
   private final ProcessRunner processRunner;
   private final ToolFinder<ProtoOptions> protocFinder;
   private final Ingredients ingredients;
-  private final SerializedObjectIngredient<ProtocSpec> protoSpec;
+  private final SerializedObjectIngredient<ProtoIO> protoSpec;
   private final SettableFileSetIngredient protocExec;
 
   FindProtoFilesAndProtoc(
@@ -46,7 +46,7 @@ final class FindProtoFilesAndProtoc extends Step {
       StringValue defaultMainDescriptorFilePath,
       StringValue defaultTestDescriptorFilePath,
 
-      SerializedObjectIngredient<ProtocSpec> protoSpec,
+      SerializedObjectIngredient<ProtoIO> protoSpec,
       SettableFileSetIngredient protocExec) {
     super(
         "find-proto-files:" + options.key,
@@ -108,7 +108,7 @@ final class FindProtoFilesAndProtoc extends Step {
         ? protoOptions.testDescriptorSetFile
         : new File(defaultTestDescriptorFilePath.value);
 
-    protoSpec.setStoredObject(new ProtocSpec(
+    protoSpec.setStoredObject(new ProtoIO(
         ImmutableList.copyOf(mainSources.build()),
         ImmutableList.copyOf(testSources.build()),
         mainDescriptorSetFile,
@@ -139,7 +139,7 @@ final class FindProtoFilesAndProtoc extends Step {
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
 
-    ProtocSpec protocSpecValue = protoSpec.getStoredObject().get();
+    ProtoIO protocSpecValue = protoSpec.getStoredObject().get();
 
     DirScanFileSetIngredient protoSources =
         ingredients.fileset(new Sources.Finder(".proto")

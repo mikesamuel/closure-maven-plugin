@@ -24,6 +24,7 @@ import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
+import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.css.CssOptions;
@@ -33,6 +34,7 @@ import com.google.common.html.plugin.extract.ExtractPlanner;
 import com.google.common.html.plugin.js.JsOptions;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
+import com.google.common.html.plugin.proto.ProtoIO;
 import com.google.common.html.plugin.proto.ProtoOptions;
 import com.google.common.html.plugin.proto.ProtoPlanner;
 import com.google.common.html.plugin.soy.SoyOptions;
@@ -293,19 +295,22 @@ extends AbstractMojo {
       throw new MojoExecutionException("Failed to plan CSS compile", ex);
     }
 
+    SerializedObjectIngredient<ProtoIO> protoIO;
     try {
-      new ProtoPlanner(planner, protocExecutable())
+      ProtoPlanner pp = new ProtoPlanner(planner, protocExecutable())
           .defaultProtoSource(defaultProtoSource)
           .defaultProtoTestSource(defaultProtoTestSource)
           .defaultMainDescriptorFile(defaultMainDescriptorFile)
-          .defaultTestDescriptorFile(defaultTestDescriptorFile)
-          .plan(proto != null ? proto : new ProtoOptions());
+          .defaultTestDescriptorFile(defaultTestDescriptorFile);
+      pp.plan(proto != null ? proto : new ProtoOptions());
+
+      protoIO = pp.getProtoIO();
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
 
     SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-    new SoyPlanner(planner)
+    new SoyPlanner(planner, protoIO)
         .defaultSoySource(defaultSoySource)
         .plan(soyOptions);
 

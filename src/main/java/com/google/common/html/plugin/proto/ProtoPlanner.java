@@ -23,13 +23,29 @@ public final class ProtoPlanner {
   private File defaultProtoTestSource;
   private File defaultMainDescriptorFile;
   private File defaultTestDescriptorFile;
+  private final File protoDir;
+  private final SerializedObjectIngredient<ProtoIO> protoIO;
 
-  /** ctor */
+  /** */
   public ProtoPlanner(
-      CommonPlanner planner,
-      ToolFinder<ProtoOptions> protocFinder) {
+      CommonPlanner planner, ToolFinder<ProtoOptions> protocFinder)
+  throws IOException {
     this.planner = planner;
     this.protocFinder = protocFinder;
+
+    this.protoDir = new File(planner.outputDir, "proto");
+    this.protoIO = planner.ingredients.serializedObject(
+        new File(protoDir, "protoc-files.ser"),
+        ProtoIO.class);
+  }
+
+
+  /**
+   * Gets info about protobuf compiler inputs and outputs derived from the
+   * proto options and file-system.
+   */
+  public SerializedObjectIngredient<ProtoIO> getProtoIO() {
+    return protoIO;
   }
 
   /** Sets the default source root for proto files used in sources. */
@@ -57,23 +73,15 @@ public final class ProtoPlanner {
   }
 
   /** Adds steps to the common planner. */
-  public void plan(ProtoOptions opts)
-      throws IOException {
+  public void plan(ProtoOptions opts) {
     Preconditions.checkNotNull(defaultProtoSource);
     Preconditions.checkNotNull(defaultProtoTestSource);
     Preconditions.checkNotNull(defaultMainDescriptorFile);
     Preconditions.checkNotNull(defaultTestDescriptorFile);
     Preconditions.checkNotNull(opts);
 
-    File protoDir = new File(planner.outputDir, "proto");
-
     OptionsIngredient<ProtoOptions> protoOptions =
         planner.ingredients.options(ProtoOptions.class, opts);
-
-    SerializedObjectIngredient<ProtocSpec> protoSpec =
-        planner.ingredients.serializedObject(
-            new File(protoDir, "protoc-files.ser"),
-            ProtocSpec.class);
 
     SettableFileSetIngredient protocExec =
         planner.ingredients.namedFileSet("protocExec");
@@ -86,7 +94,7 @@ public final class ProtoPlanner {
         planner.ingredients.stringValue(defaultProtoTestSource.getPath()),
         planner.ingredients.stringValue(defaultMainDescriptorFile.getPath()),
         planner.ingredients.stringValue(defaultTestDescriptorFile.getPath()),
-        protoSpec, protocExec));
+        protoIO, protocExec));
   }
 
 }
