@@ -3,6 +3,8 @@ package com.google.common.html.plugin.proto;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.maven.plugin.MojoExecutionException;
+
 import com.google.common.base.Preconditions;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
@@ -10,6 +12,7 @@ import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
+import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.html.plugin.common.ToolFinder;
 
 /**
@@ -73,22 +76,24 @@ public final class ProtoPlanner {
   }
 
   /** Adds steps to the common planner. */
-  public void plan(ProtoOptions opts) {
+  public void plan(ProtoOptions opts) throws MojoExecutionException {
     Preconditions.checkNotNull(defaultProtoSource);
     Preconditions.checkNotNull(defaultProtoTestSource);
     Preconditions.checkNotNull(defaultMainDescriptorFile);
     Preconditions.checkNotNull(defaultTestDescriptorFile);
     Preconditions.checkNotNull(opts);
 
-    OptionsIngredient<ProtoOptions> protoOptions =
-        planner.ingredients.options(ProtoOptions.class, opts);
+    ProtoOptions protoOptions = OptionsUtils.prepareOne(opts);
+
+    OptionsIngredient<ProtoOptions> protoOptionsIng =
+        planner.ingredients.options(ProtoOptions.class, protoOptions);
 
     SettableFileSetIngredient protocExec =
         planner.ingredients.namedFileSet("protocExec");
 
     planner.addStep(new FindProtoFilesAndProtoc(
         planner.processRunner, protocFinder, planner.ingredients,
-        protoOptions,
+        protoOptionsIng,
         planner.genfiles,
         planner.ingredients.stringValue(defaultProtoSource.getPath()),
         planner.ingredients.stringValue(defaultProtoTestSource.getPath()),

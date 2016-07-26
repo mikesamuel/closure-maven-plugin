@@ -16,9 +16,13 @@ public final class HashStoreTest extends TestCase {
 
   @Test
   public static final void testReadWrite() throws IOException {
+    PlanKey fooKey = PlanKey.builder("foo").build();
+    PlanKey barKey = PlanKey.builder("bar").build();
+    PlanKey bazKey = PlanKey.builder("baz").build();
+
     HashStore hs = new HashStore();
-    hs.setHash("foo", Hash.hashString("foo"));
-    hs.setHash("bar", Hash.hashString("bar"));
+    hs.setHash(fooKey, Hash.hashString("foo"));
+    hs.setHash(barKey, Hash.hashString("bar"));
 
     StringWriter sw = new StringWriter();
     hs.write(sw);
@@ -27,9 +31,9 @@ public final class HashStoreTest extends TestCase {
     StringReader sr = new StringReader(written);
     HashStore read = HashStore.read(sr, new TestLog());
     for (HashStore oneHs : new HashStore[] { hs, read }) {
-      assertEquals(Optional.of(Hash.hashString("foo")), oneHs.getHash("foo"));
-      assertEquals(Optional.of(Hash.hashString("bar")), oneHs.getHash("bar"));
-      assertFalse(oneHs.getHash("baz").isPresent());
+      assertEquals(Optional.of(Hash.hashString("foo")), oneHs.getHash(fooKey));
+      assertEquals(Optional.of(Hash.hashString("bar")), oneHs.getHash(barKey));
+      assertFalse(oneHs.getHash(bazKey).isPresent());
     }
   }
 

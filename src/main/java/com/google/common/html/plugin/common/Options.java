@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.html.plugin.plan.PlanKey;
 
 /**
  * Options for a compiler.
@@ -66,9 +67,11 @@ public abstract class Options implements Cloneable, Serializable {
   /**
    * A key ingredient that must not overlap with options of a different kind.
    */
-  public final String getKey() {
-    String clName = getClass().getName();
-    return id == null ? clName : clName + ":" + id;
+  public final PlanKey getKey() {
+    return PlanKey.builder("opt")
+        .addString(getClass().getName())
+        .addString(getId())
+        .build();
   }
 
   /**

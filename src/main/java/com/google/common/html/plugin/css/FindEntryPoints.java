@@ -28,6 +28,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -41,13 +42,14 @@ final class FindEntryPoints extends Step {
       SubstitutionMapProvider substMap,
       Ingredients ingredients,
       File cssOutputDirectory,
-      Ingredients.OptionsIngredient<CssOptions> options,
+      OptionsIngredient<CssOptions> options,
       DirScanFileSetIngredient cssSources,
       StringValue defaultCssOutputPathTemplate,
       StringValue defaultCssSourceMapTemplate,
       SerializedObjectIngredient<CssBundleList> bundleList) {
     super(
-        "css-find-entry-points:[" + options.getId() + "]:" + cssSources.key,
+        PlanKey.builder("css-find-entry-points")
+            .addInp(options, cssSources).build(),
         ImmutableList.<Ingredient>of(
             options,
             cssSources,

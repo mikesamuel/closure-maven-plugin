@@ -25,6 +25,7 @@ import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 import com.google.common.io.ByteStreams;
@@ -38,7 +39,7 @@ final class ExtractFiles extends Step {
       SettableFileSetIngredient archives,
       StringValue outputDirPath) {
     super(
-        "extract-files",
+        PlanKey.builder("extract-files").build(),
         ImmutableList.<Ingredient>of(
             resolvedExtractsList, genfiles, archives, outputDirPath),
         ImmutableSet.<StepSource>of(),

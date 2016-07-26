@@ -17,6 +17,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -31,7 +32,7 @@ final class ListOptions extends Step {
       SerializedObjectIngredient<GenfilesDirs> genfiles,
       SerializedObjectIngredient<CssOptionsById> optionsListFile) {
     super(
-        "explode-options",
+        PlanKey.builder("list-options").build(),
         ImmutableList.<Ingredient>builder().add(genfiles).addAll(options)
             .build(),
 

@@ -26,6 +26,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.common.ProcessRunner;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -45,9 +46,10 @@ final class RunProtoc extends Step {
       StringValue jsGenfilesPath,
       FileIngredient descriptorSetFile) {
     super(
-        // TODO: esc
-        "proto-to-java:[" + options.key + "];[" + protoSources.key + "];"
-            + rootSet,
+        PlanKey.builder("proto-to-java")
+            .addInp(options, protoSources)
+            .addString(rootSet.name())
+            .build(),
         ImmutableList.<Ingredient>builder()
             .add(options, protoSources, protocSet,
                  javaGenfilesPath, jsGenfilesPath)

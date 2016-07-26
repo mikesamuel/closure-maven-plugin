@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.maven.plugin.logging.Log;
 import org.json.simple.JSONObject;
@@ -20,18 +21,18 @@ import com.google.common.collect.ImmutableMap;
  * {@link Step}s to decide whether to rebuild.
  */
 public final class HashStore {
-  private final ConcurrentHashMap<String, Hash> hashes
-       = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Hash> hashes = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Hash> stored = new ConcurrentHashMap<>();
 
   /** The previous hash of a step's inputs if available. */
-  Optional<Hash> getHash(String stepKey) {
-    return Optional.fromNullable(hashes.get(stepKey));
+  Optional<Hash> getHash(PlanKey stepKey) {
+    return Optional.fromNullable(hashes.get(stepKey.text));
   }
 
   /** Store the hash of a step's inputs. */
-  void setHash(String stepKey, Hash hash) {
-    hashes.put(
-        Preconditions.checkNotNull(stepKey), Preconditions.checkNotNull(hash));
+  void setHash(PlanKey stepKey, Hash hash) {
+    hashes.put(stepKey.text, Preconditions.checkNotNull(hash));
+    stored.put(stepKey.text, Preconditions.checkNotNull(hash));
   }
 
   /**
@@ -83,10 +84,21 @@ public final class HashStore {
     return hs;
   }
 
-  /** Writes a form that can be read by {@link #read}. */
+  /**
+   * Writes a form that can be read by {@link #read}.
+   * This only writes the keys stored this session because those are the only
+   * ones known to be related to steps that were run or explicitly skipped
+   * instead of steps whose key depended on stale configuration or files
+   * that no longer exist and so which no longer relate to the output in a
+   * meaningful way.
+   * <p>
+   * If a later compile were to re-encounter a step with such a defunct key,
+   * for example because a configuration file was reverted, then we would
+   * not want to assume that the step does not need to be rerun.
+   */
   public void write(Writer out) throws IOException {
     ImmutableMap.Builder<String, String> strStrMap = ImmutableMap.builder();
-    for (Map.Entry<String, Hash> e : this.hashes.entrySet()) {
+    for (Map.Entry<String, Hash> e : this.stored.entrySet()) {
       strStrMap.put(e.getKey(), e.getValue().toString());
     }
     JSONObject.writeJSONString(strStrMap.build(), out);

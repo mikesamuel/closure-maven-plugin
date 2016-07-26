@@ -24,6 +24,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -42,7 +43,7 @@ final class ResolveExtracts extends Step {
       SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList,
       SettableFileSetIngredient archives) {
     super(
-        "resolve-extracts",
+        PlanKey.builder("resolve-extracts").build(),
         ImmutableList.<Ingredient>of(extractsList, dependenciesList),
         ImmutableSet.<StepSource>of(),
         ImmutableSet.<StepSource>of());

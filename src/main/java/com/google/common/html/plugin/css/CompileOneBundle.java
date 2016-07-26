@@ -14,6 +14,7 @@ import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -28,7 +29,7 @@ final class CompileOneBundle extends Step {
       SerializedObjectIngredient<CssBundle> bundle,
       ImmutableList<FileIngredient> inputFiles) {
     super(
-        "compile-css:" + outPath,
+        PlanKey.builder("compile-css").addString(outPath.getPath()).build(),
         ImmutableList.<Ingredient>builder().add(options).add(bundle)
             .addAll(inputFiles).build(),
             Sets.immutableEnumSet(

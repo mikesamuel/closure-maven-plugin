@@ -22,6 +22,7 @@ import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 import com.google.common.html.plugin.proto.ProtoIO;
@@ -41,7 +42,7 @@ abstract class AbstractSoyStep extends Step {
       SerializedObjectIngredient<ProtoIO> protoIO,
       PathValue dest) {
     super(
-        keyPrefix + ":[" + options.key + "];" + soySources.key + ";" + dest.key,
+        PlanKey.builder(keyPrefix).addInp(options, soySources, dest).build(),
         ImmutableList.<Ingredient>of(options, soySources, protoIO, dest),
         Sets.immutableEnumSet(StepSource.SOY_GENERATED, StepSource.SOY_SRC),
         Sets.immutableEnumSet(StepSource.JS_GENERATED));

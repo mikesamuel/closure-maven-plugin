@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableSet;
  * A step in the process of transforming inputs to outputs.
  */
 public abstract class Step {
-  protected final String key;
+  protected final PlanKey key;
   protected final ImmutableList<Ingredient> inputs;
   protected final ImmutableSet<StepSource> reads;
   protected final ImmutableSet<StepSource> writes;
@@ -23,7 +23,7 @@ public abstract class Step {
    *    before reads.
    */
   protected Step(
-      String key,
+      PlanKey key,
       ImmutableList<Ingredient> inputs,
       ImmutableSet<StepSource> reads,
       ImmutableSet<StepSource> writes) {

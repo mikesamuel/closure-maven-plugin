@@ -62,7 +62,7 @@ public final class OptionsUtilsTest extends TestCase {
     ImmutableSet.Builder<String> keys = ImmutableSet.builder();
     for (TestOptions o : opts) {
       ids.add(o.getId());
-      keys.add(o.getKey());
+      keys.add(o.getKey().text);
     }
 
     assertEquals(

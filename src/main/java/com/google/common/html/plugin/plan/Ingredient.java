@@ -5,14 +5,14 @@ package com.google.common.html.plugin.plan;
  */
 public abstract class Ingredient implements Hashable {
   /** A human readable label that uniquely identifies the ingredient. */
-  public final String key;
+  public final PlanKey key;
 
-  protected Ingredient(String key) {
+  protected Ingredient(PlanKey key) {
     this.key = key;
   }
 
   @Override
   public String toString() {
-    return key;
+    return key.text;
   }
 }

@@ -14,8 +14,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -31,13 +29,14 @@ import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 
 /**
  * Pools ingredients based on key.
  */
 public class Ingredients {
 
-  private final Cache<String, Ingredient> ingredients =
+  private final Cache<PlanKey, Ingredient> ingredients =
       CacheBuilder.newBuilder()
       // TODO: is this right?
       .weakValues()
@@ -47,7 +46,7 @@ public class Ingredients {
    * Lazily allocate an ingredient with the given key based on a spec.
    */
   public <T extends Ingredient>
-  T get(Class<T> type, String key, final Supplier<? extends T> maker) {
+  T get(Class<T> type, PlanKey key, final Supplier<? extends T> maker) {
     Ingredient got;
     try {
       got = ingredients.get(key, new Callable<T>() {
@@ -94,7 +93,9 @@ public class Ingredients {
 
   /** An ingredient backed by a file which is hashable when the file exists. */
   public FileIngredient file(final Source source) {
-    final String key = "file:" + source.canonicalPath;
+    final PlanKey key = PlanKey.builder("file")
+        .addString(source.canonicalPath.getPath())
+        .build();
     return get(
         FileIngredient.class,
         key,
@@ -127,17 +128,13 @@ public class Ingredients {
     }
     Collections.sort(testRootStrings);
 
-    Escaper escaper = new Escaper(':', '\\', '[', ']', ',', ';', '"');
 
-    StringBuilder keyBuilder = new StringBuilder();
-    keyBuilder.append("fileset:");
-    escaper.escape(finderCopy.suffixPattern().pattern(), keyBuilder);
-    keyBuilder.append(";");
-    escaper.escapeList(mainRootStrings, keyBuilder);
-    keyBuilder.append(";");
-    escaper.escapeList(testRootStrings, keyBuilder);
+    final PlanKey key = PlanKey.builder("fileset")
+        .addString(finderCopy.suffixPattern().pattern())
+        .addStrings(mainRootStrings)
+        .addStrings(testRootStrings)
+        .build();
 
-    final String key = keyBuilder.toString();
     return get(
         DirScanFileSetIngredient.class,
         key,
@@ -154,7 +151,7 @@ public class Ingredients {
    * computation that is not itself hashable.
    */
   public SettableFileSetIngredient namedFileSet(String name) {
-    final String key = "named-files:" + name;
+    final PlanKey key = PlanKey.builder("named-files").addString(name).build();
     return get(
         SettableFileSetIngredient.class,
         key,
@@ -169,7 +166,7 @@ public class Ingredients {
 
   /** An ingredient that represents a fixed string. */
   public StringValue stringValue(final String s) {
-    final String key = "str:" + s;
+    final PlanKey key = PlanKey.builder("str").addString(s).build();
     return get(
         StringValue.class,
         key,
@@ -187,7 +184,7 @@ public class Ingredients {
    * path, not the content of the file referred to by that path.
    */
   public PathValue pathValue(final File f) {
-    final String key = "path:" + f.getPath();
+    final PlanKey key = PlanKey.builder("path").addString(f.getPath()).build();
     return get(
         PathValue.class,
         key,
@@ -205,7 +202,7 @@ public class Ingredients {
    */
   public <T extends Options> OptionsIngredient<T> options(
       Class<T> optionsType, final T options) {
-    final String key = Preconditions.checkNotNull(options.getKey());
+    final PlanKey key = Preconditions.checkNotNull(options.getKey());
     OptionsIngredient<?> ing = get(
         OptionsIngredient.class,
         key,
@@ -238,7 +235,9 @@ public class Ingredients {
   public <T extends Serializable>
   SerializedObjectIngredient<T> serializedObject(
       final Source source, final Class<T> contentType) {
-    final String key = "file:" + source.canonicalPath.getPath();
+    final PlanKey key = PlanKey.builder("file")
+        .addString(source.canonicalPath.getPath())
+        .build();
     SerializedObjectIngredient<?> ing = get(
         SerializedObjectIngredient.class, key,
         new Supplier<SerializedObjectIngredient<T>>() {
@@ -256,7 +255,7 @@ public class Ingredients {
     /** THe backing file. */
     public final Source source;
 
-    private FileIngredient(String key, Source source) {
+    private FileIngredient(PlanKey key, Source source) {
       super(key);
       this.source = source;
     }
@@ -280,7 +279,7 @@ public class Ingredients {
     private Optional<Hash> hash = Optional.absent();
     private MojoExecutionException problem;
 
-    FileSetIngredient(String key) {
+    FileSetIngredient(PlanKey key) {
       super(key);
     }
 
@@ -385,7 +384,7 @@ public class Ingredients {
    */
   public final class SettableFileSetIngredient extends FileSetIngredient {
 
-    SettableFileSetIngredient(String key) {
+    SettableFileSetIngredient(PlanKey key) {
       super(key);
     }
 
@@ -415,7 +414,7 @@ public class Ingredients {
     private final ImmutableList<File> mainRoots;
     private final ImmutableList<File> testRoots;
 
-    private DirScanFileSetIngredient(String key, Sources.Finder finder) {
+    private DirScanFileSetIngredient(PlanKey key, Sources.Finder finder) {
       super(key);
       this.finder = Preconditions.checkNotNull(finder);
       this.mainRoots = finder.mainRoots();
@@ -462,7 +461,7 @@ public class Ingredients {
   extends Ingredient {
     private final T options;
 
-    OptionsIngredient(String key, T options) {
+    OptionsIngredient(PlanKey key, T options) {
       super(key);
       this.options = clone(options);
     }
@@ -524,7 +523,7 @@ public class Ingredients {
     /** The stored instance if any. */
     private Optional<T> instance = Optional.absent();
 
-    SerializedObjectIngredient(String key, Source source, Class<T> type) {
+    SerializedObjectIngredient(PlanKey key, Source source, Class<T> type) {
       super(key);
       this.source = source;
       this.type = type;
@@ -626,7 +625,7 @@ public class Ingredients {
   public static final class StringValue extends Ingredient {
     /** The fixed string value. */
     public final String value;
-    StringValue(String key, String value) {
+    StringValue(PlanKey key, String value) {
       super(key);
       this.value = value;
     }
@@ -649,7 +648,7 @@ public class Ingredients {
     /** The fixed string value. */
     public final File value;
 
-    PathValue(String key, File value) {
+    PathValue(PlanKey key, File value) {
       super(key);
       this.value = value;
     }
@@ -661,48 +660,6 @@ public class Ingredients {
     @Override
     public String toString() {
       return "{PathValue " + value.getPath() + "}";
-    }
-  }
-
-  static final class Escaper {
-    final Pattern metachar;
-    Escaper(char... metachars) {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[\\\\");
-      for (char c : metachars) {
-        if (c == '-' || c == '\\' || c == ']' || c == '^') {
-          sb.append('\\').append(c);
-        }
-      }
-      sb.append(']');
-      metachar = Pattern.compile(sb.toString());
-    }
-
-    void escape(CharSequence s, StringBuilder out) {
-      Matcher m = metachar.matcher(s);
-      int written = 0;
-      int n = s.length();
-      while (m.find()) {
-        int start = m.start();
-        int end = m.end();
-        out.append(s, written, start).append('\\').append(m.group());
-        written = end;
-      }
-      out.append(s, written, n);
-    }
-
-    void escapeList(Iterable<? extends String> strs, StringBuilder out) {
-      out.append('[');
-      boolean sawOne = false;
-      for (String s : strs) {
-        if (sawOne) {
-          out.append(',');
-        } else {
-          sawOne = true;
-        }
-        escape(s, out);
-      }
-      out.append(']');
     }
   }
 }

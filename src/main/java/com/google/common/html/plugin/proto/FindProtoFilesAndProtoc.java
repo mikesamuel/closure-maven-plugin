@@ -21,6 +21,7 @@ import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.common.ProcessRunner;
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 
@@ -49,7 +50,7 @@ final class FindProtoFilesAndProtoc extends Step {
       SerializedObjectIngredient<ProtoIO> protoSpec,
       SettableFileSetIngredient protocExec) {
     super(
-        "find-proto-files:" + options.key,
+        PlanKey.builder("find-proto-files").addInp(options).build(),
         ImmutableList.<Ingredient>of(
             options, genfiles,
             defaultProtoSourcePath, defaultProtoTestSourcePath,
