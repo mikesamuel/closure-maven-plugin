@@ -8,9 +8,10 @@ import com.google.common.base.Optional;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Ingredients
+    .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.OptionsUtils;
@@ -41,12 +42,11 @@ public final class SoyPlanner {
   /** Adds steps to the common planner to compiler soy. */
   public void plan(SoyOptions soy) throws MojoExecutionException {
     SoyOptions opts = OptionsUtils.prepareOne(soy);
+    Ingredients ingredients = planner.ingredients;
 
-    OptionsIngredient<SoyOptions> soyOptions = planner.ingredients.options(
+    OptionsIngredient<SoyOptions> soyOptions = ingredients.options(
         SoyOptions.class, opts);
     SerializedObjectIngredient<GenfilesDirs> genfiles = planner.genfiles;
-
-    GenfilesDirs gd = genfiles.getStoredObject().get();
 
     Sources.Finder soySourceFinder = new Sources.Finder(".soy");
     if (opts.source != null && opts.source.length != 0) {
@@ -55,26 +55,15 @@ public final class SoyPlanner {
       soySourceFinder.mainRoots(defaultSoySource.get());
     }
     soySourceFinder.mainRoots(
-        gd.getGeneratedSourceDirectoryForExtension("soy", false));
+        genfiles.getStoredObject().get()
+        .getGeneratedSourceDirectoryForExtension("soy", false));
 
+    DirScanFileSetIngredient soySources = ingredients.fileset(soySourceFinder);
 
-
-    FileSetIngredient soySources = planner.ingredients.fileset(soySourceFinder);
-
-    PathValue outputJar = planner.ingredients.pathValue(
-        new File(
-            planner.outputDir, "closure-templates-" + opts.getId() + ".jar"));
-
-    // TODO: add a step that creates the file-set, and then spawns the two
-    // other steps, so that we do not get two sets of Soy parse log messages.
-
-
-    planner.addStep(new SoyToJava(
-        soyOptions, soySources, protoIO, outputJar));
-
-    planner.addStep(new SoyToJs(
-        soyOptions, soySources, protoIO,
-        planner.ingredients.pathValue(gd.jsGenfiles)));
+    planner.addStep(new BuildSoyFileSet(
+        ingredients,
+        genfiles, soyOptions, soySources,
+        protoIO, ingredients.pathValue(planner.outputDir)));
   }
 
 }

@@ -11,35 +11,51 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.common.html.plugin.Sources.Source;
+import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Ingredients
-    .SerializedObjectIngredient;
-import com.google.common.html.plugin.proto.ProtoIO;
+import com.google.common.html.plugin.plan.PlanKey;
+import com.google.common.html.plugin.plan.Step;
+import com.google.common.html.plugin.plan.StepSource;
 import com.google.common.io.Files;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.jssrc.SoyJsSrcOptions;
 import com.google.template.soy.msgs.SoyMsgBundle;
 
-final class SoyToJs extends AbstractSoyStep {
+final class SoyToJs extends Step {
+
+  private final SoyFileSet sfs;
 
   SoyToJs(
       OptionsIngredient<SoyOptions> options,
       FileSetIngredient soySources,
-      SerializedObjectIngredient<ProtoIO> protoIO,
-      PathValue jsOutDir) {
-    super("soy-to-js", options, soySources, protoIO, jsOutDir);
+      FileIngredient protoDescriptors,
+      PathValue jsOutDir,
+      SoyFileSet sfs) {
+    super(
+        PlanKey.builder("soy-to-js").addInp(
+            options, soySources, protoDescriptors, jsOutDir)
+            .build(),
+        ImmutableList.of(options, soySources, protoDescriptors, jsOutDir),
+        Sets.immutableEnumSet(
+            StepSource.PROTO_DESCRIPTOR_SET,
+            StepSource.SOY_SRC, StepSource.SOY_GENERATED),
+        Sets.immutableEnumSet(StepSource.JS_GENERATED));
+    this.sfs = sfs;
   }
 
   @Override
-  protected void compileSoy(
-      Log log, SoyOptions options, SoyFileSet.Builder sfsBuilder,
-      ImmutableList<Source> sources, PathValue jsOutDir)
-  throws MojoExecutionException {
+  public void execute(Log log) throws MojoExecutionException {
+    OptionsIngredient<SoyOptions> optionsIng =
+        ((OptionsIngredient<?>) inputs.get(0))
+        .asSuperType(SoyOptions.class);
+    FileSetIngredient soySources = (FileSetIngredient) inputs.get(1);
+    PathValue jsOutDir = (PathValue) inputs.get(3);
 
-    SoyFileSet sfs = sfsBuilder.build();
+    SoyOptions options = optionsIng.getOptions();
 
     ImmutableList<Js> allJsSrc;
     if (options.js != null && options.js.length != 0) {
@@ -47,6 +63,15 @@ final class SoyToJs extends AbstractSoyStep {
     } else {
       Js js = new Js();
       allJsSrc = ImmutableList.of(js);
+    }
+
+    ImmutableList<Source> sources;
+    {
+      ImmutableList.Builder<Source> b = ImmutableList.builder();
+      for (FileIngredient f : soySources.mainSources()) {
+        b.add(f.source);
+      }
+      sources = b.build();
     }
 
     for (Js js : allJsSrc) {
@@ -84,5 +109,15 @@ final class SoyToJs extends AbstractSoyStep {
         }
       }
     }
+  }
+
+  @Override
+  public void skip(Log log) throws MojoExecutionException {
+    // All done.
+  }
+
+  @Override
+  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
+    return ImmutableList.of();
   }
 }
