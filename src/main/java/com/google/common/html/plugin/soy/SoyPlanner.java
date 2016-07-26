@@ -1,7 +1,6 @@
 package com.google.common.html.plugin.soy;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -12,7 +11,9 @@ import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.OptionsUtils;
 
 /**
  * Adds steps related to Soy template compilation.
@@ -21,16 +22,21 @@ public final class SoyPlanner {
   private final CommonPlanner planner;
   private Optional<File> defaultSoySource = Optional.absent();
 
+  /** */
   public SoyPlanner(CommonPlanner planner) {
     this.planner = planner;
   }
 
+  /** Sets the default soy source root. */
   public SoyPlanner defaultSoySource(File d) {
     this.defaultSoySource = Optional.of(d);
     return this;
   }
 
-  public void plan(SoyOptions opts) throws MojoExecutionException, IOException {
+  /** Adds steps to the common planner to compiler soy. */
+  public void plan(SoyOptions soy) throws MojoExecutionException {
+    SoyOptions opts = OptionsUtils.prepareOne(soy);
+
     OptionsIngredient<SoyOptions> soyOptions = planner.ingredients.options(
         SoyOptions.class, opts);
     SerializedObjectIngredient<GenfilesDirs> genfiles = planner.genfiles;

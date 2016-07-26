@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Optional;
@@ -26,7 +27,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.html.plugin.Options;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.plan.Hash;
@@ -278,6 +278,7 @@ public class Ingredients {
     private Optional<ImmutableList<FileIngredient>> testSources
         = Optional.absent();
     private Optional<Hash> hash = Optional.absent();
+    private MojoExecutionException problem;
 
     FileSetIngredient(String key) {
       super(key);
@@ -296,15 +297,43 @@ public class Ingredients {
     }
 
     /** Source files that should contribute to the artifact. */
-    public final synchronized
-    Optional<ImmutableList<FileIngredient>> mainSources() {
-      return mainSources;
+    public synchronized ImmutableList<FileIngredient> mainSources()
+    throws MojoExecutionException {
+      if (mainSources.isPresent()) {
+        return mainSources.get();
+      } else {
+        throw getProblem();
+      }
     }
 
     /** Source files that are used to test the artifact. */
-    public final synchronized
-    Optional<ImmutableList<FileIngredient>> testSources() {
-      return testSources;
+    public synchronized ImmutableList<FileIngredient> testSources()
+    throws MojoExecutionException {
+      if (testSources.isPresent()) {
+        return testSources.get();
+      } else {
+        throw getProblem();
+      }
+    }
+
+    /** The reason the sources are not available. */
+    protected final MojoExecutionException getProblem() {
+      MojoExecutionException mee = problem;
+      return (mee == null)
+          ? new MojoExecutionException(key + " never set")
+          : mee;
+    }
+
+    /**
+     * May be called if inputs to {@link #setFiles} are unavailable due to an
+     * exceptional condition.
+     */
+    protected void setProblem(Throwable th) {
+      if (th instanceof MojoExecutionException) {
+        problem = (MojoExecutionException) th;
+      } else {
+        problem = new MojoExecutionException("Could not determine " + key, th);
+      }
     }
 
     protected final
@@ -349,7 +378,11 @@ public class Ingredients {
     }
   }
 
-  /** */
+  /**
+   * A file-set that can be explicitly set.   It's key does not
+   * depend upon it's specification, so key uniqueness is the responsibility of
+   * its creator.
+   */
   public final class SettableFileSetIngredient extends FileSetIngredient {
 
     SettableFileSetIngredient(String key) {
@@ -365,6 +398,11 @@ public class Ingredients {
         Iterable<? extends FileIngredient> newTestSources)
     throws IOException {
       this.setSources(newMainSources, newTestSources);
+    }
+
+    @Override
+    public void setProblem(Throwable th) {
+      super.setProblem(th);
     }
   }
 
@@ -400,12 +438,18 @@ public class Ingredients {
         return;
       }
       Preconditions.checkNotNull(finder);
-      Sources sources = finder.scan(log);
-      ImmutableList<FileIngredient> mainSourceList = sortedSources(
-          sources.mainFiles);
-      ImmutableList<FileIngredient> testSourceList = sortedSources(
-          sources.testFiles);
-      this.setSources(mainSourceList, testSourceList);
+      try {
+        Sources sources = finder.scan(log);
+        ImmutableList<FileIngredient> mainSourceList = sortedSources(
+            sources.mainFiles);
+        ImmutableList<FileIngredient> testSourceList = sortedSources(
+            sources.testFiles);
+        this.setSources(mainSourceList, testSourceList);
+      } catch (IOException ex) {
+        setProblem(new MojoExecutionException(
+            "Resolution of " + key + " failed", ex));
+        throw ex;
+      }
       this.finder = null;
     }
   }

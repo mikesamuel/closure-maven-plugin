@@ -17,16 +17,20 @@ import org.codehaus.plexus.component.repository.ComponentDependency;
 import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
+import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Ingredients.FileIngredient;
+import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
+import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
 import com.google.common.html.plugin.extract.Extract;
 import com.google.common.html.plugin.extract.ExtractPlanner;
+import com.google.common.html.plugin.js.JsOptions;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.proto.ProtoOptions;
@@ -45,6 +49,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /**
@@ -299,14 +304,10 @@ extends AbstractMojo {
       throw new MojoExecutionException("Failed to plan proto compile", ex);
     }
 
-    try {
-      SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-      new SoyPlanner(planner)
-          .defaultSoySource(defaultSoySource)
-          .plan(soyOptions);
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to plan proto compile", ex);
-    }
+    SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
+    new SoyPlanner(planner)
+        .defaultSoySource(defaultSoySource)
+        .plan(soyOptions);
 
 
     Plan plan = planner.toPlan();
@@ -356,15 +357,17 @@ extends AbstractMojo {
              required=true, readonly=true )
   protected List<ArtifactRepository> remoteRepositories;
 
-  Function<ProtoOptions, File> protocExecutable() {
-    return new Function<ProtoOptions, File>() {
+  ToolFinder<ProtoOptions> protocExecutable() {
+    return new ToolFinder<ProtoOptions>() {
 
       static final String PROTOC_PLUGIN_GROUP_ID = "com.comoyo.maven.plugins";
       static final String PROTOC_PLUGIN_ARTIFACT_ID = "protoc-bundled-plugin";
 
       @SuppressWarnings("synthetic-access")
       @Override
-      public File apply(ProtoOptions options) {
+      public void find(
+          ProtoOptions options, Ingredients ingredients,
+          SettableFileSetIngredient protocPathOut) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
 
         String protocPluginVersion = null;
@@ -404,13 +407,23 @@ extends AbstractMojo {
               ProtocBundledMojo.class, protocBundledMojo,
               "protocExec", options.protocExec);
         }
-        Cheats.cheatCall(
-            Void.class, ProtocBundledMojo.class,
-            protocBundledMojo, "ensureProtocBinaryPresent"
-            );
-        return Cheats.cheatGet(
-            ProtocBundledMojo.class, protocBundledMojo,
-            File.class, "protocExec");
+
+        try {
+          Cheats.cheatCall(
+              Void.class, ProtocBundledMojo.class,
+              protocBundledMojo, "ensureProtocBinaryPresent"
+              );
+          File protocFile = Cheats.cheatGet(
+              ProtocBundledMojo.class, protocBundledMojo,
+              File.class, "protocExec");
+          protocPathOut.setFiles(
+              ImmutableList.of(ingredients.file(protocFile)),
+              ImmutableList.<FileIngredient>of());
+        } catch (InvocationTargetException ex) {
+          protocPathOut.setProblem(ex.getTargetException());
+        } catch (IOException ex) {
+          protocPathOut.setProblem(ex);
+        }
       }
     };
   }

@@ -52,7 +52,7 @@ final class SoyToJs extends Step {
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to find .soy sources", ex);
     }
-    Iterable<FileIngredient> soySourceFiles = soySources.mainSources().get();
+    Iterable<FileIngredient> soySourceFiles = soySources.mainSources();
 
     if (!Iterables.isEmpty(soySourceFiles)) {
       SoyOptions options = optionsIng.getOptions();
@@ -99,8 +99,8 @@ final class SoyToJs extends Step {
 
           // Disambiguate with js.id if not null (constructed above).
           String suffix = ".js";
-          if (js.id != null && !"".equals(js.id)) {
-            suffix = "_" + js.id + suffix;
+          if (!js.wasIdImplied()) {
+            suffix = "_" + js.getId() + suffix;
           }
 
           String compiledJsContent = jsFileContent.get(i);

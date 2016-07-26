@@ -3,12 +3,14 @@ package com.google.common.html.plugin.proto;
 import java.io.File;
 import java.io.IOException;
 
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
+import com.google.common.html.plugin.common.ToolFinder;
 
 /**
  * Adds steps that feed .proto files to protoc.
@@ -16,7 +18,7 @@ import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredien
 public final class ProtoPlanner {
 
   private final CommonPlanner planner;
-  private final Function<ProtoOptions, File> protocExecSupplier;
+  private final ToolFinder<ProtoOptions> protocFinder;
   private File defaultProtoSource;
   private File defaultProtoTestSource;
   private File defaultMainDescriptorFile;
@@ -24,9 +26,10 @@ public final class ProtoPlanner {
 
   /** ctor */
   public ProtoPlanner(
-      CommonPlanner planner, Function<ProtoOptions, File> protocExecSupplier) {
+      CommonPlanner planner,
+      ToolFinder<ProtoOptions> protocFinder) {
     this.planner = planner;
-    this.protocExecSupplier = protocExecSupplier;
+    this.protocFinder = protocFinder;
   }
 
   /** Sets the default source root for proto files used in sources. */
@@ -76,7 +79,7 @@ public final class ProtoPlanner {
         planner.ingredients.namedFileSet("protocExec");
 
     planner.addStep(new FindProtoFilesAndProtoc(
-        planner.processRunner, protocExecSupplier, planner.ingredients,
+        planner.processRunner, protocFinder, planner.ingredients,
         protoOptions,
         planner.genfiles,
         planner.ingredients.stringValue(defaultProtoSource.getPath()),

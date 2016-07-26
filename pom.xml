@@ -16,7 +16,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <closure-stylesheets.version>21060712-SNAPSHOT</closure-stylesheets.version>
+    <csscomp.version>21060712-SNAPSHOT</csscomp.version>
+    <jscomp.version>1.0-SNAPSHOT</jscomp.version>
     <protoc-plugin.version>1.4.55</protoc-plugin.version>
     <soy.version>2016-07-21</soy.version>
     <java.version>1.7</java.version>
@@ -64,7 +65,7 @@
     <dependency>
       <groupId>com.google.javascript</groupId>
       <artifactId>closure-compiler</artifactId>
-      <version>v20160517</version>
+      <version>${jscomp.version}</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
@@ -79,7 +80,7 @@
     <dependency>
       <groupId>com.google.closure-stylesheets</groupId>
       <artifactId>closure-stylesheets</artifactId>
-      <version>${closure-stylesheets.version}</version>
+      <version>${csscomp.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.template</groupId>

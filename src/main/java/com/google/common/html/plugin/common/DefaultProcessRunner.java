@@ -76,10 +76,12 @@ public final class DefaultProcessRunner implements ProcessRunner{
           Process p;
           boolean c;
           long t0;
+          Integer ec;
           synchronized (exitCode) {
             p = process[0];
             c = cancelled[0];
             t0 = startTime[0];
+            ec = exitCode[0];
             if (p == null && !c) {
               try {
                 exitCode.wait();
@@ -88,10 +90,9 @@ public final class DefaultProcessRunner implements ProcessRunner{
               }
             }
           }
-          if (c) {
+          if (ec != null || c) {
             break;
           } else if (p != null) {
-            int ec;
             try {
               ec = process[0].waitFor();
             } catch (InterruptedException ex) {

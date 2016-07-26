@@ -2,7 +2,7 @@ package com.google.common.html.plugin.proto;
 
 import java.io.File;
 
-import com.google.common.html.plugin.Options;
+import com.google.common.html.plugin.common.Options;
 
 /**
  * Options for protoc.
@@ -49,5 +49,10 @@ public final class ProtoOptions extends Options {
   @Override
   public ProtoOptions clone() throws CloneNotSupportedException {
     return (ProtoOptions) super.clone();
+  }
+
+  @Override
+  protected void createLazyDefaults() {
+    // Done
   }
 }

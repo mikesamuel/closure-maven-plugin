@@ -8,7 +8,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -20,10 +19,12 @@ import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -78,16 +79,11 @@ final class FindEntryPoints extends Step {
       cssSources.resolve(log);
 
       ImmutableList.Builder<Source> mainSources = ImmutableList.builder();
-      Optional<ImmutableList<FileIngredient>> files =
-          cssSources.mainSources();
-      if (files.isPresent()) {
-        for (FileIngredient sourceFile : files.get()) {
-          mainSources.add(sourceFile.source);
-        }
-        importGraph = new CssImportGraph(log, mainSources.build());
-      } else {
-        throw new MojoExecutionException("Failed to resolve sources");
+      ImmutableList<FileIngredient> files = cssSources.mainSources();
+      for (FileIngredient sourceFile : files) {
+        mainSources.add(sourceFile.source);
       }
+      importGraph = new CssImportGraph(log, mainSources.build());
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to parse imports in CSS source files", ex);
@@ -106,7 +102,7 @@ final class FindEntryPoints extends Step {
           defaultCssOutputPathTemplate.value,
           defaultCssSourceMapPathTemplate.value);
       b.add(new CssBundle(
-          cssOpts.id, entryPoint, deps.allDependencies,
+          cssOpts.getId(), entryPoint, deps.allDependencies,
           cssCompilerOutputs));
     }
 

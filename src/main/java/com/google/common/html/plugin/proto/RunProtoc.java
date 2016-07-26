@@ -13,7 +13,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -22,6 +21,7 @@ import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
+import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.common.ProcessRunner;
@@ -39,7 +39,7 @@ final class RunProtoc extends Step {
       RunProtoc.RootSet rootSet,
       OptionsIngredient<ProtoOptions> options,
       DirScanFileSetIngredient protoSources,
-      FileIngredient protoc,
+      FileSetIngredient protocSet,
       ImmutableList<FileIngredient> inputs,
       StringValue javaGenfilesPath,
       StringValue jsGenfilesPath,
@@ -49,7 +49,7 @@ final class RunProtoc extends Step {
         "proto-to-java:[" + options.key + "];[" + protoSources.key + "];"
             + rootSet,
         ImmutableList.<Ingredient>builder()
-            .add(options, protoSources, protoc,
+            .add(options, protoSources, protocSet,
                  javaGenfilesPath, jsGenfilesPath)
             .addAll(inputs)
             .build(),
@@ -72,7 +72,7 @@ final class RunProtoc extends Step {
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
     DirScanFileSetIngredient protoSources =
         (DirScanFileSetIngredient) inputs.get(1);
-    FileIngredient protoc = (FileIngredient) inputs.get(2);
+    FileSetIngredient protocSet = (FileSetIngredient) inputs.get(2);
     StringValue javaGenfilesPath = (StringValue) inputs.get(3);
     StringValue jsGenfilesPath = (StringValue) inputs.get(4);
     ImmutableList<FileIngredient> inputProtoFiles = castList(
@@ -85,7 +85,16 @@ final class RunProtoc extends Step {
       return;
     }
 
-    Optional<ImmutableList<FileIngredient>> sources = Optional.absent();
+    ImmutableList<FileIngredient> protocs = protocSet.mainSources();
+    if (protocs.isEmpty()) {
+      throw new MojoExecutionException(
+          "No protoc executable found."
+          + "  Maybe specify <configuration><proto><protocExecutable>..."
+          + " or make sure you have a dependency on protobuf-java");
+    }
+    Source protoc = protocs.get(0).source;
+
+    ImmutableList<FileIngredient> sources = null;
     switch (rootSet) {
       case MAIN:
         sources = protoSources.mainSources();
@@ -94,10 +103,10 @@ final class RunProtoc extends Step {
         sources = protoSources.testSources();
         break;
     }
-    Preconditions.checkState(sources.isPresent());
+    Preconditions.checkNotNull(sources);
 
     ImmutableList.Builder<String> argv = ImmutableList.builder();
-    argv.add(protoc.source.canonicalPath.getPath());
+    argv.add(protoc.canonicalPath.getPath());
 
     argv.add("--include_imports")
         .add("--descriptor_set_out")

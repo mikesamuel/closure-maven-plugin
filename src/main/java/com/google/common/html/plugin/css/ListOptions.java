@@ -43,17 +43,15 @@ final class ListOptions extends Step {
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
-    CssOptions[] options = new CssOptions[inputs.size() - 1];
-    for (int i = 0; i < options.length; ++i) {
+    ImmutableList.Builder<CssOptions> options = ImmutableList.builder();
+    for (int i = 1, n = inputs.size(); i < n; ++i) {
       OptionsIngredient<CssOptions> optionsInput =
-          ((OptionsIngredient<?>) inputs.get(i + 1))
+          ((OptionsIngredient<?>) inputs.get(i))
           .asSuperType(CssOptions.class);
-      options[i] = optionsInput.getOptions();
+      options.add(optionsInput.getOptions());
     }
 
-    ImmutableList<CssOptions> exploded = CssOptions.asplode(options);
-
-    optionsListFile.setStoredObject(new CssOptionsById(exploded));
+    optionsListFile.setStoredObject(new CssOptionsById(options.build()));
     try {
       optionsListFile.write();
     } catch (IOException ex) {
@@ -84,7 +82,7 @@ final class ListOptions extends Step {
     for (CssOptions options :
          optionsListFile.getStoredObject().get().optionsById.values()) {
       File bundlesFile = new File(
-          planner.cssOutputDir(), "css-bundles-" + options.getId());
+          planner.cssOutputDir(), "css-bundles-" + options.getId() + ".ser");
       ImmutableSet.Builder<File> roots = ImmutableSet.builder();
       if (options.source == null || options.source.length == 0) {
         roots.add(planner.defaultCssSource());

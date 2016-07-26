@@ -5,9 +5,10 @@ import java.io.File;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.html.plugin.Options;
-import com.google.common.html.plugin.OptionsUtils;
+import com.google.common.html.plugin.common.Options;
+import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.template.soy.SoyFileSet;
 
 /**
@@ -62,5 +63,28 @@ public final class SoyOptions extends Options {
       builder.setStrictAutoescapingRequired(strictAutoescapingRequired);
     }
     return builder;
+  }
+
+
+  @Override
+  protected void createLazyDefaults() {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  protected ImmutableList<Js> getSubOptions() {
+    return this.js != null
+        ? ImmutableList.copyOf(this.js)
+        : ImmutableList.<Js>of();
+  }
+
+  @Override
+  protected void setSubOptions(ImmutableList<? extends Options> newOptions) {
+    ImmutableList.Builder<Js> newJs = ImmutableList.builder();
+    for (Options o : newOptions) {
+      newJs.add((Js) o);
+    }
+    this.js = newJs.build().toArray(new Js[newOptions.size()]);
   }
 }

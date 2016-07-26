@@ -2,6 +2,7 @@ package com.google.common.html.plugin.soy;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -52,7 +53,7 @@ final class SoyToJava extends Step {
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to find .soy sources", ex);
     }
-    Iterable<FileIngredient> soySourceFiles = soySources.mainSources().get();
+    Iterable<FileIngredient> soySourceFiles = soySources.mainSources();
 
     if (!Iterables.isEmpty(soySourceFiles)) {
       SoyFileSet.Builder sfsBuilder =
@@ -77,10 +78,17 @@ final class SoyToJava extends Step {
               FilenameUtils.removeExtension(
                   outputJarPath.value.getName()) + "-src.jar")));
 
-      Cheats.cheatCall(
-          Void.class, SoyFileSet.class, sfsBuilder.build(), "compileToJar",
-          ByteSink.class, classJarOut,
-          Optional.class, srcJarOut);
+      try {
+        Cheats.cheatCall(
+            Void.class, SoyFileSet.class, sfsBuilder.build(), "compileToJar",
+            ByteSink.class, classJarOut,
+            Optional.class, srcJarOut);
+        // TODO: expose compileToJar publicly.
+      } catch (InvocationTargetException ex) {
+        throw new MojoExecutionException(
+            "Compilation of templates to a Java JAR failed",
+            /* An IOException */ ex.getTargetException());
+      }
     }
   }
 

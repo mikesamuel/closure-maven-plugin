@@ -17,7 +17,7 @@ public class CssOptionsById implements Serializable {
     ImmutableMap.Builder<String, CssOptions> optionsMap =
         ImmutableMap.builder();
     for (CssOptions o : options) {
-      optionsMap.put(o.id, o);
+      optionsMap.put(o.getId(), o);
     }
     this.optionsById = optionsMap.build();
   }

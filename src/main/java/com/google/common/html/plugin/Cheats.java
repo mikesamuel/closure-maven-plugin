@@ -11,7 +11,8 @@ public final class Cheats {
       Class<RT> returnType,
       Class<TT> thisType, TT thisValue,
       String methodName,
-      Object... argumentTypesAndArgs) {
+      Object... argumentTypesAndArgs)
+  throws InvocationTargetException {
     int nArgs = argumentTypesAndArgs.length / 2;
     assert nArgs * 2 == argumentTypesAndArgs.length;
     Class<?>[] argumentTypes = new Class[nArgs];
@@ -38,8 +39,6 @@ public final class Cheats {
       return returnType.cast(m.invoke(thisValue, arguments));
     } catch (IllegalAccessException ex) {
       throw new AssertionError("set accessible to true", ex);
-    } catch (InvocationTargetException ex) {  // This one is legit.
-      throw new RuntimeException(ex.getTargetException());
     }
   }
 

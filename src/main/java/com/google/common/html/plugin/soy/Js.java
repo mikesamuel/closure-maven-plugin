@@ -2,7 +2,7 @@ package com.google.common.html.plugin.soy;
 
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.html.plugin.Options;
+import com.google.common.html.plugin.common.Options;
 import com.google.template.soy.jssrc.SoyJsSrcOptions;
 
 /**
@@ -129,5 +129,12 @@ public final class Js extends Options {
   @Override
   public Js clone() throws CloneNotSupportedException {
     return (Js) super.clone();
+  }
+
+
+
+  @Override
+  protected void createLazyDefaults() {
+    // Done
   }
 }

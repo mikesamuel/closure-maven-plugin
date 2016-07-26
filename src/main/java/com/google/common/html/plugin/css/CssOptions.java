@@ -16,7 +16,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.css.CustomPass;
 import com.google.common.css.GssFunctionMapProvider;
 import com.google.common.css.JobDescription;
@@ -26,10 +25,11 @@ import com.google.common.css.SourceCode;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.Vendor;
 import com.google.common.css.JobDescription.OptimizeStrategy;
-import com.google.common.html.plugin.Options;
-import com.google.common.html.plugin.OptionsUtils;
 import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.Asplodable;
+import com.google.common.html.plugin.common.Options;
+import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.io.Files;
 
 //@Mojo(name="css")
@@ -123,6 +123,7 @@ public final class CssOptions extends Options {
    * compiled with different orientations in different output files.
    */
   @Parameter
+  @Asplodable
   public JobDescription.OutputOrientation[] outputOrientation;
   /** How to format the output from the CSS class renaming. */
   @Parameter
@@ -163,6 +164,7 @@ public final class CssOptions extends Options {
    * those associated with this vendor.
    */
   @Parameter
+  @Asplodable
   public Vendor[] vendor;
   /**
    * Allows extra processing of the AST.
@@ -427,19 +429,6 @@ public final class CssOptions extends Options {
     }
   }
 
-  /**
-   * One CssOptions instance with single field values for any fields that can
-   * be substituted into an output path template for each combination of such
-   * field values.
-   */
-  static ImmutableList<CssOptions> asplode(CssOptions[] csses) {
-    ImmutableList<CssOptions> csses0 = csses == null || csses.length == 0
-        ? ImmutableList.of(new CssOptions()) : ImmutableList.copyOf(csses);
-    ImmutableList<CssOptions> csses1 = asplodeOutputOrientation(csses0);
-    ImmutableList<CssOptions> csses2 = asplodeVendor(csses1);
-    return csses2;
-  }
-
   @Override
   public CssOptions clone() {
     try {
@@ -449,41 +438,9 @@ public final class CssOptions extends Options {
     }
   }
 
-  private static ImmutableList<CssOptions> asplodeOutputOrientation(
-      ImmutableList<CssOptions> opts) {
-    ImmutableList.Builder<CssOptions> asploded = ImmutableList.builder();
-    for (CssOptions css : opts) {
-      if (css.outputOrientation == null || css.outputOrientation.length <= 1) {
-        asploded.add(css);
-      } else {
-        for (JobDescription.OutputOrientation oo
-             : ImmutableSet.copyOf(css.outputOrientation)) {
-          CssOptions clone = css.clone();
-          clone.outputOrientation = new JobDescription.OutputOrientation[] {
-            oo,
-          };
-          asploded.add(clone);
-        }
-      }
-    }
-    return asploded.build();
-  }
-
-  private static ImmutableList<CssOptions> asplodeVendor(
-      ImmutableList<CssOptions> opts) {
-    ImmutableList.Builder<CssOptions> asploded = ImmutableList.builder();
-    for (CssOptions css : opts) {
-      if (css.vendor == null || css.vendor.length <= 1) {
-        asploded.add(css);
-      } else {
-        for (Vendor v : ImmutableSet.copyOf(css.vendor)) {
-          CssOptions clone = css.clone();
-          clone.vendor = new Vendor[] { v };
-          asploded.add(clone);
-        }
-      }
-    }
-    return asploded.build();
+  @Override
+  protected void createLazyDefaults() {
+    // Done
   }
 
   private static boolean wasSet(String parameterValue) {

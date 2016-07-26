@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -20,6 +19,7 @@ import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredie
 import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.common.ProcessRunner;
+import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
@@ -29,14 +29,14 @@ import com.google.common.html.plugin.plan.StepSource;
  */
 final class FindProtoFilesAndProtoc extends Step {
   private final ProcessRunner processRunner;
-  private final Function<ProtoOptions, File> protocExecSupplier;
+  private final ToolFinder<ProtoOptions> protocFinder;
   private final Ingredients ingredients;
   private final SerializedObjectIngredient<ProtocSpec> protoSpec;
   private final SettableFileSetIngredient protocExec;
 
   FindProtoFilesAndProtoc(
       ProcessRunner processRunner,
-      Function<ProtoOptions, File> protocExecSupplier,
+      ToolFinder<ProtoOptions> protocFinder,
       Ingredients ingredients,
 
       OptionsIngredient<ProtoOptions> options,
@@ -58,7 +58,7 @@ final class FindProtoFilesAndProtoc extends Step {
             StepSource.PROTO_SRC, StepSource.PROTO_GENERATED),
         Sets.immutableEnumSet(StepSource.PROTOC));
     this.processRunner = processRunner;
-    this.protocExecSupplier = protocExecSupplier;
+    this.protocFinder = protocFinder;
     this.ingredients = ingredients;
     this.protoSpec = protoSpec;
     this.protocExec = protocExec;
@@ -141,8 +141,6 @@ final class FindProtoFilesAndProtoc extends Step {
 
     ProtocSpec protocSpecValue = protoSpec.getStoredObject().get();
 
-    FileIngredient protocExecFile = protocExec.mainSources().get().get(0);
-
     DirScanFileSetIngredient protoSources =
         ingredients.fileset(new Sources.Finder(".proto")
             .mainRoots(protocSpecValue.mainSourceRoots)
@@ -172,16 +170,16 @@ final class FindProtoFilesAndProtoc extends Step {
     RunProtoc main = new RunProtoc(
         processRunner,
         RunProtoc.RootSet.MAIN,
-        options, protoSources, protocExecFile,
-        protoSources.mainSources().get(),
+        options, protoSources, protocExec,
+        protoSources.mainSources(),
         ingredients.stringValue(gf.javaGenfiles.getPath()),
         ingredients.stringValue(gf.jsGenfiles.getPath()),
         mainDescriptorSet);
     RunProtoc test = new RunProtoc(
         processRunner,
         RunProtoc.RootSet.TEST,
-        options, protoSources, protocExecFile,
-        protoSources.testSources().get(),
+        options, protoSources, protocExec,
+        protoSources.testSources(),
         ingredients.stringValue(gf.javaTestGenfiles.getPath()),
         ingredients.stringValue(gf.jsTestGenfiles.getPath()),
         testDescriptorSet);
@@ -189,18 +187,11 @@ final class FindProtoFilesAndProtoc extends Step {
     return ImmutableList.<Step>of(main, test);
   }
 
-  private void setProtocExec() throws MojoExecutionException {
+  private void setProtocExec() {
+    System.err.println();
     OptionsIngredient<ProtoOptions> options =
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
-
-    try {
-      protocExec.setFiles(
-          ImmutableList.of(ingredients.file(
-              protocExecSupplier.apply(options.getOptions()))),
-          ImmutableList.<FileIngredient>of());
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to find .proto roots", ex);
-    }
+    protocFinder.find(options.getOptions(), ingredients, protocExec);
   }
 
 }
