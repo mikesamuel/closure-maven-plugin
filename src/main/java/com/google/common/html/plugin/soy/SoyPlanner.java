@@ -40,8 +40,8 @@ public final class SoyPlanner {
   }
 
   /** Adds steps to the common planner to compiler soy. */
-  public void plan(SoyOptions soy) throws MojoExecutionException {
-    SoyOptions opts = OptionsUtils.prepareOne(soy);
+  public void plan(SoyOptions soyOpts) throws MojoExecutionException {
+    SoyOptions opts = OptionsUtils.prepareOne(soyOpts);
     Ingredients ingredients = planner.ingredients;
 
     OptionsIngredient<SoyOptions> soyOptions = ingredients.options(

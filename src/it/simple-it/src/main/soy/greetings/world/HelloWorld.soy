@@ -1,0 +1,11 @@
+{namespace greetings.world}
+
+/**
+ * If $x has never met the world,
+ * then $x : float.
+ */
+{template .helloWorld}
+  /** The name of the world. */
+  {@param world : string}
+  Hello, <b>{$world ?: 'World'}</b>
+{/template}

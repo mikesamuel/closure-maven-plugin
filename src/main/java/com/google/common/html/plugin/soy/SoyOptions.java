@@ -68,8 +68,9 @@ public final class SoyOptions extends Options {
 
   @Override
   protected void createLazyDefaults() {
-    // TODO Auto-generated method stub
-
+    if (this.js == null || js.length == 0) {
+      this.js = new Js[] { new Js() };
+    }
   }
 
   @Override

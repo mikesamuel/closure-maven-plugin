@@ -18,7 +18,7 @@ public final class Js extends Options {
   public boolean shouldGenerateJsdoc = true;
 
   /** Whether we should generate code to provide/require Soy namespaces. */
-  public boolean shouldProvideRequireSoyNamespaces = true;
+  public Boolean shouldProvideRequireSoyNamespaces;
 
   /**
    * Whether we should generate code to provide/require template JS functions.
@@ -32,7 +32,7 @@ public final class Js extends Options {
   public Boolean shouldProvideBothSoyNamespacesAndJsFunctions;
 
   /** Whether we should generate code to declare the top level namespace. */
-  public Boolean shouldDeclareTopLevelNamespaces;
+  public boolean shouldDeclareTopLevelNamespaces = false;
 
   /** Whether we should generate code to declare goog.modules. */
   public boolean shouldGenerateGoogModules = true;
@@ -41,7 +41,7 @@ public final class Js extends Options {
    * Whether we should generate Closure Library message definitions
    * (i.e. goog.getMsg).
    */
-  public boolean shouldGenerateGoogMsgDefs = true;
+  public Boolean shouldGenerateGoogMsgDefs;
 
   /**
    * Whether the Closure Library messages are external, i.e.
@@ -65,7 +65,7 @@ public final class Js extends Options {
    * shouldGenerateGoogMsgDefs and either shouldProvideRequireSoyNamespaces or
    * shouldProvideRequireJsFunctions is true.
    */
-  public boolean useGoogIsRtlForBidiGlobalDir = true;
+  public Boolean useGoogIsRtlForBidiGlobalDir;
 
 
   /**
@@ -75,12 +75,19 @@ public final class Js extends Options {
       @SuppressWarnings("unused") Log log) {
     SoyJsSrcOptions jsSrcOptions = new SoyJsSrcOptions();
 
+    // Do this first since it is initialized to true in the default constructor
+    // and can conflict with some other options.
+    jsSrcOptions.setShouldDeclareTopLevelNamespaces(
+        shouldDeclareTopLevelNamespaces);
+
     if (this.bidiGlobalDir != null) {
       jsSrcOptions.setBidiGlobalDir(this.bidiGlobalDir.flagValue);
     }
     jsSrcOptions.setShouldGenerateJsdoc(shouldGenerateJsdoc);
-    jsSrcOptions.setShouldProvideRequireSoyNamespaces(
-        shouldProvideRequireSoyNamespaces);
+    if (shouldProvideRequireSoyNamespaces != null) {
+      jsSrcOptions.setShouldProvideRequireSoyNamespaces(
+          shouldProvideRequireSoyNamespaces);
+    }
     if (shouldProvideRequireJsFunctions != null) {
        jsSrcOptions.setShouldProvideRequireJsFunctions(
            shouldProvideRequireJsFunctions);
@@ -89,17 +96,17 @@ public final class Js extends Options {
        jsSrcOptions.setShouldProvideBothSoyNamespacesAndJsFunctions(
            shouldProvideBothSoyNamespacesAndJsFunctions);
     }
-    if (shouldDeclareTopLevelNamespaces != null) {
-       jsSrcOptions.setShouldDeclareTopLevelNamespaces(
-           shouldDeclareTopLevelNamespaces);
-    }
     jsSrcOptions.setShouldGenerateGoogModules(shouldGenerateGoogModules);
-    jsSrcOptions.setShouldGenerateGoogMsgDefs(shouldGenerateGoogMsgDefs);
+    if (shouldGenerateGoogMsgDefs != null) {
+      jsSrcOptions.setShouldGenerateGoogMsgDefs(shouldGenerateGoogMsgDefs);
+    }
     if (googMsgsAreExternal != null) {
        jsSrcOptions.setGoogMsgsAreExternal(googMsgsAreExternal);
     }
-    jsSrcOptions.setUseGoogIsRtlForBidiGlobalDir(
-        useGoogIsRtlForBidiGlobalDir);
+    if (useGoogIsRtlForBidiGlobalDir != null) {
+      jsSrcOptions.setUseGoogIsRtlForBidiGlobalDir(
+          useGoogIsRtlForBidiGlobalDir);
+    }
 
     return jsSrcOptions;
   }

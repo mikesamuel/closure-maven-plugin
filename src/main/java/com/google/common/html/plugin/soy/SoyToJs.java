@@ -57,13 +57,7 @@ final class SoyToJs extends Step {
 
     SoyOptions options = optionsIng.getOptions();
 
-    ImmutableList<Js> allJsSrc;
-    if (options.js != null && options.js.length != 0) {
-      allJsSrc = ImmutableList.copyOf(options.js);
-    } else {
-      Js js = new Js();
-      allJsSrc = ImmutableList.of(js);
-    }
+    ImmutableList<Js> allJsSrc = ImmutableList.copyOf(options.js);
 
     ImmutableList<Source> sources;
     {
@@ -99,6 +93,7 @@ final class SoyToJs extends Step {
           FilenameUtils.getBaseName(inputRelPath.getName()) + suffix);
         File outputPath = new File(FilenameUtils.concat(
             outputDir.getPath(), outputRelPath.getPath()));
+        outputPath.getParentFile().mkdirs();
         try {
           Files.write(compiledJsContent, outputPath, Charsets.UTF_8);
         } catch (IOException ex) {
