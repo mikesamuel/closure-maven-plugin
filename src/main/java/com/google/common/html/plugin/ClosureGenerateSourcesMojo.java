@@ -64,8 +64,7 @@ import java.util.List;
     // so it can figure out which protobufVersion to use.
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
 )
-public class ClosureMavenMojo
-extends AbstractMojo {
+public class ClosureGenerateSourcesMojo {
   @Parameter(
       defaultValue="${project.build.directory}",
       property="outputDir",
