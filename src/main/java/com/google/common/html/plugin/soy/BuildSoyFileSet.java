@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
@@ -36,9 +37,11 @@ import com.google.template.soy.types.proto.SoyProtoTypeProvider;
 
 final class BuildSoyFileSet extends Step {
   final Ingredients ingredients;
+  final LifecyclePhase phase;
 
   public BuildSoyFileSet(
       Ingredients ingredients,
+      LifecyclePhase phase,
       SerializedObjectIngredient<GenfilesDirs> genfiles,
       OptionsIngredient<SoyOptions> options,
       DirScanFileSetIngredient soySources,
@@ -55,6 +58,7 @@ final class BuildSoyFileSet extends Step {
             StepSource.PROTO_DESCRIPTOR_SET),
         Sets.immutableEnumSet(StepSource.JS_GENERATED));
     this.ingredients = ingredients;
+    this.phase = phase;
   }
 
   @Override
@@ -164,9 +168,15 @@ final class BuildSoyFileSet extends Step {
         outputDir.value, "closure-templates-" + opts.getId() + ".jar"));
     PathValue jsOutDir = ingredients.pathValue(genfiles.jsGenfiles);
 
-    return ImmutableList.<Step>of(
-        new SoyToJava(optionsIng, soySources, protoDescriptors, outputJar, sfs),
-        new SoyToJs(optionsIng, soySources, protoDescriptors, jsOutDir, sfs)
-        );
+    switch (phase) {
+      case PROCESS_SOURCES:
+        return ImmutableList.<Step>of(new SoyToJs(
+            optionsIng, soySources, protoDescriptors, jsOutDir, sfs));
+      case PROCESS_CLASSES:
+        return ImmutableList.<Step>of(new SoyToJava(
+            optionsIng, soySources, protoDescriptors, outputJar, sfs));
+      default:
+    }
+    throw new AssertionError(phase);
   }
 }
