@@ -105,7 +105,8 @@ public final class HelloWorldTest extends TestCase {
 
   @Test
   public final void testHelloWorldStringInput() throws Exception {
-    SoyMapData data = new SoyMapData(ImmutableMap.of("world", "Cincinatti <:)>"));
+    SoyMapData data = new SoyMapData(
+        ImmutableMap.of("world", "Cincinatti <:)>"));
     SoyMapData ijData = new SoyMapData();
 
     String output = renderHelloWorld(data, ijData);

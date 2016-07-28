@@ -12,11 +12,14 @@ import com.google.common.collect.Sets;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
 import com.google.common.html.plugin.common.ProcessRunner;
 import com.google.common.html.plugin.common.ToolFinder;

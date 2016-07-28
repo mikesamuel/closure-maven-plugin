@@ -1,7 +1,6 @@
 package com.google.common.html.plugin;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
@@ -10,7 +9,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.repository.ComponentDependency;
 
@@ -24,10 +22,11 @@ import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.ToolFinder;
-import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
 import com.google.common.html.plugin.extract.Extract;
 import com.google.common.html.plugin.extract.ExtractPlanner;
@@ -64,154 +63,7 @@ import java.util.List;
     // so it can figure out which protobufVersion to use.
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
 )
-public class ClosureGenerateSourcesMojo {
-  @Parameter(
-      defaultValue="${project.build.directory}",
-      property="outputDir",
-      required=true,
-      readonly=true)
-  private File outputDir;
-
-  @Parameter(defaultValue="${project}", readonly=true, required=true)
-  private MavenProject project;
-
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/css",
-      readonly=true, required=true)
-  private File defaultCssSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/js",
-      readonly=true, required=true)
-  private File defaultJsSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/test/js",
-      readonly=true, required=true)
-  private File defaultJsTestSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/extern/js",
-      readonly=true, required=true)
-  private File defaultJsExterns;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/src/main/js",
-      readonly=true, required=true)
-  private File defaultJsGenfiles;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/src/test/js",
-      readonly=true, required=true)
-  private File defaultJsTestGenfiles;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/proto",
-      readonly=true, required=true)
-  private File defaultProtoSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/test/proto",
-      readonly=true, required=true)
-  private File defaultProtoTestSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/soy",
-      readonly=true, required=true)
-  private File defaultSoySource;
-
-  /**
-   * The dependencies from which to extract supplementary source files.
-   */
-  @Parameter
-  private Extract[] extracts;
-
-  /**
-   * Options for the closure-stylesheets compiler.
-   * May be specified multiple times to generate different variants, for example
-   * one stylesheet for left-to-right languages like English and one for
-   * right-to-left languages like Arabic.
-   */
-  @Parameter
-  public CssOptions[] css;
-
-  /**
-   * Options for the closure-compiler.
-   * May be specified multiple times to generate different variants.
-   */
-  @Parameter
-  public JsOptions[] js;
-
-  /**
-   * Options for the protocol buffer compiler.
-   */
-  @Parameter
-  public ProtoOptions proto;
-
-  /**
-   * Options for the closure template compiler.
-   */
-  @Parameter
-  public SoyOptions soy;
-
-  // TODO: look for something under ${project.compileSourceRoots} that is
-  // also under project.build.directory.
-  /** The source root for generated {@code .java} files. */
-  @Parameter(
-      defaultValue="${project.build.directory}/src/main/java",
-      property="javaGenfiles",
-      required=true)
-  private File javaGenfiles;
-
-  /** The source root for generated {@code .java} test files. */
-  @Parameter(
-      defaultValue="${project.build.directory}/src/test/java",
-      property="javaTestGenfiles",
-      required=true)
-  private File javaTestGenfiles;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/css/{reldir}/compiled{-basename}{-orient}.css",
-      readonly=true,
-      required=true)
-  private String defaultCssOutputPathTemplate;
-
-  /**
-   * The output from the CSS class renaming. Provides a map of class
-   * names to what they were renammed to.
-   * Defaults to target/css/{reldir}/rename-map{-basename}{-orient}.json
-   */
-  @Parameter(
-      defaultValue="${project.build.directory}/css/css-rename-map.json",
-      readonly=true,
-      required=true)
-  private File cssRenameMap;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/css/{reldir}/source-map{-basename}{-orient}.json",
-      readonly=true,
-      required=true)
-  private String defaultCssSourceMapPathTemplate;
-
-  /** Path to the file that stores hashes of intermediate outputs. */
-  @Parameter(
-      defaultValue="${project.build.directory}/closure-maven-plugin-hash-store.json",
-      property="hashStoreFile",
-      required=true)
-  private File hashStoreFile;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/src/main/proto/descriptors.pd",
-      readonly=true,
-      required=true)
-  private File defaultMainDescriptorFile;
-
-  @Parameter(
-      defaultValue="${project.build.directory}/src/test/proto/descriptors.pd",
-      readonly=true,
-      required=true)
-  private File defaultTestDescriptorFile;
+public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
 
   @Override
   public void execute() throws MojoExecutionException {

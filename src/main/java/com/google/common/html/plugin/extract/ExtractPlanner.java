@@ -10,9 +10,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.SettableFileSetIngredient;
-import com.google.common.html.plugin.extract.ResolvedExtractsList.ResolvedExtract;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
+import com.google.common.html.plugin.extract
+    .ResolvedExtractsList.ResolvedExtract;
 
 /**
  * Adds steps to the common plan to extract

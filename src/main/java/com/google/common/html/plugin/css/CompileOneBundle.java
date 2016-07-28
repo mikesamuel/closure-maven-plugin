@@ -12,7 +12,8 @@ import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients
+    .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;

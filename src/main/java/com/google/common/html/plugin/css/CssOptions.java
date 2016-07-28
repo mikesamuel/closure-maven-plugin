@@ -249,7 +249,8 @@ public final class CssOptions extends Options {
           OptionsUtils.keyValueMapFromJson(log, compileConstants);
       if (constants.isPresent()) {
         Optional<ImmutableMap<String, Integer>> constantsTyped =
-            requireValuesHaveType(log, constants.get(), Integer.class, "compileConstants");
+            requireValuesHaveType(
+                log, constants.get(), Integer.class, "compileConstants");
         if (constantsTyped.isPresent()) {
           jobDescriptionBuilder.setCompileConstants(constantsTyped.get());
         }
@@ -465,8 +466,10 @@ public final class CssOptions extends Options {
 }
 
 final class PathTemplateSubstitutor {
-  ImmutableMap<String, String> substitutions;
-  PathTemplateSubstitutor(Map<? extends String, ? extends String> substitutions) {
+  final ImmutableMap<String, String> substitutions;
+
+  PathTemplateSubstitutor(
+      Map<? extends String, ? extends String> substitutions) {
     this.substitutions = ImmutableMap.<String, String>copyOf(substitutions);
   }
 
