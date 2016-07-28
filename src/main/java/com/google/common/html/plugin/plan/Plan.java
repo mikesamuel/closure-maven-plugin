@@ -128,6 +128,25 @@ public class Plan {
     }
     Step step = ready.remove(0);
 
+    // Sanity check that ready really is satisfied.
+    EnumSet<StepSource> readsThatNeedToBeWritten =
+        EnumSet.noneOf(StepSource.class);
+    for (StepSource ss : step.reads) {
+      Integer count = this.outputUsageCount.get(ss);
+      if (count != null && 0 != count.intValue()) {
+        readsThatNeedToBeWritten.add(ss);
+      }
+    }
+    if (!readsThatNeedToBeWritten.isEmpty()) {
+      throw new MojoExecutionException(
+          "Cannot execute " + step.key
+          + " because it was spuriously queued for execution despite having"
+          + " unsatisfied reads: " + readsThatNeedToBeWritten);
+      // TODO: maybe keep a set of reads assumed satisfied based on readiness
+      // queuing and fail-fast in addSteps when something that writes those is
+      // added.
+    }
+
     // We need to rebuild if any of the inputs' or hashes don't match.
     boolean hashesOk = true;
     List<Hash> inputHashes = Lists.newArrayList();
@@ -165,6 +184,11 @@ public class Plan {
       log.debug("Executed " + step.key);
     }
 
+    // Add steps before updating satisfaction counts, so that we don't declare
+    // something ready that will then have new inputs.
+    addSteps(step.extraSteps(log));
+    hashStore.setHash(step.key, stepHash);
+
     // Update dependency satisfaction counts and enqueue newly ready.
     for (StepSource w : step.writes) {
       // Decrement usage counts.
@@ -186,8 +210,5 @@ public class Plan {
         }
       }
     }
-
-    hashStore.setHash(step.key, stepHash);
-    addSteps(step.extraSteps(log));
   }
 }

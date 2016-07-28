@@ -4,8 +4,8 @@ package com.example;
 
 import "webutil/html/types/html.proto";
 
-/* A user-name is either a string of text or of HTML */
-message UserName {
+/* A name is either a string of text or an HTML fragment */
+message Name {
   optional string text = 1;
   optional webutil.html.types.SafeHtmlProto html = 2;
 }

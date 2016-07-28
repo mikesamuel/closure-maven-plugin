@@ -57,7 +57,11 @@ final class FindProtoFilesAndProtoc extends Step {
             defaultMainDescriptorFilePath, defaultTestDescriptorFilePath),
         ImmutableSet.<StepSource>of(
             StepSource.PROTO_SRC, StepSource.PROTO_GENERATED),
-        Sets.immutableEnumSet(StepSource.PROTOC));
+        Sets.immutableEnumSet(
+            StepSource.PROTOC,
+            // This needs to run before things that depend on the descriptor set
+            // since it schedules tasks that run on the proto descriptor set.
+            StepSource.PROTO_DESCRIPTOR_SET));
     this.processRunner = processRunner;
     this.protocFinder = protocFinder;
     this.ingredients = ingredients;

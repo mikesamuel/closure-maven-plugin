@@ -50,7 +50,9 @@ final class BuildSoyFileSet extends Step {
             .build(),
         ImmutableList.<Ingredient>of(
             genfiles, options, soySources, protoIO, outputDir),
-        Sets.immutableEnumSet(StepSource.SOY_GENERATED, StepSource.SOY_SRC),
+        Sets.immutableEnumSet(
+            StepSource.SOY_GENERATED, StepSource.SOY_SRC,
+            StepSource.PROTO_DESCRIPTOR_SET),
         Sets.immutableEnumSet(StepSource.JS_GENERATED));
     this.ingredients = ingredients;
   }
@@ -88,7 +90,8 @@ final class BuildSoyFileSet extends Step {
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to find .soy sources", ex);
     }
-    Iterable<FileIngredient> soySourceFiles = soySources.mainSources();
+    ImmutableList<FileIngredient> soySourceFiles = soySources.mainSources();
+    log.debug("Found " + soySourceFiles.size() + " soy sources");
 
     if (Iterables.isEmpty(soySourceFiles)) {
       return ImmutableList.of();
@@ -103,10 +106,10 @@ final class BuildSoyFileSet extends Step {
         sfsBuilder.add(
             Files.toString(soySource.source.canonicalPath, Charsets.UTF_8),
             relPath.getPath());
-        } catch (IOException ex) {
-          throw new MojoExecutionException(
-              "Failed to read soy source: " + relPath, ex);
-        }
+      } catch (IOException ex) {
+        throw new MojoExecutionException(
+            "Failed to read soy source: " + relPath, ex);
+      }
       sources.add(soySource.source);
     }
 
@@ -120,6 +123,7 @@ final class BuildSoyFileSet extends Step {
     }
     SoyProtoTypeProvider protoTypeProvider = null;
     File mainDescriptorSetFile = protoIO.get().mainDescriptorSetFile;
+    log.debug("soy using proto descriptor file " + mainDescriptorSetFile);
     try {
       if (mainDescriptorSetFile.exists()) {
         protoTypeProvider = new SoyProtoTypeProvider.Builder()
@@ -127,6 +131,9 @@ final class BuildSoyFileSet extends Step {
             // <extract>ed dependencies and include them here?
             .addFileDescriptorSetFromFile(mainDescriptorSetFile)
             .build();
+      } else {
+        log.info(
+            "soy skipping missing descriptor file " + mainDescriptorSetFile);
       }
     } catch (IOException ex) {
       throw new MojoExecutionException(
@@ -153,14 +160,13 @@ final class BuildSoyFileSet extends Step {
 
     SoyFileSet sfs = sfsBuilder.build();
 
-    PathValue outputJar = ingredients.pathValue(
-        new File(outputDir.value, "closure-templates-" + opts.getId() + ".jar"));
+    PathValue outputJar = ingredients.pathValue(new File(
+        outputDir.value, "closure-templates-" + opts.getId() + ".jar"));
+    PathValue jsOutDir = ingredients.pathValue(genfiles.jsGenfiles);
 
     return ImmutableList.<Step>of(
         new SoyToJava(optionsIng, soySources, protoDescriptors, outputJar, sfs),
-        new SoyToJs(
-            optionsIng, soySources, protoDescriptors,
-            ingredients.pathValue(genfiles.jsGenfiles), sfs)
+        new SoyToJs(optionsIng, soySources, protoDescriptors, jsOutDir, sfs)
         );
   }
 }

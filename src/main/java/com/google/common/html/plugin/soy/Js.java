@@ -15,10 +15,10 @@ public final class Js extends Options {
   /**
    * Whether we should generate JSDoc with type info for the Closure Compiler.
    */
-  public boolean shouldGenerateJsdoc = true;
+  public Boolean shouldGenerateJsdoc = true;
 
   /** Whether we should generate code to provide/require Soy namespaces. */
-  public Boolean shouldProvideRequireSoyNamespaces;
+  public Boolean shouldProvideRequireSoyNamespaces = true;
 
   /**
    * Whether we should generate code to provide/require template JS functions.
@@ -32,10 +32,10 @@ public final class Js extends Options {
   public Boolean shouldProvideBothSoyNamespacesAndJsFunctions;
 
   /** Whether we should generate code to declare the top level namespace. */
-  public boolean shouldDeclareTopLevelNamespaces = false;
+  public Boolean shouldDeclareTopLevelNamespaces;
 
   /** Whether we should generate code to declare goog.modules. */
-  public boolean shouldGenerateGoogModules = true;
+  public Boolean shouldGenerateGoogModules;
 
   /**
    * Whether we should generate Closure Library message definitions
@@ -77,13 +77,17 @@ public final class Js extends Options {
 
     // Do this first since it is initialized to true in the default constructor
     // and can conflict with some other options.
-    jsSrcOptions.setShouldDeclareTopLevelNamespaces(
-        shouldDeclareTopLevelNamespaces);
+    if (shouldDeclareTopLevelNamespaces != null) {
+      jsSrcOptions.setShouldDeclareTopLevelNamespaces(
+          shouldDeclareTopLevelNamespaces);
+    }
 
-    if (this.bidiGlobalDir != null) {
+    if (bidiGlobalDir != null) {
       jsSrcOptions.setBidiGlobalDir(this.bidiGlobalDir.flagValue);
     }
-    jsSrcOptions.setShouldGenerateJsdoc(shouldGenerateJsdoc);
+    if (shouldGenerateJsdoc != null) {
+      jsSrcOptions.setShouldGenerateJsdoc(shouldGenerateJsdoc);
+    }
     if (shouldProvideRequireSoyNamespaces != null) {
       jsSrcOptions.setShouldProvideRequireSoyNamespaces(
           shouldProvideRequireSoyNamespaces);
@@ -96,7 +100,9 @@ public final class Js extends Options {
        jsSrcOptions.setShouldProvideBothSoyNamespacesAndJsFunctions(
            shouldProvideBothSoyNamespacesAndJsFunctions);
     }
-    jsSrcOptions.setShouldGenerateGoogModules(shouldGenerateGoogModules);
+    if (shouldGenerateGoogModules != null) {
+      jsSrcOptions.setShouldGenerateGoogModules(shouldGenerateGoogModules);
+    }
     if (shouldGenerateGoogMsgDefs != null) {
       jsSrcOptions.setShouldGenerateGoogMsgDefs(shouldGenerateGoogMsgDefs);
     }

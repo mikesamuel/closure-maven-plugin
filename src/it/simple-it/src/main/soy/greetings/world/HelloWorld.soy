@@ -4,8 +4,8 @@
  * If $x has never met the world,
  * then $x : float.
  */
-{template .helloWorld}
+{template .HelloWorld}
   /** The name of the world. */
-  {@param world : string}
-  Hello, <b>{$world ?: 'World'}</b>
+  {@param world : com.example.Name}
+  Hello, <b>{$world ? ($world.html ?: $world.text) : 'World'}</b>!
 {/template}
