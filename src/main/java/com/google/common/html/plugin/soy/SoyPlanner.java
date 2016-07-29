@@ -1,20 +1,24 @@
 package com.google.common.html.plugin.soy;
 
 import java.io.File;
+import java.net.URI;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients.UriValue;
 import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.html.plugin.proto.ProtoIO;
 
@@ -64,9 +68,19 @@ public final class SoyPlanner {
 
     DirScanFileSetIngredient soySources = ingredients.fileset(soySourceFinder);
 
+    ImmutableList.Builder<UriValue> runtimeClassPathElements =
+        ImmutableList.builder();
+    for (URI el : planner.runtimeClassPath) {
+      runtimeClassPathElements.add(ingredients.uriValue(el));
+    }
+    Bundle<UriValue> runtimeClassPath = ingredients.bundle(
+        runtimeClassPathElements.build());
+
     planner.addStep(new BuildSoyFileSet(
         ingredients, phase,
         genfiles, soyOptions, soySources,
-        protoIO, ingredients.pathValue(planner.outputDir)));
+        protoIO,
+        runtimeClassPath,
+        ingredients.pathValue(planner.outputDir)));
   }
 }

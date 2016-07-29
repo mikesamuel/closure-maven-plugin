@@ -8,6 +8,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -16,6 +17,7 @@ import com.google.common.collect.Sets;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
@@ -23,6 +25,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Ingredients.UriValue;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
@@ -46,13 +49,17 @@ final class BuildSoyFileSet extends Step {
       OptionsIngredient<SoyOptions> options,
       DirScanFileSetIngredient soySources,
       SerializedObjectIngredient<ProtoIO> protoIO,
+      Bundle<UriValue> projectClassPathElements,
       PathValue outputDir) {
     super(
         PlanKey.builder("soy-build-file-set")
-            .addInp(genfiles, options, soySources, protoIO, outputDir)
+            .addInp(
+                genfiles, options, soySources, protoIO,
+                projectClassPathElements, outputDir)
             .build(),
         ImmutableList.<Ingredient>of(
-            genfiles, options, soySources, protoIO, outputDir),
+            genfiles, options, soySources, protoIO,
+            projectClassPathElements, outputDir),
         Sets.immutableEnumSet(
             StepSource.SOY_GENERATED, StepSource.SOY_SRC,
             StepSource.PROTO_DESCRIPTOR_SET),
@@ -84,7 +91,15 @@ final class BuildSoyFileSet extends Step {
     SerializedObjectIngredient<ProtoIO> protoIOHolder =
         ((SerializedObjectIngredient<?>) inputs.get(3))
         .asSuperType(ProtoIO.class);
-    PathValue outputDir = (PathValue) inputs.get(4);
+    Bundle<UriValue> protobufClassPathElements =
+        ((Bundle<?>) inputs.get(4)).asSuperType(
+            new Function<Ingredient, UriValue>() {
+              @Override
+              public UriValue apply(Ingredient input) {
+                return (UriValue) input;
+              }
+            });
+    PathValue outputDir = (PathValue) inputs.get(5);
 
     SoyOptions opts = optionsIng.getOptions();
     GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
@@ -174,7 +189,8 @@ final class BuildSoyFileSet extends Step {
             optionsIng, soySources, protoDescriptors, jsOutDir, sfs));
       case PROCESS_CLASSES:
         return ImmutableList.<Step>of(new SoyToJava(
-            optionsIng, soySources, protoDescriptors, outputJar, sfs));
+            optionsIng, soySources, protoDescriptors,
+            protobufClassPathElements, outputJar, sfs));
       default:
     }
     throw new AssertionError(phase);
