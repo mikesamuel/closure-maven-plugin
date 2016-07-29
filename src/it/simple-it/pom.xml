@@ -23,8 +23,8 @@
         <executions>
           <execution>
             <goals>
-              <goal>generate-sources</goal>
-              <goal>compile</goal>
+              <goal>generate-closure-sources</goal>
+              <goal>compile-closure</goal>
             </goals>
           </execution>
         </executions>

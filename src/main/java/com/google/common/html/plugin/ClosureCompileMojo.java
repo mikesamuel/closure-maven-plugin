@@ -20,7 +20,8 @@ import com.google.common.html.plugin.soy.SoyPlanner;
  * from .proto files during the process-sources phase.
  */
 @Mojo(
-    name="compile", defaultPhase=LifecyclePhase.PROCESS_CLASSES,
+    name="compile-closure",
+    defaultPhase=LifecyclePhase.PROCESS_CLASSES,
     // Required because ProtocBundledMojo requires dependency resolution
     // so it can figure out which protobufVersion to use.
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME

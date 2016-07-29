@@ -28,12 +28,22 @@ import java.io.IOException;
  * to optimized bundles.
  */
 @Mojo(
-    name="generate-sources", defaultPhase=LifecyclePhase.PROCESS_SOURCES,
+    name="generate-closure-sources",
+    defaultPhase=LifecyclePhase.PROCESS_SOURCES,
     // Required because ProtocBundledMojo requires dependency resolution
     // so it can figure out which protobufVersion to use.
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
 )
 public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
+
+  @Override
+  public void execute() throws MojoExecutionException {
+    super.execute();
+
+    // Make sure the compile phase ends up compiling the protobuf sources.
+    project.addCompileSourceRoot(this.javaGenfiles.getPath());
+    project.addTestCompileSourceRoot(this.javaTestGenfiles.getPath());
+  }
 
   @Override
   protected void formulatePlan(CommonPlanner planner)
