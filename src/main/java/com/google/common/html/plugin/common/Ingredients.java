@@ -9,6 +9,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
@@ -197,6 +199,25 @@ public class Ingredients {
   }
 
   /**
+   * An ingredient that represents a path, and hashes to a hash of that
+   * path, not the content of the file referred to by that path.
+   */
+  public UriValue uriValue(final URI uri) {
+    final PlanKey key = PlanKey.builder("uri")
+        .addString(uri.toASCIIString())
+        .build();
+    return get(
+        UriValue.class,
+        key,
+        new Supplier<UriValue>() {
+          @Override
+          public UriValue get() {
+            return new UriValue(key, uri);
+          }
+        });
+  }
+
+  /**
    * Specifies how the compiler should interpret a group of source files and
    * where to look for those source files.
    */
@@ -247,6 +268,35 @@ public class Ingredients {
           }
         });
     return ing.asSuperType(contentType);
+  }
+
+  /**
+   * Group a bunch of related ingredients together.
+   */
+  public <I extends Ingredient> Bundle<I> bundle(Iterable<? extends I> ings) {
+    final ImmutableList<I> ingList = ImmutableList.copyOf(ings);
+    PlanKey.Builder keyBuilder = PlanKey.builder("bundle");
+    keyBuilder.addInp(ingList);
+    final PlanKey key = keyBuilder.build();
+
+    Bundle<?> bundle = get(
+        Bundle.class, key,
+        new Supplier<Bundle<I>>() {
+          @Override
+          public Bundle<I> get() {
+            return new Bundle<>(key, ingList);
+          }
+        });
+
+    // Succeeds when key prefix spaces are disjoint for different types of
+    // ingredients.
+    Preconditions.checkState(ingList.equals(bundle.ings));
+
+    // Sound when the above precondition passes.
+    @SuppressWarnings("unchecked")
+    Bundle<I> typedBundle = (Bundle<I>) bundle;
+
+    return typedBundle;
   }
 
 
@@ -636,7 +686,7 @@ public class Ingredients {
 
     @Override
     public String toString() {
-      return "{PathValue " + value + "}";
+      return "{StringValue " + value + "}";
     }
   }
 
@@ -645,7 +695,7 @@ public class Ingredients {
    * path, not the content of the file referred to by that path.
    */
   public static final class PathValue extends Ingredient {
-    /** The fixed string value. */
+    /** The fixed path value. */
     public final File value;
 
     PathValue(PlanKey key, File value) {
@@ -660,6 +710,69 @@ public class Ingredients {
     @Override
     public String toString() {
       return "{PathValue " + value.getPath() + "}";
+    }
+  }
+
+  /**
+   * An ingredient that represents a URI, and hashes to a hash of that
+   * URI's text, not the content referred to by that URI.
+   */
+  public static final class UriValue extends Ingredient {
+    /** The fixed URI value. */
+    public final URI value;
+
+    UriValue(PlanKey key, URI value) {
+      super(key);
+      this.value = value;
+    }
+    @Override
+    public Optional<Hash> hash() throws IOException {
+      return Optional.of(Hash.hashString(value.toString()));
+    }
+
+    @Override
+    public String toString() {
+      return "{UriValue " + value.toString() + "}";
+    }
+  }
+
+  /**
+   * A bundle of ingredients.
+   */
+  public static final class Bundle<I extends Ingredient> extends Ingredient {
+    /** The constituent ingredients. */
+    public final ImmutableList<I> ings;
+
+    Bundle(PlanKey key, Iterable<? extends I> ings) {
+      super(key);
+      this.ings = ImmutableList.copyOf(ings);
+    }
+
+    /** Type coercion. */
+    public <J extends Ingredient> Bundle<J> asSuperType(
+        Function<? super Ingredient, ? extends J> typeCheckingIdentityFn) {
+      for (Ingredient ing : ings) {
+        J typedIng = typeCheckingIdentityFn.apply(ing);
+        Preconditions.checkState(ing == typedIng);
+      }
+      @SuppressWarnings("unchecked")
+      // Sound when typeCheckingIdentityFn is sound.
+      Bundle<J> typedBundle = (Bundle<J>) this;
+      return typedBundle;
+    }
+
+    @Override
+    public Optional<Hash> hash() throws IOException {
+      ImmutableList.Builder<Hash> hashes = ImmutableList.builder();
+      for (Ingredient ing : ings) {
+        Optional<Hash> h = ing.hash();
+        if (h.isPresent()) {
+          hashes.add(h.get());
+        } else {
+          return Optional.absent();
+        }
+      }
+      return Optional.of(Hash.hashAllHashes(hashes.build()));
     }
   }
 }
