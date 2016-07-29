@@ -11,8 +11,10 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.List;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -178,14 +180,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       required=true)
   protected String defaultCssSourceMapPathTemplate;
 
-  /** Path to the file that stores hashes of intermediate outputs. */
-  @Parameter(
-      defaultValue=
-          "${project.build.directory}/closure-maven-plugin-hash-store.json",
-      property="hashStoreFile",
-      required=true)
-  protected File hashStoreFile;
-
   @Parameter(
       defaultValue="${project.build.directory}/src/main/proto/descriptors.pd",
       readonly=true,
@@ -216,6 +210,11 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           "Failed to read CSS rename map " + cssRenameMap, ex);
     }
 
+    File hashStoreFile = new File(
+        outputDir,
+        "closure-" + pluginDescriptor.getName()
+        + "-plugin-hash-store.json");
+
     HashStore hashStore = null;
     if (hashStoreFile.exists()) {
       try {
@@ -234,10 +233,22 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       hashStore = new HashStore();
     }
 
+    // Supply the runtime classpath so that we can use java classes generated
+    // during the compile phase in the process-classes phase.
+    ImmutableList.Builder<URI> runtimeClassPath = ImmutableList.builder();
+    try {
+      for (String rtClassPathElement : project.getRuntimeClasspathElements()) {
+        runtimeClassPath.add(new File(rtClassPathElement).toURI());
+      }
+    } catch (DependencyResolutionRequiredException ex) {
+      throw new MojoExecutionException("Bad mojo", ex);
+    }
+
     CommonPlanner planner;
     try {
       planner = new CommonPlanner(
-          log, outputDir, substitutionMapProvider, hashStore);
+          log, outputDir, substitutionMapProvider, hashStore,
+          runtimeClassPath.build());
     } catch (IOException ex) {
       throw new MojoExecutionException("failed to initialize planner", ex);
     }

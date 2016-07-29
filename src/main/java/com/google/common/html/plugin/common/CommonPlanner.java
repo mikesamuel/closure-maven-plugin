@@ -2,6 +2,7 @@ package com.google.common.html.plugin.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -31,6 +32,8 @@ public class CommonPlanner {
    */
   public ProcessRunner processRunner = DefaultProcessRunner.INSTANCE;
 
+  public final ImmutableList<URI> runtimeClassPath;
+
   private final HashStore hashStore;
   private final ImmutableList.Builder<Step> steps;
 
@@ -38,7 +41,8 @@ public class CommonPlanner {
   public CommonPlanner(
       Log log, File outputDir,
       SubstitutionMapProvider substitutionMapProvider,
-      HashStore hashStore)
+      HashStore hashStore,
+      ImmutableList<URI> runtimeClassPath)
   throws IOException {
     this.log = log;
     this.outputDir = outputDir;
@@ -49,6 +53,7 @@ public class CommonPlanner {
 
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();
+    this.runtimeClassPath = runtimeClassPath;
   }
 
   /** Add a step to the plan. */
