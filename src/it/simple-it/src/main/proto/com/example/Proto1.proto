@@ -4,6 +4,11 @@ package com.example;
 
 import "webutil/html/types/html.proto";
 
+// Should not be necessary, but JavaQualifiedNames seems to think it is.
+// TODO: fix JavaQualifiedNames to use the package if java_package is not
+// specified.
+option java_package = "com.example";
+
 /* A name is either a string of text or an HTML fragment */
 message Name {
   optional string text = 1;
