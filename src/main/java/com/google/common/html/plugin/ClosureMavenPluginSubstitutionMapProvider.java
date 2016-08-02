@@ -30,10 +30,10 @@ implements SubstitutionMapProvider {
    */
   public ClosureMavenPluginSubstitutionMapProvider(CharSource renameMapJson)
   throws IOException {
-    SubstitutionMap underlyingMap = null;
+    ReusableSubstitutionMap newSubstitutionMap = null;
     try {
       try (Reader reader = renameMapJson.openBufferedStream()) {
-        underlyingMap = ReusableSubstitutionMap.read(
+        newSubstitutionMap = ReusableSubstitutionMap.read(
             OutputRenamingMapFormat.JSON,
             new MakeMinimalSubstMap(),
             ImmutableSet.<String>of(),
@@ -42,11 +42,11 @@ implements SubstitutionMapProvider {
     } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
       // Ok.  Fallthrough to below.
     }
-    if (underlyingMap == null) {
-      underlyingMap = new MakeMinimalSubstMap()
-          .apply(ImmutableList.<String>of());
+    if (newSubstitutionMap == null) {
+      newSubstitutionMap = new ReusableSubstitutionMap(new MakeMinimalSubstMap()
+          .apply(ImmutableList.<String>of()));
     }
-    this.substitutionMap = new ReusableSubstitutionMap(underlyingMap);
+    this.substitutionMap = newSubstitutionMap;
   }
 
   @Override
