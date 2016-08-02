@@ -7,5 +7,5 @@
 {template .HelloWorld}
   /** The name of the world. */
   {@param world : com.example.Name}
-  Hello, <b>{$world ? ($world.html ?: $world.text) : 'World'}</b>!
+  Hello, <b>{if $world}{$world.html ?: $world.text}{else}World{/if}</b>!
 {/template}

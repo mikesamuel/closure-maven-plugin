@@ -7,6 +7,10 @@ import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+
+// Protos
+import com.example.Proto1.Name;
 
 // Soy uses Guice to inject stuff.  Sigh.
 import com.google.inject.Guice;
@@ -18,7 +22,7 @@ import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.template.soy.coredirectives.EscapeHtmlDirective;
 import com.google.template.soy.data.SanitizedContent;
 import com.google.template.soy.data.SoyCustomValueConverter;
-import com.google.template.soy.data.SoyMapData;
+import com.google.template.soy.data.SoyEasyDict;
 import com.google.template.soy.data.SoyValueHelper;
 import com.google.template.soy.jbcsrc.api.AdvisingStringBuilder;
 import com.google.template.soy.jbcsrc.api.RenderResult;
@@ -32,7 +36,6 @@ import com.google.template.soy.types.proto.SoyProtoValueConverter;
 
 // Compiled templates
 import com.google.template.soy.jbcsrc.gen.greetings.world.HelloWorld;
-
 
 
 // Testbed imports
@@ -77,16 +80,27 @@ public final class HelloWorldTest extends TestCase {
   final ImmutableList<SoyCustomValueConverter> customConverters =
       ImmutableList.<SoyCustomValueConverter>of(
           new SoyProtoValueConverter(typeRegistry, protoTypeProvider));
-  
 
-  String renderHelloWorld(SoyMapData data, SoyMapData ijData)
+  // TODO: similarly injectable
+  final SoyValueHelper valueHelper = new SoyValueHelper(customConverters);
+
+  String renderHelloWorld(Map<String, ?> data, Map<String, ?> ijData)
   throws IOException {
     RenderContext rc = new RenderContext.Builder()
         .withCompiledTemplates(compiledTemplates)
         .withSoyPrintDirectives(printDirectiveMap)
-        .withConverter(new SoyValueHelper(customConverters))  // TODO: similarly injectable
+        .withConverter(valueHelper)
         .build();
-    HelloWorld hw = new HelloWorld(data, ijData);
+
+    SoyEasyDict dataDict = valueHelper.newEasyDict();
+    dataDict.setFieldsFromJavaStringMap(data);
+    dataDict.makeImmutable();
+
+    SoyEasyDict ijDataDict = valueHelper.newEasyDict();
+    ijDataDict.setFieldsFromJavaStringMap(ijData);
+    ijDataDict.makeImmutable();
+
+    HelloWorld hw = new HelloWorld(dataDict, ijDataDict);
     AdvisingStringBuilder out = new AdvisingStringBuilder();
     RenderResult result = hw.render(out, rc);
     assertTrue(result.isDone());
@@ -95,8 +109,8 @@ public final class HelloWorldTest extends TestCase {
 
   @Test
   public final void testHelloWorldNoInput() throws Exception {
-    SoyMapData data = new SoyMapData();
-    SoyMapData ijData = new SoyMapData();
+    ImmutableMap<String, Object> data = ImmutableMap.of();
+    ImmutableMap<String, Object> ijData = ImmutableMap.of();
 
     String output = renderHelloWorld(data, ijData);
     assertEquals("Hello, <b>World</b>!", output);
@@ -104,10 +118,13 @@ public final class HelloWorldTest extends TestCase {
 
 
   @Test
-  public final void testHelloWorldStringInput() throws Exception {
-    SoyMapData data = new SoyMapData(
-        ImmutableMap.of("world", "Cincinatti <:)>"));
-    SoyMapData ijData = new SoyMapData();
+  public final void testHelloWorldUntrustedTextInput() throws Exception {
+    Name.Builder nameBuilder = Name.newBuilder();
+    nameBuilder.setText("Cincinatti <:)>");
+
+    ImmutableMap<String, Object> data = ImmutableMap.<String, Object>of(
+        "world", nameBuilder.build());
+    ImmutableMap<String, Object> ijData = ImmutableMap.of();
 
     String output = renderHelloWorld(data, ijData);
     assertEquals("Hello, <b>Cincinatti &lt;:)&gt;</b>!", output);
@@ -115,12 +132,15 @@ public final class HelloWorldTest extends TestCase {
 
   @Test
   public final void testHelloWorldSafeHtmlInput() throws Exception {
-    // Pretend we got a protobuf from somewhere.
-    SoyMapData data = new SoyMapData(ImmutableMap.of(
-        "world", SafeHtmls.toProto(SafeHtmls.htmlEscape("Cincinattu <:)>"))));
-    SoyMapData ijData = new SoyMapData();
+    Name.Builder nameBuilder = Name.newBuilder();
+    nameBuilder.setHtml(SafeHtmls.toProto(SafeHtmls.htmlEscape(
+        "Cincinatti <:-}>")));
+
+    ImmutableMap<String, Object> data = ImmutableMap.<String, Object>of(
+        "world", nameBuilder.build());
+    ImmutableMap<String, Object> ijData = ImmutableMap.of();
 
     String output = renderHelloWorld(data, ijData);
-    assertEquals("Hello, <b>Cincinatti &lt;:&gt;</b>!", output);
+    assertEquals("Hello, <b>Cincinatti &lt;:-}&gt;</b>!", output);
   }
 }
