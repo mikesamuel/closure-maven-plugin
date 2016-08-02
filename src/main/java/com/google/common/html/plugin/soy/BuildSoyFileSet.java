@@ -26,7 +26,6 @@ import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
@@ -49,7 +48,6 @@ final class BuildSoyFileSet extends Step {
   final Ingredients ingredients;
   final LifecyclePhase phase;
   final DirScanFileSetIngredient soySources;
-  final FileSetIngredient soy2JavaJar;
 
   public BuildSoyFileSet(
       Ingredients ingredients,
@@ -59,14 +57,13 @@ final class BuildSoyFileSet extends Step {
       DirScanFileSetIngredient soySources,
       SerializedObjectIngredient<ProtoIO> protoIO,
       Bundle<UriValue> projectClassPathElements,
-      FileSetIngredient soy2JavaJar,
       PathValue outputDir,
       PathValue projectBuildOutputDirectory) {
     super(
         PlanKey.builder("soy-build-file-set")
             .addInp(
                 genfiles, options, soySources, protoIO,
-                projectClassPathElements, soy2JavaJar, outputDir,
+                projectClassPathElements, outputDir,
                 projectBuildOutputDirectory)
             .build(),
         ImmutableList.<Ingredient>of(
@@ -79,7 +76,6 @@ final class BuildSoyFileSet extends Step {
     this.ingredients = ingredients;
     this.phase = phase;
     this.soySources = soySources;
-    this.soy2JavaJar = soy2JavaJar;
   }
 
   @Override
@@ -355,7 +351,7 @@ final class BuildSoyFileSet extends Step {
       {
         return ImmutableList.<Step>of(new SoyToJava(
             optionsIng, soySources, protoDescriptors,
-            protobufClassPathElements, soy2JavaJar, outputJar,
+            protobufClassPathElements, outputJar,
             projectBuildOutputDirectory, makeSoyFileSet));
       }
       default:

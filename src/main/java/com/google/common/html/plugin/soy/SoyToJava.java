@@ -51,27 +51,24 @@ final class SoyToJava extends Step {
       FileSetIngredient soySources,
       FileIngredient protoDescriptors,
       Bundle<UriValue> protobufClassPath,
-      FileSetIngredient soy2JavaJar,
       PathValue outputJar,
       PathValue projectBuildOutputDirectory,
       ReflectionableOperation<Void, SoyFileSet> makeSoyFileSet) {
     super(
         PlanKey.builder("soy-to-java").addInp(
             options, soySources, protoDescriptors, protobufClassPath,
-            soy2JavaJar, outputJar, projectBuildOutputDirectory)
+            outputJar, projectBuildOutputDirectory)
             .build(),
         ImmutableList.<Ingredient>of(
             options,
             soySources,
             protoDescriptors,
             protobufClassPath,
-            soy2JavaJar,
             outputJar,
             projectBuildOutputDirectory),
         Sets.immutableEnumSet(
             StepSource.PROTO_DESCRIPTOR_SET,
-            StepSource.SOY_SRC, StepSource.SOY_GENERATED,
-            StepSource.SOY_TO_JAVA_COMPILER),
+            StepSource.SOY_SRC, StepSource.SOY_GENERATED),
         Sets.immutableEnumSet(StepSource.JS_GENERATED));
     this.makeSoyFileSet = makeSoyFileSet;
   }
@@ -86,9 +83,8 @@ final class SoyToJava extends Step {
                 return (UriValue) input;
               }
             });
-    FileSetIngredient soy2JavaJar = (FileSetIngredient) inputs.get(4);
-    PathValue outputJarPath = (PathValue) inputs.get(5);
-    PathValue projectBuildOutputDirectoryValue = (PathValue) inputs.get(6);
+    PathValue outputJarPath = (PathValue) inputs.get(4);
+    PathValue projectBuildOutputDirectoryValue = (PathValue) inputs.get(5);
 
     final File classJarOutFile = outputJarPath.value;
     final File srcJarOutFile = new File(
@@ -105,19 +101,6 @@ final class SoyToJava extends Step {
             "Failed to convert classpath element"
             + " to form needed for class loader",
             ex);
-      }
-    }
-    // TODO: is this necessary at all?
-    if (false) {
-      try {
-        protobufClassPathUrls.add(
-            soy2JavaJar.mainSources().get(0)
-            .source.canonicalPath.toURI().toURL());
-      } catch (MalformedURLException ex) {
-        throw new MojoExecutionException(
-            "Failed to convert classpath element"
-                + " to form needed for class loader",
-                ex);
       }
     }
 

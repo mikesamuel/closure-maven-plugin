@@ -9,8 +9,6 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Ingredients
-    .SettableFileSetIngredient;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.plan.Step;
@@ -32,10 +30,6 @@ public class CommonPlanner {
   public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
   /** The {@code target/classes} directory. */
   public final PathValue projectBuildOutputDirectory;
-  /**
-   * A JAR containing the jbcsrc backend and all its dependencies.
-   */
-  public final SettableFileSetIngredient soy2JavaJar;
   /** The runtime classpath including the target directory. */
   public final ImmutableList<URI> runtimeClassPath;
 
@@ -61,7 +55,6 @@ public class CommonPlanner {
     this.substitutionMapProvider = substitutionMapProvider;
     this.genfiles = ingredients.serializedObject(
         new File(outputDir, "closure-genfiles.ser"), GenfilesDirs.class);
-    this.soy2JavaJar = ingredients.namedFileSet("soy2java");
     this.runtimeClassPath = ImmutableList.copyOf(runtimeClassPath);
 
     this.hashStore = hashStore;

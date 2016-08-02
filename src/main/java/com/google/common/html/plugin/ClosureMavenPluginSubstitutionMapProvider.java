@@ -10,7 +10,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.css.ReusableSubstitutionMap;
-import com.google.common.css.SubstitutionMap;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.io.CharSource;
 
