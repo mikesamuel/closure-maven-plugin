@@ -3,6 +3,7 @@ package com.google.common.html.plugin.proto;
 import java.io.File;
 
 import com.google.common.html.plugin.common.Options;
+import com.google.common.html.plugin.common.PathGlob;
 
 /**
  * Options for protoc.
@@ -19,6 +20,12 @@ public final class ProtoOptions extends Options {
    * Test file roots.
    */
   public File[] testSource;
+
+  /**
+   * Relative paths of sources to exclude.
+   * May use the {@code *} or {@code **} glob operators.
+   */
+  public PathGlob[] exclusion;
 
   /**
    * Protobuf version to compile schema files for.  If omitted,
@@ -53,6 +60,12 @@ public final class ProtoOptions extends Options {
 
   @Override
   protected void createLazyDefaults() {
-    // Done
+    if (exclusion == null) {
+      exclusion = new PathGlob[] {
+        // HACK: By default, exclude this since it is a sealed jar.
+        // Maybe JAR sealing is a bad idea, but until then
+        new PathGlob("webutil/html/types/**"),
+      };
+    }
   }
 }

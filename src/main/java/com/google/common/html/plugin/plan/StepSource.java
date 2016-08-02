@@ -70,6 +70,11 @@ public enum StepSource {
    * including those extracted from dependencies.
    */
   SOY_GENERATED("target/genfiles/src/main/soy/**/*.soy"),
+  /**
+   * A JAR that includes the Soy compiler bundled with its dependencies.
+   */
+  SOY_TO_JAVA_COMPILER("repository/com/google/soy/soy-with-dependencies.jar"),
+
   ;
 
   /** Human readable string that resembles the default layout. */

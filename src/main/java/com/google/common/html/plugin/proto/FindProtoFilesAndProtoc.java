@@ -2,6 +2,7 @@ package com.google.common.html.plugin.proto;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -21,6 +22,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.PathGlob;
 import com.google.common.html.plugin.common.ProcessRunner;
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -104,6 +106,11 @@ final class FindProtoFilesAndProtoc extends Step {
     }
     testSources.add(gf.getGeneratedSourceDirectoryForExtension("proto", true));
 
+    ImmutableSet.Builder<PathGlob> exclusions = ImmutableSet.builder();
+    if (protoOptions.exclusion != null) {
+      exclusions.addAll(Arrays.asList(protoOptions.exclusion));
+    }
+
     setProtocExec();
 
     File mainDescriptorSetFile =
@@ -119,6 +126,7 @@ final class FindProtoFilesAndProtoc extends Step {
     protoSpec.setStoredObject(new ProtoIO(
         ImmutableList.copyOf(mainSources.build()),
         ImmutableList.copyOf(testSources.build()),
+        ImmutableList.copyOf(exclusions.build()),
         mainDescriptorSetFile,
         testDescriptorSetFile
         ));
@@ -152,7 +160,8 @@ final class FindProtoFilesAndProtoc extends Step {
     DirScanFileSetIngredient protoSources =
         ingredients.fileset(new Sources.Finder(".proto")
             .mainRoots(protocSpecValue.mainSourceRoots)
-            .testRoots(protocSpecValue.testSourceRoots));
+            .testRoots(protocSpecValue.testSourceRoots)
+            .exclusions(protocSpecValue.exclusions));
     try {
       protoSources.resolve(log);
     } catch (IOException ex) {

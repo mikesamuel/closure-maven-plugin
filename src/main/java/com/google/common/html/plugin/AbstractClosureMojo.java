@@ -12,10 +12,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -36,6 +40,7 @@ import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
+import com.google.common.html.plugin.common.Options;
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.extract.Extract;
@@ -49,10 +54,15 @@ import com.google.common.io.Files;
 abstract class AbstractClosureMojo extends AbstractMojo {
   @Parameter(
       defaultValue="${project.build.directory}",
-      property="outputDir",
       required=true,
       readonly=true)
   protected File outputDir;
+
+  @Parameter(
+      defaultValue="${project.build.outputDirectory}",
+      required=true,
+      readonly=true)
+  protected File outputClassesDir;
 
   @Parameter(defaultValue="${project}", readonly=true, required=true)
   protected MavenProject project;
@@ -201,6 +211,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
     Log log = this.getLog();
 
+    log.info("Reading CSS rename map " + cssRenameMap);
     ClosureMavenPluginSubstitutionMapProvider substitutionMapProvider;
     try {
       substitutionMapProvider = new ClosureMavenPluginSubstitutionMapProvider(
@@ -247,8 +258,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
     CommonPlanner planner;
     try {
       planner = new CommonPlanner(
-          log, outputDir, substitutionMapProvider, hashStore,
-          runtimeClassPath.build());
+          log, outputDir, outputClassesDir, substitutionMapProvider,
+          runtimeClassPath.build(), hashStore);
     } catch (IOException ex) {
       throw new MojoExecutionException("failed to initialize planner", ex);
     }
@@ -376,4 +387,58 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       }
     };
   }
+
+  public ToolFinder<?> getSoyToJavaCompiler() {
+    return new ToolFinder<Options>() {
+
+      @Override
+      public void find(
+          Options options, Ingredients ingredients,
+          SettableFileSetIngredient toolPathOut) {
+        Log log = getLog();
+
+        @SuppressWarnings("synthetic-access")
+        Artifact artifact = repositorySystem.createArtifactWithClassifier(
+            "com.google.template",
+            "soy",
+            "2016-07-23-SNAPSHOT",
+            "jar", "with-dependencies");
+
+        log.info("Using soy2java " + artifact);
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+            .setArtifact(artifact)
+            .setRemoteRepositories(remoteRepositories);
+        @SuppressWarnings("synthetic-access")
+        ArtifactResolutionResult result = repositorySystem.resolve(request);
+
+        try {
+          if (!result.isSuccess()) {
+            for (Throwable th : result.getExceptions()) {
+              log.error(th);
+            }
+            throw new MojoExecutionException(
+                "Unable to resolve dependency on soy2java complete jar: "
+                + result.toString());
+          }
+
+          Collection<Artifact> artifacts = result.getArtifacts();
+          if (artifacts.size() != 1) {
+            throw new MojoExecutionException(
+                "Unexpected number of artifacts returned"
+                + " when resolving soy2java jar (" + artifacts.size() + ")");
+          }
+
+          Artifact soy2JavaArtifact = artifacts.iterator().next();
+          toolPathOut.setFiles(
+              ImmutableList.of(ingredients.file(soy2JavaArtifact.getFile())),
+              ImmutableList.<FileIngredient>of());
+        } catch (MojoExecutionException ex) {
+          toolPathOut.setProblem(ex);
+        } catch (IOException ex) {
+          toolPathOut.setProblem(ex);
+        }
+      }
+    };
+  }
+
 }
