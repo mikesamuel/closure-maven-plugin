@@ -22,8 +22,11 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.common.html.plugin.common.PathGlob;
 
 /** A group of source files split into test and production files. */
 public final class Sources {
@@ -55,7 +58,6 @@ public final class Sources {
   public int hashCode() {
     return Objects.hashCode(mainFiles, testFiles);
   }
-
 
   /**
    * A source path.
@@ -205,6 +207,8 @@ public final class Sources {
         ImmutableList.builder();
     private final ImmutableList.Builder<File> testRoots =
         ImmutableList.builder();
+    private final ImmutableList.Builder<PathGlob> exclusions =
+        ImmutableList.builder();
 
     /**
      * @param suffixes file suffixes to search for like ".js".
@@ -226,7 +230,8 @@ public final class Sources {
     public Finder clone() {
       return new Finder(suffixPattern)
           .mainRoots(this.mainRoots.build())
-          .testRoots(this.testRoots.build());
+          .testRoots(this.testRoots.build())
+          .exclusions(this.exclusions.build());
     }
 
     /**
@@ -280,6 +285,28 @@ public final class Sources {
       return this;
     }
 
+    /** Specifies relative paths excluded from the search results. */
+    public Finder exclusions(Iterable<? extends PathGlob> globs) {
+      for (PathGlob exclusion : globs) {
+        exclusions.add(exclusion.clone());
+      }
+      return this;
+    }
+
+    /** Relative paths excluded from the search results. */
+    public ImmutableList<PathGlob> exclusions() {
+      return copyPathGlobs(exclusions.build());
+    }
+
+    private static ImmutableList<PathGlob> copyPathGlobs(
+        Iterable<? extends PathGlob> globs) {
+      ImmutableList.Builder<PathGlob> b = ImmutableList.builder();
+      for (PathGlob g : globs) {
+        b.add(g.clone());
+      }
+      return b.build();
+    }
+
     /**
      * Walk the file trees under the source roots looking for files matching
      * the suffix pattern.
@@ -288,8 +315,9 @@ public final class Sources {
     public Sources scan(Log log) throws IOException {
       // Using treeset to get a reliable file order makes later build stages
       // less volatile.
-      final Set<Source> mainFiles = Sets.newTreeSet();
-      final Set<Source> testFiles = Sets.newTreeSet();
+      Set<Source> mainFiles = Sets.newTreeSet();
+      Set<Source> testFiles = Sets.newTreeSet();
+      Predicate<String> exclude = Predicates.or(exclusions());
 
       for (File root : mainRoots.build()) {
         if (!root.exists()) {
@@ -299,7 +327,7 @@ public final class Sources {
         log.debug(
             "Scanning " + root + " for files matching " + this.suffixPattern);
 
-        find(root, suffixPattern, mainFiles);
+        find(root, suffixPattern, mainFiles, exclude);
       }
 
       for (File root : testRoots.build()) {
@@ -308,7 +336,7 @@ public final class Sources {
           continue;
         }
 
-        find(root, suffixPattern, testFiles);
+        find(root, suffixPattern, testFiles, exclude);
       }
 
       return new Sources(mainFiles, testFiles);
@@ -317,7 +345,8 @@ public final class Sources {
 
   private static void find(
       final File root,
-      final Pattern basenamePattern, final Collection<? super Source> out)
+      final Pattern basenamePattern, final Collection<? super Source> out,
+      final Predicate<String> exclude)
   throws IOException {
     final Path rootPath = root.toPath();
     Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
@@ -346,11 +375,15 @@ public final class Sources {
       throws IOException {
         String basename = p.getFileName().toString();
         if (basenamePattern.matcher(basename).find()) {
-          Source source = new Source(
-              p.toFile().getCanonicalFile(),
-              root,
-              new File(relPath, basename));
-          out.add(source);
+          File relPathComplete = new File(relPath, basename);
+          String relPathCompleteStr = relPathComplete.getPath();
+          if (!exclude.apply(relPathCompleteStr)) {
+            Source source = new Source(
+                p.toFile().getCanonicalFile(),
+                root,
+                relPathComplete);
+            out.add(source);
+          }
         }
         return FileVisitResult.CONTINUE;
       }

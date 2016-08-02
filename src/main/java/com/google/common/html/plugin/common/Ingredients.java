@@ -130,11 +130,17 @@ public class Ingredients {
     }
     Collections.sort(testRootStrings);
 
+    List<String> exclusionStrings = Lists.newArrayList();
+    for (PathGlob exclusion : finder.exclusions()) {
+      exclusionStrings.add(exclusion.getGlobString());
+    }
+    Collections.sort(testRootStrings);
 
     final PlanKey key = PlanKey.builder("fileset")
         .addString(finderCopy.suffixPattern().pattern())
         .addStrings(mainRootStrings)
         .addStrings(testRootStrings)
+        .addStrings(exclusionStrings)
         .build();
 
     return get(
@@ -463,12 +469,14 @@ public class Ingredients {
     private Sources.Finder finder;
     private final ImmutableList<File> mainRoots;
     private final ImmutableList<File> testRoots;
+    private final ImmutableList<PathGlob> exclusions;
 
     private DirScanFileSetIngredient(PlanKey key, Sources.Finder finder) {
       super(key);
       this.finder = Preconditions.checkNotNull(finder);
       this.mainRoots = finder.mainRoots();
       this.testRoots = finder.testRoots();
+      this.exclusions = finder.exclusions();
     }
 
     /** @see Sources.Finder#mainRoots */
@@ -479,6 +487,15 @@ public class Ingredients {
     /** @see Sources.Finder#testRoots */
     public ImmutableList<File> testRoots() {
       return testRoots;
+    }
+
+    /** @see Sources.Finder#exclusions */
+    public ImmutableList<PathGlob> exclusions() {
+      ImmutableList.Builder<PathGlob> b = ImmutableList.builder();
+      for (PathGlob g : exclusions) {
+        b.add(g);
+      }
+      return b.build();
     }
 
     /** Scans the file-system to find matching files. */
