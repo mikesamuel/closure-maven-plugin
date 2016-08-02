@@ -8,6 +8,9 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.SubstitutionMapProvider;
+import com.google.common.html.plugin.common.Ingredients.PathValue;
+import com.google.common.html.plugin.common.Ingredients
+    .SettableFileSetIngredient;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.plan.Step;
@@ -27,33 +30,42 @@ public class CommonPlanner {
   public final Ingredients ingredients;
   /** Where to put generated files. */
   public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
+  /** The {@code target/classes} directory. */
+  public final PathValue projectBuildOutputDirectory;
+  /**
+   * A JAR containing the jbcsrc backend and all its dependencies.
+   */
+  public final SettableFileSetIngredient soy2JavaJar;
+  /** The runtime classpath including the target directory. */
+  public final ImmutableList<URI> runtimeClassPath;
+
   /**
    * May be used by steps to run a compiler but stubbed out in tests.
    */
   public ProcessRunner processRunner = DefaultProcessRunner.INSTANCE;
-
-  public final ImmutableList<URI> runtimeClassPath;
-
   private final HashStore hashStore;
   private final ImmutableList.Builder<Step> steps;
 
   /** */
   public CommonPlanner(
-      Log log, File outputDir,
+      Log log, File outputDir, File projectBuildOutputDirectory,
       SubstitutionMapProvider substitutionMapProvider,
-      HashStore hashStore,
-      ImmutableList<URI> runtimeClassPath)
+      Iterable<? extends URI> runtimeClassPath,
+      HashStore hashStore)
   throws IOException {
+    this.ingredients = new Ingredients();
     this.log = log;
     this.outputDir = outputDir;
+    this.projectBuildOutputDirectory = ingredients.pathValue(
+        projectBuildOutputDirectory);
     this.substitutionMapProvider = substitutionMapProvider;
-    this.ingredients = new Ingredients();
     this.genfiles = ingredients.serializedObject(
         new File(outputDir, "closure-genfiles.ser"), GenfilesDirs.class);
+    this.soy2JavaJar = ingredients.namedFileSet("soy2java");
+    this.runtimeClassPath = ImmutableList.copyOf(runtimeClassPath);
 
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();
-    this.runtimeClassPath = runtimeClassPath;
   }
 
   /** Add a step to the plan. */

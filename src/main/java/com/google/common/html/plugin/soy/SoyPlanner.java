@@ -78,9 +78,9 @@ public final class SoyPlanner {
 
     planner.addStep(new BuildSoyFileSet(
         ingredients, phase,
-        genfiles, soyOptions, soySources,
-        protoIO,
-        runtimeClassPath,
-        ingredients.pathValue(planner.outputDir)));
+        genfiles, soyOptions, soySources, protoIO,
+        runtimeClassPath, planner.soy2JavaJar,
+        ingredients.pathValue(planner.outputDir),
+        planner.projectBuildOutputDirectory));
   }
 }
