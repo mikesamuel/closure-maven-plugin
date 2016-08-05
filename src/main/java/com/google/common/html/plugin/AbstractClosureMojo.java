@@ -125,7 +125,10 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
   /**
    * Options for the closure-compiler.
-   * May be specified multiple times to generate different variants.
+   * <p>
+   * May be specified multiple times to generate different variants, for example
+   * with different
+   * <a href="https://developers.google.com/closure/compiler/docs/js-for-compiler#tag-define">{@code --define}s</a>.
    */
   @Parameter
   public JsOptions[] js;
