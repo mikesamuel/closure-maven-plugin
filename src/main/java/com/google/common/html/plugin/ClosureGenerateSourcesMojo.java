@@ -5,15 +5,18 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.html.plugin.css.CssPlanner;
 import com.google.common.html.plugin.extract.Extract;
 import com.google.common.html.plugin.extract.ExtractPlanner;
 import com.google.common.html.plugin.js.JsOptions;
+import com.google.common.html.plugin.js.JsPlanner;
 import com.google.common.html.plugin.proto.ProtoIO;
 import com.google.common.html.plugin.proto.ProtoOptions;
 import com.google.common.html.plugin.proto.ProtoPlanner;
@@ -50,13 +53,28 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
   throws MojoExecutionException {
     File jsGenfiles = defaultJsGenfiles;
     File jsTestGenfiles = defaultJsTestGenfiles;
-    if (js != null && js.length != 0) {
-      JsOptions js0 = js[0];
-      if (js0.jsGenfiles != null) {
-        jsGenfiles = js0.jsGenfiles;
+    ImmutableList<JsOptions> jsOptions = OptionsUtils.prepare(
+        new Supplier<JsOptions>() {
+          @Override
+          public JsOptions get() {
+            return new JsOptions();
+          }
+        },
+        js != null
+        ? ImmutableList.copyOf(js)
+        : ImmutableList.<JsOptions>of());
+    {
+      for (JsOptions jsOpt : jsOptions) {
+        if (jsOpt.jsGenfiles != null) {
+          jsGenfiles = jsOpt.jsGenfiles;
+          break;
+        }
       }
-      if (js0.jsTestGenfiles != null) {
-        jsTestGenfiles = js0.jsTestGenfiles;
+      for (JsOptions jsOpt : jsOptions) {
+        if (jsOpt.jsTestGenfiles != null) {
+          jsTestGenfiles = jsOpt.jsTestGenfiles;
+          break;
+        }
       }
     }
 
@@ -110,5 +128,13 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
     new SoyPlanner(LifecyclePhase.PROCESS_SOURCES, planner, protoIO)
         .defaultSoySource(defaultSoySource)
         .plan(soyOptions);
+
+    new JsPlanner(planner)
+        .defaultJsSource(defaultJsSource)
+        .defaultJsTestSource(defaultJsTestSource)
+        .plan(jsOptions);
+    // TODO: figure out how to thread externs through.
+    // TODO: figure out how to make the rename map available.
+    // TODO: figure out how to package compiled CSS and JS.
   }
 }
