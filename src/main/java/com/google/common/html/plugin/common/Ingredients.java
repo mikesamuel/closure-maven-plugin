@@ -308,7 +308,16 @@ public class Ingredients {
 
   /** An ingredient backed by a file which is hashable when the file exists. */
   public static final class FileIngredient extends Ingredient {
-    /** THe backing file. */
+    /** Gets {@link #source}. */
+    public static final Function<FileIngredient, Source> GET_SOURCE =
+        new Function<FileIngredient, Source>() {
+          @Override
+          public Source apply(FileIngredient ing) {
+            return ing.source;
+          }
+        };
+
+    /** The backing file. */
     public final Source source;
 
     private FileIngredient(PlanKey key, Source source) {
