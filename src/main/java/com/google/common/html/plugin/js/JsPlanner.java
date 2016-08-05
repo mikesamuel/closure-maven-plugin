@@ -47,6 +47,7 @@ public final class JsPlanner {
           new FindJsSources(
               this,
               ingredients.options(JsOptions.class, oneJs),
+              planner.genfiles,
               ingredients.pathValue(defaultJsSource),
               ingredients.pathValue(defaultJsTestSource)));
     }

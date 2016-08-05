@@ -9,9 +9,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
+import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
@@ -22,14 +24,15 @@ final class FindJsSources extends Step {
 
   protected FindJsSources(
       JsPlanner planner, OptionsIngredient<JsOptions> options,
+      SerializedObjectIngredient<GenfilesDirs> genfilesHolder,
       PathValue defaultJsSource, PathValue defaultJsTestSource) {
     super(
         PlanKey.builder("find-js")
             .addInp(
-                options, defaultJsSource, defaultJsTestSource)
+                options, genfilesHolder, defaultJsSource, defaultJsTestSource)
             .build(),
         ImmutableList.<Ingredient>of(
-            options, defaultJsSource, defaultJsTestSource),
+            options, genfilesHolder, defaultJsSource, defaultJsTestSource),
         Sets.immutableEnumSet(StepSource.JS_GENERATED, StepSource.JS_SRC),
         ImmutableSet.<StepSource>of());
     this.planner = planner;
@@ -49,10 +52,14 @@ final class FindJsSources extends Step {
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
     OptionsIngredient<JsOptions> optionsIng =
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    PathValue defaultJsSource = (PathValue) inputs.get(1);
-    PathValue defaultJsTestSource = (PathValue) inputs.get(2);
+    SerializedObjectIngredient<GenfilesDirs> genfilesHolder =
+        ((SerializedObjectIngredient<?>) inputs.get(1))
+        .asSuperType(GenfilesDirs.class);
+    PathValue defaultJsSource = (PathValue) inputs.get(2);
+    PathValue defaultJsTestSource = (PathValue) inputs.get(3);
 
     JsOptions options = optionsIng.getOptions();
+    GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
 
     Sources.Finder finder = new Sources.Finder(".js", ".ts");
     if (options.source != null && options.source.length != 0) {
@@ -60,11 +67,13 @@ final class FindJsSources extends Step {
     } else {
       finder.mainRoots(defaultJsSource.value);
     }
+    finder.mainRoots(genfiles.jsGenfiles);
     if (options.testSource != null && options.testSource.length != 0) {
       finder.testRoots(options.testSource);
     } else {
       finder.testRoots(defaultJsTestSource.value);
     }
+    finder.testRoots(genfiles.jsTestGenfiles);
 
     DirScanFileSetIngredient fs = planner.planner.ingredients.fileset(finder);
     try {

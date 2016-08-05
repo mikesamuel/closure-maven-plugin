@@ -30,6 +30,7 @@ import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -49,7 +50,7 @@ final class ComputeJsDepGraph extends Step {
       OptionsIngredient<JsOptions> optionsIng,
       FileSetIngredient sources) {
     super(
-        PlanKey.builder("js-entry-points")
+        PlanKey.builder("js-module-graph")
             .addInp(optionsIng, sources)
             .build(),
         ImmutableList.<Ingredient>of(optionsIng, sources),
@@ -264,11 +265,15 @@ final class ComputeJsDepGraph extends Step {
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
 
     CommonPlanner commonPlanner = planner.planner;
+
+    PathValue jsOutputDir = commonPlanner.ingredients.pathValue(
+        new File(commonPlanner.projectBuildOutputDirectory.value, "js"));
+
     try {
       return ImmutableList.<Step>of(
           new CompileJs(
               optionsIng, getModulesIng(),
-              commonPlanner.ingredients.pathValue(commonPlanner.outputDir)));
+              jsOutputDir));
     } catch (IOException ex) {
       throw new MojoExecutionException("Could not find JS module graph", ex);
     }
