@@ -1,7 +1,9 @@
 package com.google.common.html.plugin.js;
 
+import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -26,12 +28,12 @@ final class CompileJs extends Step {
   public CompileJs(
       OptionsIngredient<JsOptions> optionsIng,
       SerializedObjectIngredient<Modules> modulesIng,
-      PathValue outputDir) {
+      PathValue jsOutputDir) {
     super(
         PlanKey.builder("compile-js")
-            .addInp(optionsIng, modulesIng, outputDir)
+            .addInp(optionsIng, modulesIng, jsOutputDir)
             .build(),
-        ImmutableList.<Ingredient>of(optionsIng, modulesIng, outputDir),
+        ImmutableList.<Ingredient>of(optionsIng, modulesIng, jsOutputDir),
         Sets.immutableEnumSet(StepSource.JS_SRC, StepSource.JS_GENERATED),
         Sets.immutableEnumSet(StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP)
         );
@@ -44,15 +46,27 @@ final class CompileJs extends Step {
     SerializedObjectIngredient<Modules> modulesIng =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(Modules.class);
-    PathValue outputDir = (PathValue) inputs.get(2);
+    PathValue jsOutputDir = (PathValue) inputs.get(2);
+
+    Modules modules = modulesIng.getStoredObject().get();
+    if (modules.modules.isEmpty()) {
+      log.info("Skipping JS compilation -- zero modules");
+      return;
+    }
+
+    jsOutputDir.value.mkdirs();
 
     ImmutableList.Builder<String> argvBuilder = ImmutableList.builder();
     optionsIng.getOptions().addArgv(log, argvBuilder);
 
     argvBuilder.add("--manage_closure_dependencies").add("true");
-    argvBuilder.add("--js_output_file").add(outputDir.value.getPath());
+    argvBuilder.add("--js_output_file")
+        .add(jsOutputDir.value.getPath()
+            // The %outname% substitution is defined in
+            // AbstractCommandLineRunner.
+             + File.separator + "compiled-%outname%.js");
 
-    modulesIng.getStoredObject().get().addClosureCompilerFlags(argvBuilder);
+    modules.addClosureCompilerFlags(argvBuilder);
 
     final ImmutableList<String> argv = argvBuilder.build();
     if (log.isDebugEnabled()) {
@@ -65,13 +79,13 @@ final class CompileJs extends Step {
       logViaErrStreams(
           "jscomp: ",
           log,
-          new WithStdOutAndStderr() {
+          new WithStdOutAndStderrAndWithoutStdin() {
             @Override
-            void run(PrintStream stdout, PrintStream stderr)
+            void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
             throws IOException, MojoExecutionException {
               CommandLineRunner runner = new CommandLineRunner(
                   argv.toArray(new String[0]),
-                  stdout, stderr) {
+                  stdin, stdout, stderr) {
                 // Subclass to get access to the constructor.
               };
               runner.run();
@@ -122,34 +136,45 @@ final class CompileJs extends Step {
   }
 
 
+  static final class DevNullInputStream extends InputStream {
+    @Override
+    public int read() throws IOException {
+      return -1;
+    }
+  }
+
+
   private static void logViaErrStreams(
-      String prefix, final Log log, WithStdOutAndStderr withStdOutAndStderr)
+      String prefix, final Log log,
+      WithStdOutAndStderrAndWithoutStdin withStdOutAndStderrAndWithoutStdin)
   throws IOException, MojoExecutionException {
-    try (PrefixingOutputStream infoWriter =
-        new PrefixingOutputStream(prefix) {
-      @Override
-      protected void onLine(CharSequence line) {
-        log.info(line);
-      }
-    }) {
-      try (PrintStream out = new PrintStream(infoWriter, true, "UTF-8")) {
-        try (PrefixingOutputStream warnWriter =
-            new PrefixingOutputStream(prefix) {
-          @Override
-          protected void onLine(CharSequence line) {
-            log.warn(line);
-          }
-        }) {
-          try (PrintStream err = new PrintStream(warnWriter, true, "UTF-8")) {
-            withStdOutAndStderr.run(out, err);
+    try (InputStream in = new DevNullInputStream()) {
+      try (PrefixingOutputStream infoWriter =
+          new PrefixingOutputStream(prefix) {
+        @Override
+        protected void onLine(CharSequence line) {
+          log.info(line);
+        }
+      }) {
+        try (PrintStream out = new PrintStream(infoWriter, true, "UTF-8")) {
+          try (PrefixingOutputStream warnWriter =
+              new PrefixingOutputStream(prefix) {
+            @Override
+            protected void onLine(CharSequence line) {
+              log.warn(line);
+            }
+          }) {
+            try (PrintStream err = new PrintStream(warnWriter, true, "UTF-8")) {
+              withStdOutAndStderrAndWithoutStdin.run(in, out, err);
+            }
           }
         }
       }
     }
   }
 
-  abstract class WithStdOutAndStderr {
-    abstract void run(PrintStream stdout, PrintStream stderr)
+  abstract class WithStdOutAndStderrAndWithoutStdin {
+    abstract void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
     throws IOException, MojoExecutionException;
   }
 }
