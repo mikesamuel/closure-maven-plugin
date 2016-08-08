@@ -41,7 +41,6 @@ import com.google.common.html.plugin.plan.StepSource;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerInput;
 import com.google.javascript.jscomp.SourceFile;
-import com.google.javascript.jscomp.parsing.parser.trees.NewExpressionTree;
 
 final class ComputeJsDepGraph extends Step {
   final JsPlanner planner;
