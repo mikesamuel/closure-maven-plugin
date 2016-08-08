@@ -1,3 +1,6 @@
 [submodule "submodules/protobuf"]
 	path = submodules/protobuf
 	url = https://github.com/google/protobuf.git
+[submodule "submodules/closure-library"]
+	path = submodules/closure-library
+	url = https://github.com/google/closure-library.git

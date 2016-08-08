@@ -3,6 +3,7 @@ package com.google.common.html.plugin;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import com.google.common.base.Supplier;
@@ -12,9 +13,10 @@ import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.OptionsUtils;
+import com.google.common.html.plugin.css.CssOptions;
 import com.google.common.html.plugin.css.CssPlanner;
-import com.google.common.html.plugin.extract.Extract;
 import com.google.common.html.plugin.extract.ExtractPlanner;
+import com.google.common.html.plugin.extract.Extracts;
 import com.google.common.html.plugin.js.JsOptions;
 import com.google.common.html.plugin.js.JsPlanner;
 import com.google.common.html.plugin.proto.ProtoIO;
@@ -38,6 +40,37 @@ import java.io.IOException;
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
 )
 public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
+
+  /**
+   * The dependencies from which to extract supplementary source files.
+   */
+  @Parameter
+  protected Extracts extracts;
+
+  /**
+   * Options for the closure-stylesheets compiler.
+   * May be specified multiple times to generate different variants, for example
+   * one stylesheet for left-to-right languages like English and one for
+   * right-to-left languages like Arabic.
+   */
+  @Parameter
+  public CssOptions[] css;
+
+  /**
+   * Options for the closure-compiler.
+   * <p>
+   * May be specified multiple times to generate different variants, for example
+   * with different
+   * <a href="https://developers.google.com/closure/compiler/docs/js-for-compiler#tag-define">{@code --define}s</a>.
+   */
+  @Parameter
+  public JsOptions[] js;
+
+  /**
+   * Options for the protocol buffer compiler.
+   */
+  @Parameter
+  public ProtoOptions proto;
 
   @Override
   public void execute() throws MojoExecutionException {
@@ -90,10 +123,8 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
     }
 
     try {
-      new ExtractPlanner(planner, project)
-          .plan(extracts != null
-                ? ImmutableList.copyOf(extracts)
-                : ImmutableList.<Extract>of());
+      new ExtractPlanner(planner, project, pluginDescriptor)
+          .plan(extracts != null ? extracts : new Extracts());
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to plan source file extraction", ex);

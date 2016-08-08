@@ -37,9 +37,6 @@ import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.ToolFinder;
-import com.google.common.html.plugin.css.CssOptions;
-import com.google.common.html.plugin.extract.Extract;
-import com.google.common.html.plugin.js.JsOptions;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.proto.ProtoOptions;
@@ -107,37 +104,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       defaultValue="${project.basedir}/src/main/soy",
       readonly=true, required=true)
   protected File defaultSoySource;
-
-  /**
-   * The dependencies from which to extract supplementary source files.
-   */
-  @Parameter
-  protected Extract[] extracts;
-
-  /**
-   * Options for the closure-stylesheets compiler.
-   * May be specified multiple times to generate different variants, for example
-   * one stylesheet for left-to-right languages like English and one for
-   * right-to-left languages like Arabic.
-   */
-  @Parameter
-  public CssOptions[] css;
-
-  /**
-   * Options for the closure-compiler.
-   * <p>
-   * May be specified multiple times to generate different variants, for example
-   * with different
-   * <a href="https://developers.google.com/closure/compiler/docs/js-for-compiler#tag-define">{@code --define}s</a>.
-   */
-  @Parameter
-  public JsOptions[] js;
-
-  /**
-   * Options for the protocol buffer compiler.
-   */
-  @Parameter
-  public ProtoOptions proto;
 
   /**
    * Options for the closure template compiler.
@@ -304,7 +270,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
   // For protoc support.
 
   @Parameter(defaultValue="${plugin}", required=true, readonly=true)
-  private PluginDescriptor pluginDescriptor;
+  protected PluginDescriptor pluginDescriptor;
 
   @Component
   private RepositorySystem repositorySystem;

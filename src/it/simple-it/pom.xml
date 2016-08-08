@@ -28,11 +28,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <extracts>
-            <extract>proto</extract>
-          </extracts>
-        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -44,13 +39,6 @@
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.0.0-beta-2</version>
-    </dependency>
-    <!-- Above we specify that we're going to extract supporting files from this.
-         Specifically, html.proto -->
-    <dependency>
-      <groupId>com.google.common.html.types</groupId>
-      <artifactId>proto</artifactId>
-      <version>1.0.4-SNAPSHOT</version>
     </dependency>
     <!-- Our JUnit tests run JBC templates -->
     <dependency>
@@ -64,13 +52,5 @@
       <artifactId>soy</artifactId>
       <version>2016-07-23-SNAPSHOT</version>
     </dependency>
-    <!-- Our tests depend upon the compiled soy templates -->
-    <!--dependency>
-      <groupId>greetings.world</groupId>
-      <artifactId>soy-compiled</artifactId>
-      <version>1.0</version>
-      <scope>system</scope>
-      <systemPath>${project.build.directory}/closure-templates-soy.0.jar</systemPath>
-    </dependency-->
   </dependencies>
 </project>

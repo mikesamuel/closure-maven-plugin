@@ -95,7 +95,8 @@ final class ResolveExtracts extends Step {
         artKey.append(':');
 
         if (!artId.isPresent()) {
-          log.error("Skipping extract that is missing groupId");
+          log.error("Extract " + e + " is missing groupId");
+          allUnambiguous = false;
           continue;
         }
         artKey.append(artId.get());

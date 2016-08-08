@@ -83,7 +83,7 @@ public final class ResolvedExtractsList implements Serializable {
   public final ImmutableList<ResolvedExtract> extracts;
 
   /** */
-  ResolvedExtractsList(ImmutableList<ResolvedExtract> extracts) {
-    this.extracts = extracts;
+  ResolvedExtractsList(Iterable<? extends ResolvedExtract> extracts) {
+    this.extracts = ImmutableList.copyOf(extracts);
   }
 }
