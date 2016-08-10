@@ -2,6 +2,8 @@ package com.google.common.html.plugin;
 
 import org.junit.Test;
 
+import com.google.common.html.plugin.common.Words;
+
 import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")

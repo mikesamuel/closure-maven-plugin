@@ -25,11 +25,10 @@ import com.google.common.css.SourceCode;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.Vendor;
 import com.google.common.css.JobDescription.OptimizeStrategy;
-import com.google.common.html.plugin.OutputAmbiguityChecker;
-import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.Asplodable;
 import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.html.plugin.common.SourceOptions;
+import com.google.common.html.plugin.common.Sources;
 import com.google.common.io.Files;
 
 //@Mojo(name="css")
@@ -414,14 +413,6 @@ public final class CssOptions extends SourceOptions {
     /** All of the output files. */
     public ImmutableList<File> allOutputFiles() {
       return ImmutableList.of(css, sourceMap);
-    }
-
-    /** All of the output files, annotated. */
-    public ImmutableList<OutputAmbiguityChecker.Output> allOutputs() {
-      return ImmutableList.of(
-          new OutputAmbiguityChecker.Output("Compiled CSS", css),
-          new OutputAmbiguityChecker.Output("CSS Source Map", sourceMap));
-
     }
   }
 

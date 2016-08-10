@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.Bundle;
@@ -31,6 +30,7 @@ import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.UriValue;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;

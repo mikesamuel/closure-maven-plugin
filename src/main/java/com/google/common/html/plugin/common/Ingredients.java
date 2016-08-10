@@ -29,8 +29,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.html.plugin.Sources;
-import com.google.common.html.plugin.Sources.Source;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -320,6 +319,7 @@ public class Ingredients {
 
     /** The backing file. */
     public final Source source;
+    private Optional<Hash> hash = Optional.absent();
 
     private FileIngredient(PlanKey key, Source source) {
       super(key);
@@ -328,11 +328,24 @@ public class Ingredients {
 
     @Override
     public Optional<Hash> hash() throws IOException {
-      try {
-        return Optional.of(Hash.hash(source));
-      } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
-        return Optional.absent();
+      Optional<Hash> lhash;
+      synchronized (this) {
+        lhash = this.hash;
       }
+      if (! lhash.isPresent()) {
+        try {
+          lhash = Optional.of(Hash.hash(source));
+        } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
+          // If the file is not found then absent is correct.
+        }
+        synchronized (this) {
+          if (!this.hash.isPresent()) {
+            this.hash = lhash;
+          }
+          lhash = this.hash;
+        }
+      }
+      return lhash;
     }
   }
 

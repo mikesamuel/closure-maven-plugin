@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -134,9 +136,20 @@ interface PathChooser {
 }
 
 final class DefaultPathChooser implements PathChooser {
+  private static final Pattern PREFIX = Pattern.compile(
+      "^(src|dep)/(main|test)/(\\w+)/");
+
   @Override
   public String chooseRelativePath(String entryName, byte[] content) {
-    return entryName;
+    // Strip {src,dep}/{main,test}/ext from the front.
+    String path = entryName.replace('/', File.separatorChar);
+    path = Files.simplifyPath(path);
+    path = path.replace(File.separatorChar, '/');
+    Matcher matcher = PREFIX.matcher(path);
+    if (matcher.find()) {
+      path = path.substring(matcher.end());
+    }
+    return path;
   }
 }
 
@@ -173,7 +186,7 @@ final class FindProtoPackageStmt implements PathChooser {
     }
 
     if (packageName == null) {
-      return entryName;
+      return new DefaultPathChooser().chooseRelativePath(entryName, content);
     }
     int lastSlash = entryName.lastIndexOf('/');
     return packageName.replace('.', '/')

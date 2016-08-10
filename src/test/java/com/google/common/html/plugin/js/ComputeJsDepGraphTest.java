@@ -10,11 +10,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.TestLog;
 import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.common.TopoSort;
 import com.google.common.html.plugin.common.TypedFile;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.javascript.jscomp.CompilerInput;
 import com.google.javascript.jscomp.SourceFile;
 

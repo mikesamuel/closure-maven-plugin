@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.common.html.plugin.common;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

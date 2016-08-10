@@ -12,9 +12,10 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.DirectoryScannerSpec;
+import com.google.common.html.plugin.common.Sources;
 import com.google.common.html.plugin.common.TypedFile;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;

@@ -1,12 +1,19 @@
-package com.google.common.html.plugin;
+package com.google.common.html.plugin.common;
 
 import com.google.common.base.Ascii;
 
+/**
+ * Utilities for checking file naming conventions.
+ */
 public final class Words {
 
   private Words() {
   }
 
+  /**
+   * True when s ends with suffix in a way that suffix is not part of a larger
+   * word by camel-casing or underscore naming conventions.
+   */
   public static boolean endsWithWordOrIs(String s, String suffix) {
     if (suffix.isEmpty()) {
       return true;

@@ -28,7 +28,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.TopoSort;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
@@ -37,6 +36,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;

@@ -31,6 +31,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
+import com.google.common.html.plugin.common.Cheats;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients

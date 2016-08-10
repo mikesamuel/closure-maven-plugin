@@ -14,7 +14,7 @@ import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
 import com.google.common.css.compiler.commandline.ClosureCommandLineCompiler;
-import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.Sources;
 import com.google.common.io.Files;
 
 final class CssCompilerWrapper {

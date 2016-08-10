@@ -3,7 +3,7 @@ package com.google.common.html.plugin.css;
 import java.io.Serializable;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.Sources;
 
 final class CssBundle implements Serializable {
 

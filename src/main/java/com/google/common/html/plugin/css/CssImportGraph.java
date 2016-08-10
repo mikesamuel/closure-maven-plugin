@@ -31,8 +31,8 @@ import com.google.common.css.compiler.ast.CssUnknownAtRuleNode;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
-import com.google.common.html.plugin.Words;
-import com.google.common.html.plugin.Sources.Source;
+import com.google.common.html.plugin.common.Words;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.io.Files;
 
 final class CssImportGraph {

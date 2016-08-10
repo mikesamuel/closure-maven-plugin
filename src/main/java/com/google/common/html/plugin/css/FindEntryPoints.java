@@ -2,23 +2,17 @@ package com.google.common.html.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
-import com.google.common.html.plugin.OutputAmbiguityChecker;
-import com.google.common.html.plugin.Sources;
-import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.common.Ingredients;
+import com.google.common.html.plugin.common.Sources;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
@@ -26,6 +20,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -109,18 +104,6 @@ final class FindEntryPoints extends Step {
     }
 
     ImmutableList<CssBundle> bundles = b.build();
-
-    OutputAmbiguityChecker.requireOutputsUnambiguous(
-        log,
-        Iterables.concat(
-            Lists.transform(
-                bundles,
-                new Function<CssBundle, List<OutputAmbiguityChecker.Output>>() {
-                  @Override public
-                  List<OutputAmbiguityChecker.Output> apply(CssBundle bundle) {
-                    return bundle.outputs.allOutputs();
-                  }
-                })));
 
     bundleList.setStoredObject(new CssBundleList(bundles));
     try {

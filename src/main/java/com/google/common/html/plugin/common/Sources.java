@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.common.html.plugin.common;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,9 +15,6 @@ import org.codehaus.plexus.util.DirectoryScanner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.html.plugin.common.DirectoryScannerSpec;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.io.Files;
 
 /** A group of source files split into test and production files. */

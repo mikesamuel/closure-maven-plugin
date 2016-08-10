@@ -58,6 +58,7 @@ public final class ExtractPlanner {
       builtinExtract.setArtifactId(pluginDescriptor.getArtifactId());
       builtinExtract.setGroupId(pluginDescriptor.getGroupId());
       builtinExtract.setVersion(pluginDescriptor.getVersion());
+      builtinExtract.setLoadAsNeeded(true);
       allExtracts.add(builtinExtract);
     }
     allExtracts.addAll(Arrays.asList(extracts.extract));
