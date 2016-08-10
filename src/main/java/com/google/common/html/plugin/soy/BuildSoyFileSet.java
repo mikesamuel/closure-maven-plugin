@@ -31,6 +31,7 @@ import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.UriValue;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
@@ -40,6 +41,7 @@ import com.google.common.io.Files;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.SoyFileSet.Builder;
+import com.google.template.soy.base.internal.SoyFileKind;
 import com.google.template.soy.types.SoyTypeProvider;
 import com.google.template.soy.types.SoyTypeRegistry;
 import com.google.template.soy.types.proto.SoyProtoTypeProvider;
@@ -119,7 +121,7 @@ final class BuildSoyFileSet extends Step {
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to find .soy sources", ex);
     }
-    ImmutableList<FileIngredient> soySourceFiles = soySources.mainSources();
+    ImmutableList<FileIngredient> soySourceFiles = soySources.sources();
     log.debug("Found " + soySourceFiles.size() + " soy sources");
 
     if (Iterables.isEmpty(soySourceFiles)) {
@@ -163,10 +165,14 @@ final class BuildSoyFileSet extends Step {
       public Builder direct(Builder sfsBuilder) throws MojoExecutionException {
         for (Source source : sources) {
           String relPath = source.relativePath.getPath();
+          SoyFileKind kind =
+              source.root.ps.contains(SourceFileProperty.LOAD_AS_NEEDED)
+              ? SoyFileKind.DEP
+              : SoyFileKind.SRC;
           try {
             CharSequence content = Files.toString(
                 source.canonicalPath, Charsets.UTF_8);
-            sfsBuilder.add(content, relPath);
+            sfsBuilder.addWithKind(content, kind, relPath);
           } catch (IOException ex) {
             throw new MojoExecutionException(
                 "Failed to read soy source: " + relPath, ex);
@@ -180,13 +186,24 @@ final class BuildSoyFileSet extends Step {
       throws MojoExecutionException, ReflectiveOperationException {
         Method addFileMethod = sfsBuilder.getClass().getMethod(
             "add", CharSequence.class, String.class);
+        @SuppressWarnings("rawtypes")
+        Class<? extends Enum> soyFileKindClass =
+            cl.loadClass(SoyFileKind.class.getName())
+            .asSubclass(Enum.class);
         for (Source source : sources) {
           String relPath = source.relativePath.getPath();
+          SoyFileKind kindNotInClassLoader =
+              source.root.ps.contains(SourceFileProperty.LOAD_AS_NEEDED)
+              ? SoyFileKind.DEP
+              : SoyFileKind.SRC;
+          @SuppressWarnings("unchecked")
+          Object kind = Enum.valueOf(
+              soyFileKindClass, kindNotInClassLoader.name());
           try {
             CharSequence content = Files.toString(
                 source.canonicalPath, Charsets.UTF_8);
             try {
-              addFileMethod.invoke(sfsBuilder, content, relPath);
+              addFileMethod.invoke(sfsBuilder, content, kind, relPath);
             } catch (InvocationTargetException ex) {
               Throwable target = ex.getTargetException();
               if (target instanceof IOException) {

@@ -5,58 +5,109 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.codehaus.plexus.util.DirectoryScanner;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.PathGlob;
+import com.google.common.collect.Maps;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
+import com.google.common.html.plugin.common.SourceFileProperty;
+import com.google.common.html.plugin.common.TypedFile;
+import com.google.common.io.Files;
 
 /** A group of source files split into test and production files. */
 public final class Sources {
   /** Files that contribute source code to the artifact. */
-  public final ImmutableList<Source> mainFiles;
-  /** Files that are used in testing the artifact. */
-  public final ImmutableList<Source> testFiles;
+  public final ImmutableList<Source> sources;
 
   /** An empty set of source files. */
   public static final Sources EMPTY = new Sources(
-      ImmutableList.<Source>of(), ImmutableList.<Source>of());
+      ImmutableList.<Source>of());
 
   private Sources(
-      Iterable<? extends Source> mainFiles,
-      Iterable<? extends Source> testFiles) {
-    this.mainFiles = ImmutableList.copyOf(mainFiles);
-    this.testFiles = ImmutableList.copyOf(testFiles);
+      Iterable<? extends Source> sources) {
+    this.sources = ImmutableList.copyOf(sources);
   }
 
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof Sources)) { return false; }
     Sources that = (Sources) o;
-    return this.mainFiles.equals(that.mainFiles)
-        && this.testFiles.equals(that.testFiles);
+    return this.sources.equals(that.sources);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(mainFiles, testFiles);
+    return sources.hashCode();
+  }
+
+  /**
+   * Scans the file-trees under the specified directories for files matching
+   * the specified patterns.
+   */
+  public static Sources scan(
+      Log log, DirectoryScannerSpec spec) throws IOException {
+    String[] includesArray = spec.includes.toArray(new String[0]);
+    String[] excludesArray = spec.excludes.toArray(new String[0]);
+
+    Map<File, Source> found = Maps.newLinkedHashMap();
+    for (TypedFile root : spec.roots) {
+      if (!root.f.exists()) {
+        log.info("Skipping scan of non-extant root directory " + root);
+        continue;
+      }
+
+      File canonRoot = root.f.getCanonicalFile();
+      TypedFile typedCanonRoot = new TypedFile(canonRoot, root.ps);
+
+      DirectoryScanner scanner = new DirectoryScanner();
+      scanner.setBasedir(canonRoot);
+      scanner.setIncludes(includesArray);
+      scanner.setExcludes(excludesArray);
+      scanner.addDefaultExcludes();
+      scanner.setCaseSensitive(true);  // WTF MacOS
+      scanner.setFollowSymlinks(true);
+
+      scanner.scan();
+
+      for (String relPath : scanner.getIncludedFiles()) {
+        relPath = Files.simplifyPath(relPath);
+
+        File file = new File(
+            FilenameUtils.concat(canonRoot.getPath(), relPath));
+
+        File canonFile = file.getCanonicalFile();
+        TypedFile sourceRoot = typedCanonRoot;
+
+        Source prev = found.get(canonFile);
+        if (prev != null) {
+          EnumSet<SourceFileProperty> combinedProps =
+              EnumSet.noneOf(SourceFileProperty.class);
+          combinedProps.addAll(sourceRoot.ps);
+          combinedProps.retainAll(prev.root.ps);
+          // We AND these together because of the following case-based
+          // analysis over the properties.
+          // TEST_ONLY -- if either file is not test only, then the combined is
+          //     not test only.
+          // LOAD_AS_NEEDED -- if either file is always loaded, the combined is
+          //     always needed.
+
+          sourceRoot = new TypedFile(sourceRoot.f, combinedProps);
+        }
+
+        File relFile = new File(relPath);
+
+        Source source = new Source(canonFile, sourceRoot, relFile);
+        found.put(canonFile, source);
+      }
+    }
+
+    return new Sources(found.values());
   }
 
   /**
@@ -85,7 +136,7 @@ public final class Sources {
     /** The canonical path to the source file on the local file system. */
     public final File canonicalPath;
     /** The canonical path to the source file root. */
-    public final File root;
+    public final TypedFile root;
     /** The relative path from the root to the original path. */
     public final File relativePath;
 
@@ -97,7 +148,7 @@ public final class Sources {
      */
     public Source (
         File canonicalPath,
-        File root,
+        TypedFile root,
         File relativePath) {
       this.canonicalPath = canonicalPath;
       this.root = root;
@@ -107,12 +158,14 @@ public final class Sources {
     @Override
     public boolean equals(Object o) {
       if (!(o instanceof Source)) { return false; }
-      return this.canonicalPath.equals(((Source) o).canonicalPath);
+      Source that = (Source) o;
+      return this.canonicalPath.equals(that.canonicalPath)
+          && this.root.equals(that.root);
     }
 
     @Override
     public int hashCode() {
-      return canonicalPath.hashCode();
+      return canonicalPath.hashCode() + 31 * root.hashCode();
     }
 
     @Override
@@ -148,9 +201,9 @@ public final class Sources {
       File absFile;  // Absolute path to the resolved file.
       if (relFile != null) {
         absFile = new File(FilenameUtils.concat(
-            this.root.getPath(), relFile.getPath()));
+            this.root.f.getPath(), relFile.getPath()));
       } else {
-        absFile = this.root;
+        absFile = this.root.f;
       }
 
       boolean sawPathParts = false;
@@ -187,9 +240,9 @@ public final class Sources {
     /**
      * The same relativePath but with the given root.
      */
-    public Source reroot(File newRoot) throws IOException {
+    public Source reroot(TypedFile newRoot) throws IOException {
       File rerooted = new File(FilenameUtils.concat(
-          newRoot.getPath(), this.relativePath.getPath()));
+          newRoot.f.getPath(), this.relativePath.getPath()));
       return new Source(
           rerooted.getCanonicalFile(),
           newRoot,
@@ -197,198 +250,6 @@ public final class Sources {
     }
   }
 
-
-  /**
-   * Scans a search path for source files.
-   */
-  public static final class Finder {
-    private final Pattern suffixPattern;
-    private final ImmutableList.Builder<File> mainRoots =
-        ImmutableList.builder();
-    private final ImmutableList.Builder<File> testRoots =
-        ImmutableList.builder();
-    private final ImmutableList.Builder<PathGlob> exclusions =
-        ImmutableList.builder();
-
-    /**
-     * @param suffixes file suffixes to search for like ".js".
-     */
-    public Finder(String... suffixes) {
-      ImmutableList.Builder<String> suffixPatterns = ImmutableList.builder();
-      for (String suffix : suffixes) {
-        suffixPatterns.add(prettyPatternQuote(suffix));
-      }
-      this.suffixPattern = Pattern.compile(
-          "(?:" + Joiner.on("|").join(suffixPatterns.build()) + ")\\z");
-    }
-
-    Finder(Pattern suffixPattern) {
-      this.suffixPattern = suffixPattern;
-    }
-
-    @Override
-    public Finder clone() {
-      return new Finder(suffixPattern)
-          .mainRoots(this.mainRoots.build())
-          .testRoots(this.testRoots.build())
-          .exclusions(this.exclusions.build());
-    }
-
-    /**
-     * The pattern that matches suffixes of the files we're looking for.
-     */
-    public Pattern suffixPattern() {
-      return suffixPattern;
-    }
-
-    /**
-     * Search path elements containing production files.
-     */
-    public ImmutableList<File> mainRoots() {
-      return mainRoots.build();
-    }
-
-    /**
-     * Adds to {@link #mainRoots()}.
-     */
-    public Finder mainRoots(File... roots) {
-      return mainRoots(Arrays.asList(roots));
-    }
-
-    /**
-     * Adds to {@link #mainRoots()}.
-     */
-    public Finder mainRoots(Iterable<? extends File> roots) {
-      mainRoots.addAll(roots);
-      return this;
-    }
-
-    /**
-     * Search path elements containing test files.
-     */
-    public ImmutableList<File> testRoots() {
-      return testRoots.build();
-    }
-
-    /**
-     * Adds to {@link #testRoots()}.
-     */
-    public Finder testRoots(File... roots) {
-      return testRoots(Arrays.asList(roots));
-    }
-
-    /**
-     * Adds to {@link #testRoots()}.
-     */
-    public Finder testRoots(Iterable<? extends File> roots) {
-      testRoots.addAll(roots);
-      return this;
-    }
-
-    /** Specifies relative paths excluded from the search results. */
-    public Finder exclusions(Iterable<? extends PathGlob> globs) {
-      for (PathGlob exclusion : globs) {
-        exclusions.add(exclusion.clone());
-      }
-      return this;
-    }
-
-    /** Relative paths excluded from the search results. */
-    public ImmutableList<PathGlob> exclusions() {
-      return copyPathGlobs(exclusions.build());
-    }
-
-    private static ImmutableList<PathGlob> copyPathGlobs(
-        Iterable<? extends PathGlob> globs) {
-      ImmutableList.Builder<PathGlob> b = ImmutableList.builder();
-      for (PathGlob g : globs) {
-        b.add(g.clone());
-      }
-      return b.build();
-    }
-
-    /**
-     * Walk the file trees under the source roots looking for files matching
-     * the suffix pattern.
-     */
-    @SuppressWarnings("synthetic-access")
-    public Sources scan(Log log) throws IOException {
-      // Using treeset to get a reliable file order makes later build stages
-      // less volatile.
-      Set<Source> mainFiles = Sets.newTreeSet();
-      Set<Source> testFiles = Sets.newTreeSet();
-      Predicate<String> exclude = Predicates.or(exclusions());
-
-      for (File root : mainRoots.build()) {
-        if (!root.exists()) {
-          log.debug("Skipping missing directory: " + root);
-          continue;
-        }
-        log.debug(
-            "Scanning " + root + " for files matching " + this.suffixPattern);
-
-        find(root, suffixPattern, mainFiles, exclude);
-      }
-
-      for (File root : testRoots.build()) {
-        if (!root.exists()) {
-          log.debug("Skipping missing directory: " + root);
-          continue;
-        }
-
-        find(root, suffixPattern, testFiles, exclude);
-      }
-
-      return new Sources(mainFiles, testFiles);
-    }
-  }
-
-  private static void find(
-      final File root,
-      final Pattern basenamePattern, final Collection<? super Source> out,
-      final Predicate<String> exclude)
-  throws IOException {
-    final Path rootPath = root.toPath();
-    Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
-      private File relPath = null;
-
-      @Override
-      public FileVisitResult preVisitDirectory(
-          Path p, BasicFileAttributes attrs) {
-        if (relPath != null || !p.equals(rootPath)) {
-          relPath = new File(relPath, p.getFileName().toString());
-        }
-        return FileVisitResult.CONTINUE;
-      }
-
-      @Override
-      public FileVisitResult postVisitDirectory(
-          Path p, @Nullable IOException ex) {
-        if (relPath != null) {
-          relPath = relPath.getParentFile();
-        }
-        return FileVisitResult.CONTINUE;
-      }
-
-      @Override
-      public FileVisitResult visitFile(Path p, BasicFileAttributes attrs)
-      throws IOException {
-        String basename = p.getFileName().toString();
-        if (basenamePattern.matcher(basename).find()) {
-          File relPathComplete = new File(relPath, basename);
-          String relPathCompleteStr = relPathComplete.getPath();
-          if (!exclude.apply(relPathCompleteStr)) {
-            Source source = new Source(
-                p.toFile().getCanonicalFile(),
-                root,
-                relPathComplete);
-            out.add(source);
-          }
-        }
-        return FileVisitResult.CONTINUE;
-      }
-    });
-  }
 
   static URI uriOfPath(File f) throws URISyntaxException {
     String path = f.getPath();

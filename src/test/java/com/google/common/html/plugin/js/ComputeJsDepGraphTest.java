@@ -12,7 +12,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.html.plugin.Sources.Source;
 import com.google.common.html.plugin.TestLog;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.common.TopoSort;
+import com.google.common.html.plugin.common.TypedFile;
 import com.google.javascript.jscomp.CompilerInput;
 import com.google.javascript.jscomp.SourceFile;
 
@@ -173,14 +175,14 @@ public final class ComputeJsDepGraphTest extends TestCase {
   static final class TestBuilder {
 
     private Map<String, String> fileContent = Maps.newLinkedHashMap();
-    private ImmutableList.Builder<Source> mainSources = ImmutableList.builder();
-    private ImmutableList.Builder<Source> testSources = ImmutableList.builder();
+    private ImmutableList.Builder<Source> sources = ImmutableList.builder();
     private ImmutableList.Builder<String> wantedArgv = ImmutableList.builder();
 
-    private static Source src(String root, String relPath) {
+    private static Source src(
+        String root, String relPath, SourceFileProperty... ps) {
       return new Source(
           new File(root + "/" + relPath),
-          new File(root),
+          new TypedFile(new File(root), ps),
           new File(relPath));
     }
 
@@ -190,12 +192,12 @@ public final class ComputeJsDepGraphTest extends TestCase {
     }
 
     TestBuilder mainSource(String root, String relPath) {
-      mainSources.add(src(root, relPath));
+      sources.add(src(root, relPath));
       return this;
     }
 
     TestBuilder testSource(String root, String relPath) {
-      testSources.add(src(root, relPath));
+      sources.add(src(root, relPath, SourceFileProperty.TEST_ONLY));
       return this;
     }
 
@@ -223,8 +225,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
               return new CompilerInput(sf);
             }
           },
-          mainSources.build(),
-          testSources.build());
+          sources.build());
 
       ImmutableList.Builder<String> modulesArgv = ImmutableList.builder();
       modules.addClosureCompilerFlags(modulesArgv);

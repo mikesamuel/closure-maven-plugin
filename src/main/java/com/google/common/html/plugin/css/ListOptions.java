@@ -8,7 +8,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients
@@ -84,15 +84,9 @@ final class ListOptions extends Step {
          optionsListFile.getStoredObject().get().optionsById.values()) {
       File bundlesFile = new File(
           planner.cssOutputDir(), "css-bundles-" + options.getId() + ".ser");
-      ImmutableSet.Builder<File> roots = ImmutableSet.builder();
-      if (options.source == null || options.source.length == 0) {
-        roots.add(planner.defaultCssSource());
-      } else {
-        roots.addAll(ImmutableList.copyOf(options.source));
-      }
-      roots.add(gf.getGeneratedSourceDirectoryForExtension("css", false));
-      DirScanFileSetIngredient sources = ingredients.fileset(
-          new Sources.Finder(".css", ".gss").mainRoots(roots.build()));
+      DirectoryScannerSpec dsSpec = options.toDirectoryScannerSpec(
+          planner.defaultCssSource(), planner.defaultCssSource(), gf);
+      DirScanFileSetIngredient sources = ingredients.fileset(dsSpec);
       try {
         sources.resolve(log);
       } catch (IOException ex) {

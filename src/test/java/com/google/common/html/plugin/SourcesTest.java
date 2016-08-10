@@ -13,6 +13,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.html.plugin.Sources.Source;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
+import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -21,12 +23,15 @@ import junit.framework.TestCase;
 public final class SourcesTest extends TestCase {
   private File tmpDir, bar, foo;
   private final Log log = new TestLog();
+  private TypedFile tmpDirRoot;
+
 
   @Before
   @Override
   public void setUp() throws IOException {
     tmpDir = Files.createTempDir().getCanonicalFile();
     tmpDir.mkdirs();
+    tmpDirRoot = new TypedFile(tmpDir);
     // T/bar/foo.txt
     // T/bar/baz.txt/
     // T/boo.txt
@@ -47,10 +52,13 @@ public final class SourcesTest extends TestCase {
 
   @Test
   public final void testScan() throws Exception {
-    Sources sources = new Sources.Finder(".txt").mainRoots(tmpDir).scan(log);
-    assertTrue(sources.testFiles.isEmpty());
+    DirectoryScannerSpec spec = new DirectoryScannerSpec(
+        ImmutableList.of(tmpDirRoot),
+        ImmutableList.of("**/*.txt"),
+        ImmutableList.<String>of());
+    Sources sources = Sources.scan(log, spec);
     Map<File, Source> actual = Maps.newLinkedHashMap();
-    for (Source source : sources.mainFiles) {
+    for (Source source : sources.sources) {
       assertTrue(
           source.toString(),
           !actual.containsKey(source.relativePath));
@@ -62,25 +70,25 @@ public final class SourcesTest extends TestCase {
             new File("bar", "foo.txt"),
             new Source(
                 new File(bar, "foo.txt"),
-                tmpDir,
+                tmpDirRoot,
                 new File("bar", "foo.txt")))
         .put(
             new File("bar", "baz.txt"),
             new Source(
                 new File(bar, "baz.txt"),
-                tmpDir,
+                tmpDirRoot,
                 new File("bar", "baz.txt")))
         .put(
             new File("boo.txt"),
             new Source(
                 new File(tmpDir, "boo.txt"),
-                tmpDir,
+                tmpDirRoot,
                 new File("boo.txt")))
         .put(
             new File("foo", "bar.txt"),
             new Source(
                 new File(foo, "bar.txt"),
-                tmpDir,
+                tmpDirRoot,
                 new File("foo", "bar.txt")))
         .build();
 
@@ -116,11 +124,11 @@ public final class SourcesTest extends TestCase {
   public final void testResolve() throws URISyntaxException, IOException {
     Source srcFoo = new Source(
         new File(bar, "foo.txt"),
-        tmpDir,
+        tmpDirRoot,
         new File("bar", "foo.txt"));
     Source srcBar = new Source(
         new File(foo, "bar.txt"),
-        tmpDir,
+        tmpDirRoot,
         new File("foo", "bar.txt"));
 
     {
@@ -141,7 +149,7 @@ public final class SourcesTest extends TestCase {
         assertEquals(
             "" + i,
             tmpDir.getPath(),
-            inRoot.root.getPath());
+            inRoot.root.f.getPath());
       }
     }
 
@@ -155,8 +163,8 @@ public final class SourcesTest extends TestCase {
         Source resolvedBar = resolvedBars[i];
         assertEquals(
             "" + i,
-            srcBar.root.getPath(),
-            resolvedBar.root.getPath());
+            srcBar.root.f.getPath(),
+            resolvedBar.root.f.getPath());
         assertEquals(
             "" + i,
             srcBar.canonicalPath.getPath(),

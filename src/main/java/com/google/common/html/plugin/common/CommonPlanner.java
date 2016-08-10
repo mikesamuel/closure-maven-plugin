@@ -20,6 +20,8 @@ public class CommonPlanner {
 
   /** Logger that should receive events related to step execution. */
   public final Log log;
+  /** The maven project base directory. */
+  public final File baseDir;
   /** The maven {@code target} directory. */
   public final File outputDir;
   /** The common CSS identifier substitution map provider. */
@@ -42,13 +44,14 @@ public class CommonPlanner {
 
   /** */
   public CommonPlanner(
-      Log log, File outputDir, File projectBuildOutputDirectory,
+      Log log, File baseDir, File outputDir, File projectBuildOutputDirectory,
       SubstitutionMapProvider substitutionMapProvider,
       Iterable<? extends URI> runtimeClassPath,
       HashStore hashStore)
   throws IOException {
     this.ingredients = new Ingredients();
     this.log = log;
+    this.baseDir = baseDir;
     this.outputDir = outputDir;
     this.projectBuildOutputDirectory = ingredients.pathValue(
         projectBuildOutputDirectory);

@@ -6,6 +6,7 @@ import java.io.Serializable;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.html.plugin.common.SourceFileProperty;
 
 /**
  * Like an {@link ExtractsList} but after all the extracts have been resolved
@@ -32,7 +33,7 @@ public final class ResolvedExtractsList implements Serializable {
      * extracted under {@code target/src/<filetype>/test} instead of
      * {@code target/src/<filetype>/main}.
      */
-    public final boolean isTestScope;
+    public final ImmutableSet<SourceFileProperty> props;
     /** The location of the jar file. */
     public final File archive;
 
@@ -42,20 +43,20 @@ public final class ResolvedExtractsList implements Serializable {
         String artifactId,
         String version,
         ImmutableSet<String> suffixes,
-        boolean isTestScope,
+        ImmutableSet<SourceFileProperty> props,
         File archive) {
       this.groupId = groupId;
       this.artifactId = artifactId;
       this.version = version;
       this.suffixes = suffixes;
-      this.isTestScope = isTestScope;
+      this.props = props;
       this.archive = archive;
     }
 
     @Override
     public int hashCode() {
       return Objects.hashCode(
-          groupId, artifactId, version, suffixes, isTestScope, archive);
+          groupId, artifactId, version, suffixes, props, archive);
     }
 
     @Override
@@ -68,7 +69,7 @@ public final class ResolvedExtractsList implements Serializable {
           && this.artifactId.equals(that.artifactId)
           && this.version.equals(that.version)
           && this.suffixes.equals(that.suffixes)
-          && this.isTestScope == that.isTestScope
+          && this.props.equals(that.props)
           && this.archive.equals(that.archive);
     }
 

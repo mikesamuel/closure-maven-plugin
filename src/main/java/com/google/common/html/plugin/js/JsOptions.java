@@ -10,7 +10,7 @@ import org.kohsuke.args4j.Option;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.html.plugin.common.Options;
+import com.google.common.html.plugin.common.SourceOptions;
 import com.google.javascript.jscomp.CommandLineRunner;
 import com.google.javascript.jscomp.CompilationLevel;
 import com.google.javascript.jscomp.CompilerOptions;
@@ -21,21 +21,9 @@ import com.google.javascript.jscomp.WarningLevel;
  * A plexus-configurable set of options compatible with
  * {@link CommandLineRunner}.
  */
-public final class JsOptions extends Options {
+public final class JsOptions extends SourceOptions {
 
   private static final long serialVersionUID = -5477807829203040714L;
-
-  /** Roots of directory trees containing production JS sources. */
-  public File[] source;
-
-  /** Roots of directory trees containing test-only JS sources. */
-  public File[] testSource;
-
-  /**
-   * Roots of directory trees containing JS externs files defining the
-   * environment in which the source files will execute.
-   */
-  public File[] externSource;
 
   /**
    * Directory for generated production JS source files.
@@ -323,5 +311,11 @@ public final class JsOptions extends Options {
       }
       FIELD_TO_FLAG = b.build();
     }
+  }
+
+
+  @Override
+  protected ImmutableList<String> sourceExtensions() {
+    return ImmutableList.of("js", "ts");
   }
 }

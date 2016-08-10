@@ -8,8 +8,8 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.CommonPlanner;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.Bundle;
@@ -56,17 +56,14 @@ public final class SoyPlanner {
         SoyOptions.class, opts);
     SerializedObjectIngredient<GenfilesDirs> genfiles = planner.genfiles;
 
-    Sources.Finder soySourceFinder = new Sources.Finder(".soy");
-    if (opts.source != null && opts.source.length != 0) {
-      soySourceFinder.mainRoots(opts.source);
-    } else {
-      soySourceFinder.mainRoots(defaultSoySource.get());
-    }
-    soySourceFinder.mainRoots(
-        genfiles.getStoredObject().get()
-        .getGeneratedSourceDirectoryForExtension("soy", false));
+    File defaultSoyTestSource = new File(
+        new File(new File(planner.baseDir, "src"), "test"), "soy");
 
-    DirScanFileSetIngredient soySources = ingredients.fileset(soySourceFinder);
+    DirectoryScannerSpec dsSpec = opts.toDirectoryScannerSpec(
+        defaultSoySource.get(), defaultSoyTestSource,
+        planner.genfiles.getStoredObject().get());
+
+    DirScanFileSetIngredient soySources = ingredients.fileset(dsSpec);
 
     ImmutableList.Builder<UriValue> runtimeClassPathElements =
         ImmutableList.builder();

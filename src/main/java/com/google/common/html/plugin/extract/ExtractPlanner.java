@@ -11,6 +11,7 @@ import org.apache.maven.project.MavenProject;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients
@@ -18,6 +19,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.OptionsUtils;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.extract
     .ResolvedExtractsList.ResolvedExtract;
 
@@ -86,7 +88,9 @@ public final class ExtractPlanner {
             a.getArtifactId(),
             a.getVersion(),
             ImmutableSet.<String>of(),
-            "test".equals(a.getScope()),
+            ("test".equals(a.getScope())
+                ? Sets.immutableEnumSet(SourceFileProperty.TEST_ONLY)
+                : ImmutableSet.<SourceFileProperty>of()),
             artFile
             ));
       }

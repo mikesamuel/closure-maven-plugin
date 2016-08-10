@@ -62,7 +62,7 @@ final class SoyToJs extends Step {
     ImmutableList<Source> sources;
     {
       ImmutableList.Builder<Source> b = ImmutableList.builder();
-      for (FileIngredient f : soySources.mainSources()) {
+      for (FileIngredient f : soySources.sources()) {
         b.add(f.source);
       }
       sources = b.build();

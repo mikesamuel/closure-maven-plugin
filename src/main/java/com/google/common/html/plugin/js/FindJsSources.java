@@ -8,7 +8,7 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
@@ -61,21 +61,11 @@ final class FindJsSources extends Step {
     JsOptions options = optionsIng.getOptions();
     GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
 
-    Sources.Finder finder = new Sources.Finder(".js", ".ts");
-    if (options.source != null && options.source.length != 0) {
-      finder.mainRoots(options.source);
-    } else {
-      finder.mainRoots(defaultJsSource.value);
-    }
-    finder.mainRoots(genfiles.jsGenfiles);
-    if (options.testSource != null && options.testSource.length != 0) {
-      finder.testRoots(options.testSource);
-    } else {
-      finder.testRoots(defaultJsTestSource.value);
-    }
-    finder.testRoots(genfiles.jsTestGenfiles);
+    DirectoryScannerSpec sourcesSpec = options.toDirectoryScannerSpec(
+        defaultJsSource.value, defaultJsTestSource.value, genfiles);
 
-    DirScanFileSetIngredient fs = planner.planner.ingredients.fileset(finder);
+    DirScanFileSetIngredient fs = planner.planner.ingredients.fileset(
+        sourcesSpec);
     try {
       fs.resolve(log);
     } catch (IOException ex) {

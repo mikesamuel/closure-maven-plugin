@@ -1,11 +1,13 @@
 package com.google.common.html.plugin.extract;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Set;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.html.plugin.common.SourceFileProperty;
 
 /**
  * Identifies an artifact to extract source files from.
@@ -26,6 +28,8 @@ public final class Extract implements Serializable {
   private Optional<String> artifactId = Optional.absent();
   private Optional<String> version = Optional.absent();
   private Set<String> suffixes = Sets.newLinkedHashSet();
+  private EnumSet<SourceFileProperty> props = EnumSet.noneOf(
+      SourceFileProperty.class);
 
   /** Zero-argument constructor for plexus configurator */
   public Extract() {
@@ -113,6 +117,29 @@ public final class Extract implements Serializable {
     this.version = Optional.of(newVersion);
   }
 
+  /** Setter that allows configuration by a plexus configurator. */
+  public void setProperty(SourceFileProperty p) {
+    this.props.add(p);
+  }
+
+  /** Setter that allows configuration by a plexus configurator. */
+  public void setTestOnly(boolean b) {
+    setProperty(SourceFileProperty.TEST_ONLY, b);
+  }
+
+  /** Setter that allows configuration by a plexus configurator. */
+  public void setLoadAsNeeded(boolean b) {
+    setProperty(SourceFileProperty.LOAD_AS_NEEDED, b);
+  }
+
+  private void setProperty(SourceFileProperty p, boolean b) {
+    if (b) {
+      props.add(p);
+    } else {
+      props.remove(p);
+    }
+  }
+
   /** The version of the artifact to extract from if present. */
   public Optional<String> getVersion() {
     return version;
@@ -140,6 +167,13 @@ public final class Extract implements Serializable {
       return DEFAULT_EXTRACT_SUFFIX_SET;
     }
     return fromBuilder;
+  }
+
+  /**
+   * The file properties for the extracted files.
+   */
+  public ImmutableSet<SourceFileProperty> getFileProperties() {
+    return Sets.immutableEnumSet(this.props);
   }
 
   @Override

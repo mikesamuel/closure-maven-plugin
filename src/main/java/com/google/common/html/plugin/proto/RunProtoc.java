@@ -15,16 +15,20 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.Sources.Source;
+import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
-import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.ProcessRunner;
+import com.google.common.html.plugin.common.SourceFileProperty;
+import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
@@ -33,7 +37,6 @@ import com.google.common.html.plugin.plan.StepSource;
 final class RunProtoc extends Step {
   final ProcessRunner processRunner;
   final RunProtoc.RootSet rootSet;
-  final FileIngredient descriptorSetFile;
 
   RunProtoc(
       ProcessRunner processRunner,
@@ -41,10 +44,10 @@ final class RunProtoc extends Step {
       OptionsIngredient<ProtoOptions> options,
       DirScanFileSetIngredient protoSources,
       FileSetIngredient protocSet,
-      ImmutableList<FileIngredient> inputs,
-      StringValue javaGenfilesPath,
-      StringValue jsGenfilesPath,
-      FileIngredient descriptorSetFile) {
+      Bundle<FileIngredient> inputs,
+      PathValue javaGenfilesPath,
+      PathValue jsGenfilesPath,
+      PathValue descriptorSetFile) {
     super(
         PlanKey.builder("proto-to-java")
             .addInp(options, protoSources)
@@ -52,8 +55,7 @@ final class RunProtoc extends Step {
             .build(),
         ImmutableList.<Ingredient>builder()
             .add(options, protoSources, protocSet,
-                 javaGenfilesPath, jsGenfilesPath)
-            .addAll(inputs)
+                 javaGenfilesPath, jsGenfilesPath, descriptorSetFile, inputs)
             .build(),
         Sets.immutableEnumSet(
             StepSource.PROTO_SRC, StepSource.PROTO_GENERATED,
@@ -64,7 +66,6 @@ final class RunProtoc extends Step {
             StepSource.JS_GENERATED));
     this.processRunner = processRunner;
     this.rootSet = Preconditions.checkNotNull(rootSet);
-    this.descriptorSetFile = descriptorSetFile;
   }
 
   @Override
@@ -75,19 +76,22 @@ final class RunProtoc extends Step {
     DirScanFileSetIngredient protoSources =
         (DirScanFileSetIngredient) inputs.get(1);
     FileSetIngredient protocSet = (FileSetIngredient) inputs.get(2);
-    StringValue javaGenfilesPath = (StringValue) inputs.get(3);
-    StringValue jsGenfilesPath = (StringValue) inputs.get(4);
-    ImmutableList<FileIngredient> inputProtoFiles = castList(
-        inputs.subList(5, inputs.size()), FileIngredient.class);
+    PathValue javaGenfilesPath = (PathValue) inputs.get(3);
+    PathValue jsGenfilesPath = (PathValue) inputs.get(4);
+    PathValue descriptorSetFile = (PathValue) inputs.get(5);
+    Bundle<FileIngredient> inputFileBundle = ((Bundle<?>) inputs.get(6))
+        .asSuperType(FileIngredient.class);
 
-    if (inputProtoFiles.isEmpty()) {
+    ImmutableList<FileIngredient> sources = inputFileBundle.ings;
+
+    if (Iterables.isEmpty(sources)) {
       // We're done.
       // TODO: Is it a problem that we will not generate
       // an empty descriptor set file?
       return;
     }
 
-    ImmutableList<FileIngredient> protocs = protocSet.mainSources();
+    ImmutableList<FileIngredient> protocs = protocSet.sources();
     if (protocs.isEmpty()) {
       throw new MojoExecutionException(
           "No protoc executable found."
@@ -96,23 +100,12 @@ final class RunProtoc extends Step {
     }
     Source protoc = protocs.get(0).source;
 
-    ImmutableList<FileIngredient> sources = null;
-    switch (rootSet) {
-      case MAIN:
-        sources = protoSources.mainSources();
-        break;
-      case TEST:
-        sources = protoSources.testSources();
-        break;
-    }
-    Preconditions.checkNotNull(sources);
-
     ImmutableList.Builder<String> argv = ImmutableList.builder();
     argv.add(protoc.canonicalPath.getPath());
 
     argv.add("--include_imports")
         .add("--descriptor_set_out")
-        .add(descriptorSetFile.source.canonicalPath.getPath());
+        .add(descriptorSetFile.value.getPath());
 
     // Protoc is a little finicky about requiring that output directories
     // exist, though it will happily create directories for the packages.
@@ -121,23 +114,18 @@ final class RunProtoc extends Step {
 
     // Build a proto search path.
     Set<File> roots = Sets.newLinkedHashSet();
-    if (rootSet == RootSet.TEST) {
-      for (File root : protoSources.testRoots()) {
-        if (roots.add(root)) {
-          argv.add("--proto_path").add(root.getPath());
-        }
-      }
-    }
-    for (File root : protoSources.mainRoots()) {
-      if (roots.add(root)) {
-        argv.add("--proto_path").add(root.getPath());
+    for (TypedFile root : protoSources.spec().roots) {
+      if ((rootSet == RootSet.TEST
+           || !root.ps.contains(SourceFileProperty.TEST_ONLY))
+          && roots.add(root.f)) {
+        argv.add("--proto_path").add(root.f.getPath());
       }
     }
 
-    for (FileIngredient input : inputProtoFiles) {
-      File root = input.source.root;
-      if (roots.add(root)) {
-        argv.add("--proto_path").add(root.getPath());
+    for (FileIngredient input : sources) {
+      TypedFile root = input.source.root;
+      if (roots.add(root.f)) {
+        argv.add("--proto_path").add(root.f.getPath());
         // We're not guarding against ambiguity here.
         // We warn on it below.
       }
@@ -148,7 +136,7 @@ final class RunProtoc extends Step {
     // paths resolved by `import "<relative-path>";` directives are still
     // a potential source of ambiguity.
     Map<File, Source> relPathToSource = Maps.newHashMap();
-    for (FileIngredient input : inputProtoFiles) {
+    for (FileIngredient input : sources) {
       Source inputSource = input.source;
       Source ambig = relPathToSource.put(inputSource.relativePath, inputSource);
       if (ambig == null) {
@@ -157,7 +145,7 @@ final class RunProtoc extends Step {
             // because protoc insists that each input appear under a
             // search path element as determined by string comparison.
             FilenameUtils.concat(
-                inputSource.root.getPath(),
+                inputSource.root.f.getPath(),
                 inputSource.relativePath.getPath()));
       } else {
         log.warn(
@@ -187,9 +175,9 @@ final class RunProtoc extends Step {
     }
   }
 
-  private static String ensureDirExists(String dirPath) {
-    new File(dirPath).mkdirs();
-    return dirPath;
+  private static String ensureDirExists(File dirPath) {
+    dirPath.mkdirs();
+    return dirPath.getPath();
   }
 
   @Override
@@ -206,15 +194,5 @@ final class RunProtoc extends Step {
     MAIN,
     TEST,
     ;
-  }
-
-  private static <E, T extends E> ImmutableList<T> castList(
-      ImmutableList<E> ls, Class<T> elementType) {
-    for (E element : ls) {
-      elementType.cast(element);
-    }
-    @SuppressWarnings("unchecked")
-    ImmutableList<T> lsAsTList = (ImmutableList<T>) ls;
-    return lsAsTList;
   }
 }

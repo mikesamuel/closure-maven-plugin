@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -26,6 +27,7 @@ import com.google.common.base.Supplier;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.Sources.Source;
@@ -64,7 +66,8 @@ public class Ingredients {
     return type.cast(got);
   }
 
-  private static Source singletonSource(File file) throws IOException {
+  private static Source singletonSource(
+      File file, Set<SourceFileProperty> props) throws IOException {
     File canonFile = file.getCanonicalFile();
 
     class RootFinder {
@@ -85,12 +88,18 @@ public class Ingredients {
     if (relFile == null) {
       throw new IOException("The file-system root cannot be a source file");
     }
-    return new Sources.Source(canonFile, rf.root, relFile);
+    return new Sources.Source(
+        canonFile, new TypedFile(rf.root, props), relFile);
   }
 
   /** An ingredient backed by a file which is hashable when the file exists. */
   public FileIngredient file(File file) throws IOException {
-    return file(singletonSource(file));
+    return file(singletonSource(file, ImmutableSet.<SourceFileProperty>of()));
+  }
+
+  /** An ingredient backed by a file which is hashable when the file exists. */
+  public FileIngredient file(TypedFile file) throws IOException {
+    return file(singletonSource(file.f, file.ps));
   }
 
   /** An ingredient backed by a file which is hashable when the file exists. */
@@ -116,32 +125,22 @@ public class Ingredients {
    * which is hashable when explicitly resolved.
    */
   @SuppressWarnings("synthetic-access")
-  public DirScanFileSetIngredient fileset(Sources.Finder finder) {
-    final Sources.Finder finderCopy = finder.clone();
+  public DirScanFileSetIngredient fileset(final DirectoryScannerSpec spec) {
+    PlanKey.Builder keyBuilder = PlanKey.builder("fileset");
+    keyBuilder.addStrings(spec.includes);
+    keyBuilder.addStrings(spec.excludes);
 
-    List<String> mainRootStrings = Lists.newArrayList();
-    for (File f : finderCopy.mainRoots()) {
-      mainRootStrings.add(f.getPath());
+    List<String> strs = Lists.newArrayList();
+    for (TypedFile root : spec.roots) {
+      strs.clear();
+      strs.add(root.f.getPath());
+      for (SourceFileProperty p : root.ps) {
+        strs.add(p.name());
+      }
+      keyBuilder.addStrings(strs);
     }
-    Collections.sort(mainRootStrings);
-    List<String> testRootStrings = Lists.newArrayList();
-    for (File f : finderCopy.testRoots()) {
-      testRootStrings.add(f.getPath());
-    }
-    Collections.sort(testRootStrings);
 
-    List<String> exclusionStrings = Lists.newArrayList();
-    for (PathGlob exclusion : finder.exclusions()) {
-      exclusionStrings.add(exclusion.getGlobString());
-    }
-    Collections.sort(testRootStrings);
-
-    final PlanKey key = PlanKey.builder("fileset")
-        .addString(finderCopy.suffixPattern().pattern())
-        .addStrings(mainRootStrings)
-        .addStrings(testRootStrings)
-        .addStrings(exclusionStrings)
-        .build();
+    final PlanKey key = keyBuilder.build();
 
     return get(
         DirScanFileSetIngredient.class,
@@ -149,7 +148,7 @@ public class Ingredients {
         new Supplier<DirScanFileSetIngredient>() {
           @Override
           public DirScanFileSetIngredient get() {
-            return new DirScanFileSetIngredient(key, finderCopy);
+            return new DirScanFileSetIngredient(key, spec);
           }
         });
   }
@@ -251,7 +250,9 @@ public class Ingredients {
   SerializedObjectIngredient<T> serializedObject(
       File file, Class<T> contentType)
   throws IOException {
-    return serializedObject(singletonSource(file), contentType);
+    return serializedObject(
+        singletonSource(file, ImmutableSet.<SourceFileProperty>of()),
+        contentType);
   }
 
   /**
@@ -337,10 +338,7 @@ public class Ingredients {
 
   /** A group of files that need not be known at construct time. */
   public abstract class FileSetIngredient extends Ingredient {
-    private Optional<ImmutableList<FileIngredient>> mainSources
-        = Optional.absent();
-    private Optional<ImmutableList<FileIngredient>> testSources
-        = Optional.absent();
+    private Optional<ImmutableList<FileIngredient>> sources = Optional.absent();
     private Optional<Hash> hash = Optional.absent();
     private MojoExecutionException problem;
 
@@ -350,31 +348,18 @@ public class Ingredients {
 
     @Override
     public final synchronized Optional<Hash> hash() throws IOException {
-      if (mainSources.isPresent() && testSources.isPresent()) {
-        return Hash.hashAllHashables(
-            ImmutableList.<FileIngredient>builder()
-            .addAll(mainSources.get())
-            .addAll(testSources.get()).build());
+      if (sources.isPresent()) {
+        return Hash.hashAllHashables(sources.get());
       } else {
         return Optional.absent();
       }
     }
 
     /** Source files that should contribute to the artifact. */
-    public synchronized ImmutableList<FileIngredient> mainSources()
+    public synchronized ImmutableList<FileIngredient> sources()
     throws MojoExecutionException {
-      if (mainSources.isPresent()) {
-        return mainSources.get();
-      } else {
-        throw getProblem();
-      }
-    }
-
-    /** Source files that are used to test the artifact. */
-    public synchronized ImmutableList<FileIngredient> testSources()
-    throws MojoExecutionException {
-      if (testSources.isPresent()) {
-        return testSources.get();
+      if (sources.isPresent()) {
+        return sources.get();
       } else {
         throw getProblem();
       }
@@ -401,25 +386,20 @@ public class Ingredients {
     }
 
     protected final
-    void setSources(
-        Iterable<? extends FileIngredient> newMainSources,
-        Iterable<? extends FileIngredient> newTestSources)
+    void setSources(Iterable<? extends FileIngredient> newSources)
     throws IOException {
-      Optional<ImmutableList<FileIngredient>> newMainSourceList = Optional.of(
-          ImmutableList.copyOf(newMainSources));
-      Optional<ImmutableList<FileIngredient>> newTestSourceList = Optional.of(
-          ImmutableList.copyOf(newTestSources));
-      Hash mainHash = Hash.hashAllHashables(newMainSourceList.get()).get();
-      Hash testHash = Hash.hashAllHashables(newTestSourceList.get()).get();
-      Optional<Hash> hashOfFiles = Optional.of(
-          Hash.hashAllHashes(
-              ImmutableList.<Hash>of(mainHash, testHash)));
+      ImmutableList<FileIngredient> newSourceList =
+          ImmutableList.copyOf(newSources);
+      Hash hashOfFiles = Hash.hashAllHashables(newSourceList).get();
+
+      Optional<ImmutableList<FileIngredient>> newSourceListOpt =
+          Optional.of(newSourceList);
+      Optional<Hash> hashOfFilesOpt = Optional.of(hashOfFiles);
+
       synchronized (this) {
-        Preconditions.checkState(
-            !mainSources.isPresent() && !testSources.isPresent());
-        this.mainSources = newMainSourceList;
-        this.testSources = newTestSourceList;
-        this.hash = hashOfFiles;
+        Preconditions.checkState(!sources.isPresent());
+        this.sources = newSourceListOpt;
+        this.hash = hashOfFilesOpt;
       }
     }
 
@@ -428,8 +408,8 @@ public class Ingredients {
       Optional<ImmutableList<FileIngredient>> newSources = Optional.of(
           ImmutableList.copyOf(sources));
       synchronized (this) {
-        Preconditions.checkState(!mainSources.isPresent());
-        this.mainSources = newSources;
+        Preconditions.checkState(!this.sources.isPresent());
+        this.sources = newSources;
       }
     }
 
@@ -457,11 +437,9 @@ public class Ingredients {
      * May be called once to specify the files in the set, as the file set
      * transitions from being used as an input to being used as an output.
      */
-    public void setFiles(
-        Iterable<? extends FileIngredient> newMainSources,
-        Iterable<? extends FileIngredient> newTestSources)
+    public void setFiles(Iterable<? extends FileIngredient> newSources)
     throws IOException {
-      this.setSources(newMainSources, newTestSources);
+      this.setSources(newSources);
     }
 
     @Override
@@ -475,36 +453,16 @@ public class Ingredients {
    * which is hashable when explicitly resolved.
    */
   public final class DirScanFileSetIngredient extends FileSetIngredient {
-    private Sources.Finder finder;
-    private final ImmutableList<File> mainRoots;
-    private final ImmutableList<File> testRoots;
-    private final ImmutableList<PathGlob> exclusions;
+    private final DirectoryScannerSpec spec;
 
-    private DirScanFileSetIngredient(PlanKey key, Sources.Finder finder) {
+    private DirScanFileSetIngredient(PlanKey key, DirectoryScannerSpec spec) {
       super(key);
-      this.finder = Preconditions.checkNotNull(finder);
-      this.mainRoots = finder.mainRoots();
-      this.testRoots = finder.testRoots();
-      this.exclusions = finder.exclusions();
+      this.spec = Preconditions.checkNotNull(spec);
     }
 
-    /** @see Sources.Finder#mainRoots */
-    public ImmutableList<File> mainRoots() {
-      return mainRoots;
-    }
-
-    /** @see Sources.Finder#testRoots */
-    public ImmutableList<File> testRoots() {
-      return testRoots;
-    }
-
-    /** @see Sources.Finder#exclusions */
-    public ImmutableList<PathGlob> exclusions() {
-      ImmutableList.Builder<PathGlob> b = ImmutableList.builder();
-      for (PathGlob g : exclusions) {
-        b.add(g);
-      }
-      return b.build();
+    /** The specification for the set of files to scan. */
+    public DirectoryScannerSpec spec() {
+      return spec;
     }
 
     /** Scans the file-system to find matching files. */
@@ -512,20 +470,21 @@ public class Ingredients {
       if (isResolved()) {
         return;
       }
-      Preconditions.checkNotNull(finder);
       try {
-        Sources sources = finder.scan(log);
-        ImmutableList<FileIngredient> mainSourceList = sortedSources(
-            sources.mainFiles);
-        ImmutableList<FileIngredient> testSourceList = sortedSources(
-            sources.testFiles);
-        this.setSources(mainSourceList, testSourceList);
+        Sources sources = Sources.scan(log, spec);
+
+        ImmutableList.Builder<FileIngredient> fileIngredientList =
+            ImmutableList.builder();
+        for (Source source : sources.sources) {
+          fileIngredientList.add(Ingredients.this.file(source));
+        }
+
+        this.setSources(fileIngredientList.build());
       } catch (IOException ex) {
         setProblem(new MojoExecutionException(
             "Resolution of " + key + " failed", ex));
         throw ex;
       }
-      this.finder = null;
     }
   }
 
@@ -785,6 +744,16 @@ public class Ingredients {
       // Sound when typeCheckingIdentityFn is sound.
       Bundle<J> typedBundle = (Bundle<J>) this;
       return typedBundle;
+    }
+
+    /** Type coercion. */
+    public <J extends Ingredient> Bundle<J> asSuperType(final Class<J> typ) {
+      return asSuperType(new Function<Ingredient, J>() {
+        @Override
+        public J apply(Ingredient ing) {
+          return typ.cast(ing);
+        }
+      });
     }
 
     @Override

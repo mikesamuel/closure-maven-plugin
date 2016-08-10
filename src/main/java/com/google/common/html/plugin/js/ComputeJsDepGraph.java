@@ -16,10 +16,13 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -34,6 +37,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
@@ -90,8 +94,7 @@ final class ComputeJsDepGraph extends Step {
             return new CompilerInput(sourceFile);
           }
         },
-        Lists.transform(sources.mainSources(), FileIngredient.GET_SOURCE),
-        Lists.transform(sources.testSources(), FileIngredient.GET_SOURCE));
+        Lists.transform(sources.sources(), FileIngredient.GET_SOURCE));
 
     try {
       SerializedObjectIngredient<Modules> modulesIng = getModulesIng();
@@ -107,8 +110,7 @@ final class ComputeJsDepGraph extends Step {
       Log log,
       JsOptions options,
       CompilerInputFactory ciFactory,
-      Iterable<? extends Source> mainSources,
-      Iterable<? extends Source> testSources)
+      Iterable<? extends Source> sources)
   throws MojoExecutionException {
 
     Multimap<ModuleName, CompilerInputAndSource> compilerInputsPerModule =
@@ -127,6 +129,19 @@ final class ComputeJsDepGraph extends Step {
                     });
               }
             });
+
+    Predicate<Source> isTestOnly = new Predicate<Source>() {
+      @Override
+      public boolean apply(Source s) {
+        return s.root.ps.contains(SourceFileProperty.TEST_ONLY);
+      }
+    };
+
+    Iterable<? extends Source> mainSources = Iterables.filter(
+        sources, Predicates.not(isTestOnly));
+    Iterable<? extends Source> testSources = Iterables.filter(
+        sources, isTestOnly);
+
     collectSourceFiles(
         "main", mainSources, compilerInputsPerModule, ciFactory);
     collectSourceFiles(

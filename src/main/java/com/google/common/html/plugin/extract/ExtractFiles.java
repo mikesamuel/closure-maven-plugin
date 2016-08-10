@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -22,6 +23,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -91,7 +93,7 @@ final class ExtractFiles extends Step {
               // Suffix matches.
               byte[] bytes = ByteStreams.toByteArray(zipIn);
               File extractedLocation = locationFor(
-                  gd, name, e.isTestScope, bytes);
+                  gd, name, e.props, bytes);
               log.debug(
                   "Extracting " + e.groupId + ":" + e.artifactId + " : " + name
                   + " to " + extractedLocation);
@@ -106,14 +108,15 @@ final class ExtractFiles extends Step {
   }
 
   private static File locationFor(
-      GenfilesDirs gd, String name, boolean isTestScope, byte[] content) {
+      GenfilesDirs gd, String name, Set<SourceFileProperty> props,
+      byte[] content) {
     String suffix = FilenameUtils.getExtension(name);
     PathChooser pathChooser = EXTENSION_TO_PATH_CHOOSER.get(suffix);
     if (pathChooser == null) {
       pathChooser = new DefaultPathChooser();
     }
     String relPath = pathChooser.chooseRelativePath(name, content);
-    File base = gd.getGeneratedSourceDirectoryForExtension(suffix, isTestScope);
+    File base = gd.getGeneratedSourceDirectory(suffix, props);
 
     return new File(FilenameUtils.concat(
         base.getPath(),

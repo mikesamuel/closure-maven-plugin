@@ -1,6 +1,5 @@
 package com.google.common.html.plugin.soy;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -12,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.html.plugin.common.Options;
 import com.google.common.html.plugin.common.OptionsUtils;
+import com.google.common.html.plugin.common.SourceOptions;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.SoyFileSet.Builder;
 
@@ -19,12 +19,9 @@ import com.google.template.soy.SoyFileSet.Builder;
  * An ID that must be unique among a bundle of options of the same kind used
  * in a compilation batch.
  */
-public final class SoyOptions extends Options {
+public final class SoyOptions extends SourceOptions {
 
   private static final long serialVersionUID = -7199213790460881298L;
-
-  /** Source root directories for {@code .soy} files. */
-  public File[] source;
 
   /** whether to allow external calls (calls to undefined templates). */
   public Boolean allowExternalCalls;
@@ -207,5 +204,11 @@ public final class SoyOptions extends Options {
       newJs.add((Js) o);
     }
     this.js = newJs.build().toArray(new Js[newOptions.size()]);
+  }
+
+
+  @Override
+  protected ImmutableList<String> sourceExtensions() {
+    return ImmutableList.of("soy");
   }
 }

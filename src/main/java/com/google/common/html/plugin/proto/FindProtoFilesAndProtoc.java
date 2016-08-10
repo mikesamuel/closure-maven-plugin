@@ -2,28 +2,30 @@ package com.google.common.html.plugin.proto;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.Sources;
+import com.google.common.html.plugin.common.DirectoryScannerSpec;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.StringValue;
-import com.google.common.html.plugin.common.PathGlob;
 import com.google.common.html.plugin.common.ProcessRunner;
+import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -47,10 +49,10 @@ final class FindProtoFilesAndProtoc extends Step {
 
       OptionsIngredient<ProtoOptions> options,
       SerializedObjectIngredient<GenfilesDirs> genfiles,
-      StringValue defaultProtoSourcePath,
-      StringValue defaultProtoTestSourcePath,
-      StringValue defaultMainDescriptorFilePath,
-      StringValue defaultTestDescriptorFilePath,
+      PathValue defaultProtoSourcePath,
+      PathValue defaultProtoTestSourcePath,
+      PathValue defaultMainDescriptorFilePath,
+      PathValue defaultTestDescriptorFilePath,
 
       SerializedObjectIngredient<ProtoIO> protoSpec,
       SettableFileSetIngredient protocExec) {
@@ -81,52 +83,34 @@ final class FindProtoFilesAndProtoc extends Step {
     SerializedObjectIngredient<GenfilesDirs> genfiles =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
-    StringValue defaultProtoSourcePath = (StringValue) inputs.get(2);
-    StringValue defaultProtoTestSourcePath = (StringValue) inputs.get(3);
-    StringValue defaultMainDescriptorFilePath = (StringValue) inputs.get(4);
-    StringValue defaultTestDescriptorFilePath = (StringValue) inputs.get(5);
+    PathValue defaultProtoSourcePath = (PathValue) inputs.get(2);
+    PathValue defaultProtoTestSourcePath = (PathValue) inputs.get(3);
+    PathValue defaultMainDescriptorFilePath = (PathValue) inputs.get(4);
+    PathValue defaultTestDescriptorFilePath = (PathValue) inputs.get(5);
 
     GenfilesDirs gf = genfiles.getStoredObject().get();
 
     ProtoOptions protoOptions = options.getOptions();
 
-    ImmutableSet.Builder<File> mainSources = ImmutableSet.builder();
-    if (protoOptions.source != null) {
-      mainSources.addAll(ImmutableList.copyOf(protoOptions.source));
-    } else {
-      mainSources.add(new File(defaultProtoSourcePath.value));
-    }
-    mainSources.add(gf.getGeneratedSourceDirectoryForExtension("proto", false));
-
-    ImmutableSet.Builder<File> testSources = ImmutableSet.builder();
-    if (protoOptions.testSource != null) {
-      testSources.addAll(ImmutableList.copyOf(protoOptions.testSource));
-    } else {
-      testSources.add(new File(defaultProtoTestSourcePath.value));
-    }
-    testSources.add(gf.getGeneratedSourceDirectoryForExtension("proto", true));
-
-    ImmutableSet.Builder<PathGlob> exclusions = ImmutableSet.builder();
-    if (protoOptions.exclusion != null) {
-      exclusions.addAll(Arrays.asList(protoOptions.exclusion));
-    }
+    DirectoryScannerSpec protoSources = protoOptions.toDirectoryScannerSpec(
+        defaultProtoSourcePath.value,
+        defaultProtoTestSourcePath.value,
+        gf);
 
     setProtocExec();
 
     File mainDescriptorSetFile =
         protoOptions.descriptorSetFile != null
         ? protoOptions.descriptorSetFile
-        : new File(defaultMainDescriptorFilePath.value);
+        : defaultMainDescriptorFilePath.value;
 
     File testDescriptorSetFile =
         protoOptions.testDescriptorSetFile != null
         ? protoOptions.testDescriptorSetFile
-        : new File(defaultTestDescriptorFilePath.value);
+        : defaultTestDescriptorFilePath.value;
 
     protoSpec.setStoredObject(new ProtoIO(
-        ImmutableList.copyOf(mainSources.build()),
-        ImmutableList.copyOf(testSources.build()),
-        ImmutableList.copyOf(exclusions.build()),
+        protoSources,
         mainDescriptorSetFile,
         testDescriptorSetFile
         ));
@@ -158,29 +142,41 @@ final class FindProtoFilesAndProtoc extends Step {
     ProtoIO protocSpecValue = protoSpec.getStoredObject().get();
 
     DirScanFileSetIngredient protoSources =
-        ingredients.fileset(new Sources.Finder(".proto")
-            .mainRoots(protocSpecValue.mainSourceRoots)
-            .testRoots(protocSpecValue.testSourceRoots)
-            .exclusions(protocSpecValue.exclusions));
+        ingredients.fileset(protocSpecValue.protoSources);
     try {
       protoSources.resolve(log);
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to find .proto sources", ex);
     }
 
-    FileIngredient mainDescriptorSet;
-    FileIngredient testDescriptorSet;
-    try {
-      mainDescriptorSet = ingredients.file(
-          protocSpecValue.mainDescriptorSetFile);
-      testDescriptorSet = ingredients.file(
-          protocSpecValue.testDescriptorSetFile);
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to find position for descriptor set output files", ex);
-    }
+    PathValue mainDescriptorSet = ingredients.pathValue(
+        protocSpecValue.mainDescriptorSetFile);
+    PathValue testDescriptorSet = ingredients.pathValue(
+        protocSpecValue.testDescriptorSetFile);
 
     GenfilesDirs gf = genfiles.getStoredObject().get();
+
+    Predicate<FileIngredient> isTestOnly = new Predicate<FileIngredient>() {
+      @Override
+      public boolean apply(FileIngredient ing) {
+        return ing.source.root.ps.contains(SourceFileProperty.TEST_ONLY);
+      }
+    };
+    Predicate<FileIngredient> isDep = new Predicate<FileIngredient>() {
+      @Override
+      public boolean apply(FileIngredient ing) {
+        return ing.source.root.ps.contains(SourceFileProperty.LOAD_AS_NEEDED);
+      }
+    };
+    Predicate<FileIngredient> isMainSource = Predicates.not(Predicates.or(
+        isTestOnly, isDep));
+    Predicate<FileIngredient> isTestSource = Predicates.and(
+        isTestOnly, Predicates.not(isDep));
+
+    Iterable<FileIngredient> mainSources =
+        Iterables.filter(protoSources.sources(), isMainSource);
+    Iterable<FileIngredient> testSources =
+        Iterables.filter(protoSources.sources(), isTestSource);
 
     // Compile the main files separately from the test files since protoc
     // has a single output directory.
@@ -188,17 +184,17 @@ final class FindProtoFilesAndProtoc extends Step {
         processRunner,
         RunProtoc.RootSet.MAIN,
         options, protoSources, protocExec,
-        protoSources.mainSources(),
-        ingredients.stringValue(gf.javaGenfiles.getPath()),
-        ingredients.stringValue(gf.jsGenfiles.getPath()),
+        ingredients.bundle(mainSources),
+        ingredients.pathValue(gf.javaGenfiles),
+        ingredients.pathValue(gf.jsGenfiles),
         mainDescriptorSet);
     RunProtoc test = new RunProtoc(
         processRunner,
         RunProtoc.RootSet.TEST,
         options, protoSources, protocExec,
-        protoSources.testSources(),
-        ingredients.stringValue(gf.javaTestGenfiles.getPath()),
-        ingredients.stringValue(gf.jsTestGenfiles.getPath()),
+        ingredients.bundle(testSources),
+        ingredients.pathValue(gf.javaTestGenfiles),
+        ingredients.pathValue(gf.jsTestGenfiles),
         testDescriptorSet);
 
     return ImmutableList.<Step>of(main, test);
@@ -210,5 +206,4 @@ final class FindProtoFilesAndProtoc extends Step {
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
     protocFinder.find(options.getOptions(), ingredients, protocExec);
   }
-
 }

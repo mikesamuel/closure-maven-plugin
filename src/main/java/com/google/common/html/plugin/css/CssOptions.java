@@ -28,8 +28,8 @@ import com.google.common.css.JobDescription.OptimizeStrategy;
 import com.google.common.html.plugin.OutputAmbiguityChecker;
 import com.google.common.html.plugin.Sources;
 import com.google.common.html.plugin.common.Asplodable;
-import com.google.common.html.plugin.common.Options;
 import com.google.common.html.plugin.common.OptionsUtils;
+import com.google.common.html.plugin.common.SourceOptions;
 import com.google.common.io.Files;
 
 //@Mojo(name="css")
@@ -37,7 +37,7 @@ import com.google.common.io.Files;
  * Options for processing
  * <a href="https://github.com/google/closure-stylesheets">Closure Stylesheets</a>.
  */
-public final class CssOptions extends Options {
+public final class CssOptions extends SourceOptions {
 
   private static final long serialVersionUID = 8205371531045169081L;
 
@@ -172,11 +172,6 @@ public final class CssOptions extends Options {
   @Parameter
   public Class<? extends CustomPass>[] customPasses;
 
-  /**
-   * Directories to scan for CSS sources.
-   */
-  @Parameter
-  public File[] source;
   /**
    * The output CSS filename. If empty, standard output will be
    * used. The output is always UTF-8 encoded.
@@ -462,6 +457,12 @@ public final class CssOptions extends Options {
 
   private static boolean wasSet(Enum<?> parameterValue) {
     return parameterValue != null;
+  }
+
+
+  @Override
+  protected ImmutableList<String> sourceExtensions() {
+    return ImmutableList.of("css", "gss");
   }
 }
 

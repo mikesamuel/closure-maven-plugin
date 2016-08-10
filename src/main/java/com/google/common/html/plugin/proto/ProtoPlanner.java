@@ -95,10 +95,10 @@ public final class ProtoPlanner {
         planner.processRunner, protocFinder, planner.ingredients,
         protoOptionsIng,
         planner.genfiles,
-        planner.ingredients.stringValue(defaultProtoSource.getPath()),
-        planner.ingredients.stringValue(defaultProtoTestSource.getPath()),
-        planner.ingredients.stringValue(defaultMainDescriptorFile.getPath()),
-        planner.ingredients.stringValue(defaultTestDescriptorFile.getPath()),
+        planner.ingredients.pathValue(defaultProtoSource),
+        planner.ingredients.pathValue(defaultProtoTestSource),
+        planner.ingredients.pathValue(defaultMainDescriptorFile),
+        planner.ingredients.pathValue(defaultTestDescriptorFile),
         protoIO, protocExec));
   }
 

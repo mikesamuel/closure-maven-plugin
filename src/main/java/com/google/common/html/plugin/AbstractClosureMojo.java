@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
 import com.google.common.html.plugin.common.ToolFinder;
@@ -44,6 +43,12 @@ import com.google.common.html.plugin.soy.SoyOptions;
 import com.google.common.io.Files;
 
 abstract class AbstractClosureMojo extends AbstractMojo {
+  @Parameter(
+      defaultValue="${project.basedir}",
+      required=true,
+      readonly=true)
+  protected File baseDir;
+
   @Parameter(
       defaultValue="${project.build.directory}",
       required=true,
@@ -222,7 +227,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
     CommonPlanner planner;
     try {
       planner = new CommonPlanner(
-          log, outputDir, outputClassesDir, substitutionMapProvider,
+          log, baseDir, outputDir, outputClassesDir, substitutionMapProvider,
           runtimeClassPath.build(), hashStore);
     } catch (IOException ex) {
       throw new MojoExecutionException("failed to initialize planner", ex);
@@ -341,8 +346,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
               ProtocBundledMojo.class, protocBundledMojo,
               File.class, "protocExec");
           protocPathOut.setFiles(
-              ImmutableList.of(ingredients.file(protocFile)),
-              ImmutableList.<FileIngredient>of());
+              ImmutableList.of(ingredients.file(protocFile)));
         } catch (InvocationTargetException ex) {
           protocPathOut.setProblem(ex.getTargetException());
         } catch (IOException ex) {

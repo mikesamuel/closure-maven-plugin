@@ -26,6 +26,7 @@ import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
+import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -80,12 +81,11 @@ final class FindEntryPoints extends Step {
     try {
       cssSources.resolve(log);
 
-      ImmutableList.Builder<Source> mainSources = ImmutableList.builder();
-      ImmutableList<FileIngredient> files = cssSources.mainSources();
-      for (FileIngredient sourceFile : files) {
-        mainSources.add(sourceFile.source);
+      ImmutableList.Builder<Source> sources = ImmutableList.builder();
+      for (FileIngredient sourceFile : cssSources.sources()) {
+        sources.add(sourceFile.source);
       }
-      importGraph = new CssImportGraph(log, mainSources.build());
+      importGraph = new CssImportGraph(log, sources.build());
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to parse imports in CSS source files", ex);
@@ -153,7 +153,8 @@ final class FindEntryPoints extends Step {
       SerializedObjectIngredient<CssBundle> bundle;
       try {
         bundle = ingredients.serializedObject(
-            b.entryPoint.reroot(cssOutputDirectory).suffix(".bundle.ser"),
+            b.entryPoint.reroot(new TypedFile(cssOutputDirectory))
+                .suffix(".bundle.ser"),
             CssBundle.class);
         bundle.setStoredObject(b);
         bundle.write();

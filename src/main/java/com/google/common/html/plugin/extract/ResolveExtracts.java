@@ -21,6 +21,7 @@ import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients
     .SettableFileSetIngredient;
+import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.html.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -114,7 +115,7 @@ final class ResolveExtracts extends Step {
               solution.groupId,
               solution.version,
               e.getSuffixes(),
-              solution.isTestScope,
+              e.getFileProperties(),
               solution.archive
               ));
         } else {
@@ -147,16 +148,14 @@ final class ResolveExtracts extends Step {
       ImmutableList<ResolvedExtract> resolved)
   throws MojoExecutionException {
 
-    ImmutableList.Builder<FileIngredient> mainArchives =
-        ImmutableList.builder();
-    ImmutableList.Builder<FileIngredient> testArchives =
+    ImmutableList.Builder<FileIngredient> archivesBuilder =
         ImmutableList.builder();
     try {
       for (ResolvedExtract re : resolved) {
-        (re.isTestScope ? testArchives : mainArchives).add(
-            ingredients.file(re.archive));
+        archivesBuilder.add(ingredients.file(
+            new TypedFile(re.archive, re.props)));
       }
-      archives.setFiles(mainArchives.build(), testArchives.build());
+      this.archives.setFiles(archivesBuilder.build());
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to build hashable file list of archives",

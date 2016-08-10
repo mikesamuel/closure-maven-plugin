@@ -15,6 +15,7 @@ import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableClassToInstanceMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.plugin.TestLog;
+import com.google.common.html.plugin.common.SourceOptions.SourceRootBuilder;
 import com.google.common.html.plugin.js.JsOptions.DependencyMode;
 import com.google.common.html.plugin.js.JsOptions.FormattingOption;
 import com.google.javascript.jscomp.CompilationLevel;
@@ -37,7 +38,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testNonFlagOptionsToArgv() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.source = new File[] { new File("src") };
+    SourceRootBuilder src = new SourceRootBuilder();
+    src.set(new File("src"));
+    opts.source = new SourceRootBuilder[] { src };
 
     assertEquals(ImmutableList.of(), sanityCheckArgv(opts));
   }
