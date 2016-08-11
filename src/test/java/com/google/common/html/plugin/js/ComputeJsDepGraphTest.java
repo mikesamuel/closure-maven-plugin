@@ -167,10 +167,10 @@ public final class ComputeJsDepGraphTest extends TestCase {
   @Test
   public static void testDeps() throws Exception {
     new TestBuilder()
-       .source("/src/main/js/a", "foo.js")
-       .source("/src/dep/js/a", "bar.js", SourceFileProperty.LOAD_AS_NEEDED)
-       .source("/src/dep/js/a", "baz.js", SourceFileProperty.LOAD_AS_NEEDED)
-       .source("/src/dep/js/a", "boo.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .source("/src/main/js", "a/foo.js")
+       .source("/src/dep/js", "a/bar.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .source("/src/dep/js", "a/baz.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .source("/src/dep/js", "a/boo.js", SourceFileProperty.LOAD_AS_NEEDED)
        .fileContent(
            "/src/main/js/a/foo.js",
            ""
@@ -190,13 +190,46 @@ public final class ComputeJsDepGraphTest extends TestCase {
            + "goog.provide('a.boo');\n"
            + "goog.require('a.bar');")
        .expectArgv(
-           "--module", "src.main:3",
+           "--module", "src.main.a:3",
            "--js", "/src/dep/js/a/bar.js",  // No deps
            "--js", "/src/dep/js/a/baz.js",  // Depends on a/bar.js
            "--js", "/src/main/js/a/foo.js"  // Depends on a/baz.js
            )
        .log(new TestLog().verbose(false))
        .run();
+  }
+
+  @Test
+  public static final void testUnusedModules() throws Exception {
+    new TestBuilder()
+        .source("/src/main/js", "a/foo.js")
+        .source("/src/dep/js", "b/bar.js", SourceFileProperty.LOAD_AS_NEEDED)
+        .source("/src/dep/js", "c/baz.js", SourceFileProperty.LOAD_AS_NEEDED)
+        .source("/src/dep/js", "d/boo.js", SourceFileProperty.LOAD_AS_NEEDED)
+        .fileContent(
+            "/src/main/js/a/foo.js",
+            ""
+            + "goog.provide('a.foo');\n"
+            + "goog.require('c.baz');")
+        .fileContent(
+            "/src/dep/js/b/bar.js",
+            "goog.provide('b.bar');")
+        .fileContent(
+            "/src/dep/js/c/baz.js",
+            "goog.provide('c.baz');")
+        .fileContent(
+            "/src/dep/js/d/boo.js",
+            ""
+            + "goog.provide('d.boo');\n"
+            + "goog.require('b.bar');")
+        .expectArgv(
+            "--module", "src.main.c:1",
+            "--js", "/src/dep/js/c/baz.js",
+            "--module", "src.main.a:1:src.main.c",
+            "--js", "/src/main/js/a/foo.js"  // Depends on c/baz.js
+            )
+        .log(new TestLog().verbose(false))
+        .run();
   }
 
   static final class TestBuilder extends AbstractDepTestBuilder<TestBuilder> {

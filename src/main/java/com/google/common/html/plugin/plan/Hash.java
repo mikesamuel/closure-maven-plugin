@@ -19,7 +19,9 @@ import com.google.common.io.Files;
 /**
  * Wraps a byte[] from a hashing function.
  */
-public final class Hash {
+public final class Hash implements Serializable {
+  private static final long serialVersionUID = -3522511647884072504L;
+
   private final byte[] bytes;
 
   Hash(byte[] bytes) {

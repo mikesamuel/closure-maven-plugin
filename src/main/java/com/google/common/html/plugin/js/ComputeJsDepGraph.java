@@ -141,7 +141,11 @@ final class ComputeJsDepGraph extends Step {
       ImmutableMap.Builder<ModuleName, ImmutableList<SourceAndDepInfo>> b =
           ImmutableMap.builder();
       for (Map.Entry<ModuleName, ModuleInfo> e : moduleInfo.entrySet()) {
-        b.put(e.getKey(), ImmutableList.copyOf(e.getValue().getUsedSources()));
+        ImmutableList<SourceAndDepInfo> moduleSources =
+            ImmutableList.copyOf(e.getValue().getUsedSources());
+        if (!moduleSources.isEmpty()) {
+          b.put(e.getKey(), moduleSources);
+        }
       }
       sourcesPerModule = b.build();
     }
