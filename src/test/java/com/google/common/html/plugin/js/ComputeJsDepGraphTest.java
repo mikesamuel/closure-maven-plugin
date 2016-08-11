@@ -1,22 +1,15 @@
 package com.google.common.html.plugin.js;
 
-import java.io.File;
-import java.util.Map;
-
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
+import com.google.common.html.plugin.common.TopoSort;
 import com.google.common.html.plugin.TestLog;
 import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.common.TopoSort;
-import com.google.common.html.plugin.common.TypedFile;
 import com.google.common.html.plugin.common.Sources.Source;
-import com.google.javascript.jscomp.CompilerInput;
-import com.google.javascript.jscomp.SourceFile;
 
 import junit.framework.TestCase;
 
@@ -60,24 +53,24 @@ public final class ComputeJsDepGraphTest extends TestCase {
     .testSource("/src/test/js", "b/test.js")
     .expectArgv(
             // main.b has no external dependencies and contains 2 files
-            "--module", "main.b:2",
+            "--module", "src.main.b:2",
             // Stable file order.
             "--js", "/src/main/js/b/baz.js",
             "--js", "/src/main/js/b/boo.js",
 
             // main.a depends upon main.b and contains 2 files
-            "--module", "main.a:2:main.b",
+            "--module", "src.main.a:2:src.main.b",
             // bar.js depends upon foo.js
             "--js", "/src/main/js/a/foo.js",
             "--js", "/src/main/js/a/bar.js",
 
             // test.b depends upon main.b
-            "--module", "test.b:1:main.b",
+            "--module", "src.test.b:1:src.main.b",
             "--js", "/src/test/js/b/test.js",
 
             // test.a depends upon main.a and transitively upon main.b
             // Since main.a depends upon main.b, main.b comes first.
-            "--module", "test.a:1:main.b,main.a",
+            "--module", "src.test.a:1:src.main.b,src.main.a",
             "--js", "/src/test/js/a/test.js"
             )
     .run();
@@ -126,10 +119,10 @@ public final class ComputeJsDepGraphTest extends TestCase {
           ex.getCause() instanceof TopoSort.CyclicRequirementException);
       assertEquals(
           // b depends, via a.foo on a
-          "[{ModuleName main.b}, {GoogNamespace a.foo}, "
+          "[{ModuleName src.main.b}, {GoogNamespace a.foo}, "
           // a depends, via b.bar, on b
-          + "{ModuleName main.a}, {GoogNamespace b.bar},"
-          + " {ModuleName main.b}]",
+          + "{ModuleName src.main.a}, {GoogNamespace b.bar},"
+          + " {ModuleName src.main.b}]",
           ((TopoSort.CyclicRequirementException) ex.getCause())
           .cycle.toString());
       return;
@@ -171,34 +164,47 @@ public final class ComputeJsDepGraphTest extends TestCase {
     fail("Expected exception");
   }
 
+  @Test
+  public static void testDeps() throws Exception {
+    new TestBuilder()
+       .source("/src/main/js/a", "foo.js")
+       .source("/src/dep/js/a", "bar.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .source("/src/dep/js/a", "baz.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .source("/src/dep/js/a", "boo.js", SourceFileProperty.LOAD_AS_NEEDED)
+       .fileContent(
+           "/src/main/js/a/foo.js",
+           ""
+           + "goog.provide('a.foo');\n"
+           + "goog.require('a.baz');")
+       .fileContent(
+           "/src/dep/js/a/bar.js",
+           "goog.provide('a.bar');")
+       .fileContent(
+           "/src/dep/js/a/baz.js",
+           ""
+           + "goog.provide('a.baz');\n"
+           + "goog.require('a.bar');")
+       .fileContent(
+           "/src/dep/js/a/boo.js",
+           ""
+           + "goog.provide('a.boo');\n"
+           + "goog.require('a.bar');")
+       .expectArgv(
+           "--module", "src.main:3",
+           "--js", "/src/dep/js/a/bar.js",  // No deps
+           "--js", "/src/dep/js/a/baz.js",  // Depends on a/bar.js
+           "--js", "/src/main/js/a/foo.js"  // Depends on a/baz.js
+           )
+       .log(new TestLog().verbose(false))
+       .run();
+  }
 
-  static final class TestBuilder {
+  static final class TestBuilder extends AbstractDepTestBuilder<TestBuilder> {
 
-    private Map<String, String> fileContent = Maps.newLinkedHashMap();
-    private ImmutableList.Builder<Source> sources = ImmutableList.builder();
     private ImmutableList.Builder<String> wantedArgv = ImmutableList.builder();
 
-    private static Source src(
-        String root, String relPath, SourceFileProperty... ps) {
-      return new Source(
-          new File(root + "/" + relPath),
-          new TypedFile(new File(root), ps),
-          new File(relPath));
-    }
-
-    TestBuilder fileContent(String path, String content) {
-      Preconditions.checkState(null == fileContent.put(path, content));
-      return this;
-    }
-
-    TestBuilder mainSource(String root, String relPath) {
-      sources.add(src(root, relPath));
-      return this;
-    }
-
-    TestBuilder testSource(String root, String relPath) {
-      sources.add(src(root, relPath, SourceFileProperty.TEST_ONLY));
-      return this;
+    TestBuilder() {
+      super(TestBuilder.class);
     }
 
     TestBuilder expectArgv(String... args) {
@@ -208,28 +214,18 @@ public final class ComputeJsDepGraphTest extends TestCase {
       return this;
     }
 
-    void run() throws MojoExecutionException {
-      Modules modules = ComputeJsDepGraph.execute(
-          new TestLog(),
-          new JsOptions(),
-          new ComputeJsDepGraph.CompilerInputFactory() {
-            @Override
-            public CompilerInput create(Source source) {
-              @SuppressWarnings("synthetic-access")
-              String content = Preconditions.checkNotNull(
-                  fileContent.get(source.canonicalPath.getPath()),
-                  source.canonicalPath.getPath());
-              SourceFile sf = SourceFile.builder()
-                  .withOriginalPath(source.relativePath.getPath())
-                  .buildFromCode(source.canonicalPath.getPath(), content);
-              return new CompilerInput(sf);
-            }
-          },
-          sources.build());
+    @Override
+    void run(
+        Log log, JsOptions options, ImmutableList<Source> srcs, JsDepInfo di)
+    throws MojoExecutionException {
+      Modules modules = ComputeJsDepGraph.computeDepGraph(
+          log,
+          options,
+          srcs,
+          di);
 
       ImmutableList.Builder<String> modulesArgv = ImmutableList.builder();
       modules.addClosureCompilerFlags(modulesArgv);
-
 
       assertEquals(
           Joiner.on("\n").join(wantedArgv.build()),

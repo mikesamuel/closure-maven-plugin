@@ -45,6 +45,11 @@ public enum StepSource {
    * files.
    */
   JS_SOURCE_MAP("target/js/*-source-map.json"),
+  /**
+   * An intermediate file that records a mapping from source files to
+   * lists of provides/requires.
+   */
+  JS_DEP_INFO("target/js/dep-info.ser"),
 
   /** Protobuf source files for the current project. */
   PROTO_SRC("src/main/js/**/*.proto"),

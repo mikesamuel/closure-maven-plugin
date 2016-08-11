@@ -21,21 +21,29 @@ import com.google.common.html.plugin.plan.StepSource;
 
 final class FindJsSources extends Step {
   private final JsPlanner planner;
+  private final SerializedObjectIngredient<JsDepInfo> depInfoIng;
+  private final SerializedObjectIngredient<Modules> modulesIng;
 
   protected FindJsSources(
       JsPlanner planner, OptionsIngredient<JsOptions> options,
       SerializedObjectIngredient<GenfilesDirs> genfilesHolder,
+      SerializedObjectIngredient<JsDepInfo> depInfoIng,
+      SerializedObjectIngredient<Modules> modulesIng,
       PathValue defaultJsSource, PathValue defaultJsTestSource) {
     super(
         PlanKey.builder("find-js")
             .addInp(
                 options, genfilesHolder, defaultJsSource, defaultJsTestSource)
+            .addString(depInfoIng.source.canonicalPath.getPath())
+            .addString(modulesIng.source.canonicalPath.getPath())
             .build(),
         ImmutableList.<Ingredient>of(
             options, genfilesHolder, defaultJsSource, defaultJsTestSource),
         Sets.immutableEnumSet(StepSource.JS_GENERATED, StepSource.JS_SRC),
         ImmutableSet.<StepSource>of());
     this.planner = planner;
+    this.depInfoIng = depInfoIng;
+    this.modulesIng = modulesIng;
   }
 
   @Override
@@ -73,6 +81,7 @@ final class FindJsSources extends Step {
     }
 
     return ImmutableList.<Step>of(
-        new ComputeJsDepGraph(planner, optionsIng, fs));
+        new ComputeJsDepInfo(optionsIng, depInfoIng, fs),
+        new ComputeJsDepGraph(planner, optionsIng, depInfoIng, modulesIng, fs));
   }
 }

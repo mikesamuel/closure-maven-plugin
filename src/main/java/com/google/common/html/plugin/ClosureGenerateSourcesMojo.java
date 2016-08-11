@@ -160,10 +160,14 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
         .defaultSoySource(defaultSoySource)
         .plan(soyOptions);
 
-    new JsPlanner(planner)
-        .defaultJsSource(defaultJsSource)
-        .defaultJsTestSource(defaultJsTestSource)
-        .plan(jsOptions);
+    try {
+      new JsPlanner(planner)
+          .defaultJsSource(defaultJsSource)
+          .defaultJsTestSource(defaultJsTestSource)
+          .plan(jsOptions);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Faile to plan js compile", ex);
+    }
     // TODO: figure out how to thread externs through.
     // TODO: figure out how to make the rename map available.
     // TODO: figure out how to package compiled CSS and JS.

@@ -2,8 +2,8 @@ package com.google.common.html.plugin.js;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -11,15 +11,14 @@ import java.util.Set;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.base.Supplier;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
@@ -29,6 +28,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.TopoSort;
+import com.google.common.html.plugin.js.Identifier.GoogNamespace;
+import com.google.common.html.plugin.js.Identifier.ModuleName;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
@@ -43,61 +44,47 @@ import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 import com.google.javascript.jscomp.Compiler;
-import com.google.javascript.jscomp.CompilerInput;
-import com.google.javascript.jscomp.SourceFile;
 
 final class ComputeJsDepGraph extends Step {
-  final JsPlanner planner;
-  private SerializedObjectIngredient<Modules> modulesIngForPlanner;
+  private final JsPlanner planner;
+  private final SerializedObjectIngredient<Modules> modulesIng;
 
   public ComputeJsDepGraph(
       JsPlanner planner,
       OptionsIngredient<JsOptions> optionsIng,
+      SerializedObjectIngredient<JsDepInfo> depInfo,
+      SerializedObjectIngredient<Modules> modulesIng,
       FileSetIngredient sources) {
     super(
         PlanKey.builder("js-module-graph")
-            .addInp(optionsIng, sources)
+            .addInp(optionsIng, depInfo, sources)
             .build(),
-        ImmutableList.<Ingredient>of(optionsIng, sources),
-        Sets.immutableEnumSet(StepSource.JS_GENERATED, StepSource.JS_SRC),
+        ImmutableList.<Ingredient>of(optionsIng, depInfo, sources),
+        Sets.immutableEnumSet(
+            StepSource.JS_GENERATED, StepSource.JS_SRC, StepSource.JS_DEP_INFO),
         Sets.immutableEnumSet(StepSource.JS_COMPILED));
     this.planner = planner;
+    this.modulesIng = modulesIng;
   }
-
-  synchronized SerializedObjectIngredient<Modules> getModulesIng()
-  throws IOException {
-    if (modulesIngForPlanner == null) {
-      modulesIngForPlanner = planner.planner.ingredients.serializedObject(
-        new File(new File(planner.planner.outputDir, "js"), "modules.ser"),
-        Modules.class);
-    }
-    return modulesIngForPlanner;
-  }
-
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
     OptionsIngredient<JsOptions> optionsIng =
         ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    FileSetIngredient sources = (FileSetIngredient) inputs.get(1);
+    SerializedObjectIngredient<JsDepInfo> depInfoIng =
+        ((SerializedObjectIngredient<?>) inputs.get(1))
+        .asSuperType(JsDepInfo.class);
+    FileSetIngredient fs = (FileSetIngredient) inputs.get(2);
 
-    Modules modules = execute(
-        log,
-        optionsIng.getOptions(),
-        new CompilerInputFactory() {
-          @Override
-          public CompilerInput create(Source s) {
-            SourceFile sourceFile = new SourceFile.Builder()
-                .withCharset(Charsets.UTF_8)
-                .withOriginalPath(s.relativePath.getPath())
-                .buildFromFile(s.canonicalPath);
-            return new CompilerInput(sourceFile);
-          }
-        },
-        Lists.transform(sources.sources(), FileIngredient.GET_SOURCE));
+    JsOptions options = optionsIng.getOptions();
+    JsDepInfo depInfo = depInfoIng.getStoredObject().get();
+
+    Iterable<? extends Source> sources = Lists.transform(
+        fs.sources(), FileIngredient.GET_SOURCE);
+
+    Modules modules = computeDepGraph(log, options, sources, depInfo);
 
     try {
-      SerializedObjectIngredient<Modules> modulesIng = getModulesIng();
       modulesIng.setStoredObject(modules);
       modulesIng.write();
     } catch (IOException ex) {
@@ -105,47 +92,68 @@ final class ComputeJsDepGraph extends Step {
     }
   }
 
-  @VisibleForTesting
-  static Modules execute(
-      Log log,
-      JsOptions options,
-      CompilerInputFactory ciFactory,
-      Iterable<? extends Source> sources)
+  static Modules computeDepGraph(
+      Log log, JsOptions options,
+      Iterable<? extends Source> sources, JsDepInfo depInfo)
   throws MojoExecutionException {
+    // Group sources into modules based on directory.
+    ImmutableMap<ModuleName, ModuleInfo> moduleInfo =
+        buildModuleInfoMap(sources, depInfo);
 
-    Multimap<ModuleName, CompilerInputAndSource> compilerInputsPerModule =
-        Multimaps.newMultimap(
-            Maps.<ModuleName, Collection<CompilerInputAndSource>>newTreeMap(),
-            new Supplier<Collection<CompilerInputAndSource>>() {
-              @Override
-              public Collection<CompilerInputAndSource> get() {
-                return Sets.newTreeSet(
-                    new Comparator<CompilerInputAndSource>() {
-                      @Override
-                      public int compare(
-                          CompilerInputAndSource a, CompilerInputAndSource b) {
-                        return a.s.relativePath.compareTo(b.s.relativePath);
-                      }
-                    });
-              }
-            });
-
-    Predicate<Source> isTestOnly = new Predicate<Source>() {
-      @Override
-      public boolean apply(Source s) {
-        return s.root.ps.contains(SourceFileProperty.TEST_ONLY);
+    // Look at the dep-info to figure out which sources are actually required.
+    ImmutableMap<ModuleName, ImmutableList<SourceAndDepInfo>> sourcesPerModule;
+    {
+      // This algorithm is unnecessarily iterative.  It could be tightened up by
+      // keeping a multimap from symbols to providers.
+      Set<GoogNamespace> allRequired = Sets.newLinkedHashSet();
+      for (ModuleInfo mi : moduleInfo.values()) {
+        allRequired.addAll(mi.getRequired());
       }
-    };
+      ImmutableSet<GoogNamespace> previouslyProvided = ImmutableSet.of();
+      for (Set<GoogNamespace> allProvided = Sets.newLinkedHashSet();
+          !allRequired.isEmpty();
+          previouslyProvided = ImmutableSet.copyOf(allProvided)) {
+        allProvided.clear();
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "JS bundle " + options.getId() + " still requires "
+              + allRequired);
+        }
 
-    Iterable<? extends Source> mainSources = Iterables.filter(
-        sources, Predicates.not(isTestOnly));
-    Iterable<? extends Source> testSources = Iterables.filter(
-        sources, isTestOnly);
+        for (ModuleInfo mi : moduleInfo.values()) {
+          mi.prettyPleaseProvide(allRequired);
+          allProvided.addAll(mi.getProvides());
+        }
 
-    collectSourceFiles(
-        "main", mainSources, compilerInputsPerModule, ciFactory);
-    collectSourceFiles(
-        "test", testSources, compilerInputsPerModule, ciFactory);
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "JS bundle " + options.getId() + " provides "
+              + allProvided);
+        }
+
+        // Avoid inf recursion when there are unsatisfied requirements by
+        // checking monotonicity and let later stages diagnose the problem.
+        if (allProvided.size() == previouslyProvided.size()) {
+          break;
+        }
+      }
+
+      ImmutableMap.Builder<ModuleName, ImmutableList<SourceAndDepInfo>> b =
+          ImmutableMap.builder();
+      for (Map.Entry<ModuleName, ModuleInfo> e : moduleInfo.entrySet()) {
+        b.put(e.getKey(), ImmutableList.copyOf(e.getValue().getUsedSources()));
+      }
+      sourcesPerModule = b.build();
+    }
+    if (log.isDebugEnabled()) {
+      StringBuilder sb = new StringBuilder(
+          "JS bundle " + options.getId() + " modules");
+      for (Map.Entry<ModuleName, ImmutableList<SourceAndDepInfo>> e
+           : sourcesPerModule.entrySet()) {
+        sb.append("\t" + e.getKey() + " : " + e.getValue());
+      }
+      log.debug(sb);
+    }
 
     final Compiler parsingCompiler = new Compiler(
         new MavenLogJSErrorManager(log));
@@ -159,16 +167,16 @@ final class ComputeJsDepGraph extends Step {
     {
       Map<ModuleName, Set<GoogNamespace>> allRequires = Maps.newLinkedHashMap();
       Map<ModuleName, Set<GoogNamespace>> allProvides = Maps.newLinkedHashMap();
-      for (Map.Entry<ModuleName, Collection<CompilerInputAndSource>> e
-          : compilerInputsPerModule.asMap().entrySet()) {
+      for (Map.Entry<ModuleName, ImmutableList<SourceAndDepInfo>> e
+           : sourcesPerModule.entrySet()) {
        ModuleName moduleName = e.getKey();
 
        Set<GoogNamespace> reqs = Sets.newTreeSet();
-       ImmutableSet.Builder<GoogNamespace> provsBuilder = ImmutableSet.builder();
-       for (CompilerInputAndSource cis : e.getValue()) {
-         cis.ci.setCompiler(parsingCompiler);
-         reqs.addAll(GoogNamespace.allOf(cis.ci.getRequires()));
-         provsBuilder.addAll(GoogNamespace.allOf(cis.ci.getProvides()));
+       ImmutableSet.Builder<GoogNamespace> provsBuilder =
+           ImmutableSet.builder();
+       for (SourceAndDepInfo sdi : e.getValue()) {
+         reqs.addAll(sdi.di.requires);
+         provsBuilder.addAll(sdi.di.provides);
        }
        // We don't need to require internally provided symbols.
        ImmutableSet<GoogNamespace> provs = provsBuilder.build();
@@ -181,7 +189,7 @@ final class ComputeJsDepGraph extends Step {
         moduleTopoSort = new TopoSort<>(
             Functions.forMap(allRequires),
             Functions.forMap(allProvides),
-            compilerInputsPerModule.keySet(),
+            sourcesPerModule.keySet(),
             ambientlyAvailable);
       } catch (TopoSort.CyclicRequirementException ex) {
         throw new MojoExecutionException("Mismatched require/provides", ex);
@@ -200,25 +208,23 @@ final class ComputeJsDepGraph extends Step {
 
     ImmutableList.Builder<Modules.Module> moduleList = ImmutableList.builder();
     for (ModuleName moduleName : moduleOrder) {
-      final Map<String, CompilerInputAndSource> inputsByCiName =
+      final Map<String, SourceAndDepInfo> inputsByCiName =
           Maps.newLinkedHashMap();
-      Collection<CompilerInputAndSource> moduleSources =
-          compilerInputsPerModule.get(moduleName);
-      for (CompilerInputAndSource cis : moduleSources) {
-        String ciName = cis.ci.getName();
+      ImmutableList<SourceAndDepInfo> moduleSources =
+          sourcesPerModule.get(moduleName);
+      for (SourceAndDepInfo sdi : moduleSources) {
+        String ciName = sdi.di.closureCompilerInputName;
         Preconditions.checkState(
-            null == inputsByCiName.put(ciName, cis));
+            null == inputsByCiName.put(ciName, sdi));
       }
 
-      TopoSort<CompilerInputAndSource, GoogNamespace> compilerInputsTopoSort;
+      TopoSort<SourceAndDepInfo, GoogNamespace> sourcesTopoSort;
       try {
-        compilerInputsTopoSort = new TopoSort<>(
-            new Function<CompilerInputAndSource, Collection<GoogNamespace>>() {
+        sourcesTopoSort = new TopoSort<>(
+            new Function<SourceAndDepInfo, Collection<GoogNamespace>>() {
               @Override
-              public Collection<GoogNamespace>
-              apply(CompilerInputAndSource cis) {
-                ImmutableList<GoogNamespace> reqs =
-                    GoogNamespace.allOf(cis.ci.getRequires());
+              public Collection<GoogNamespace> apply(SourceAndDepInfo sdi) {
+                ImmutableSet<GoogNamespace> reqs = sdi.di.requires;
                 ImmutableList.Builder<GoogNamespace> reqsFiltered =
                     ImmutableList.builder();
                 for (GoogNamespace req : reqs) {
@@ -229,11 +235,10 @@ final class ComputeJsDepGraph extends Step {
                 return reqsFiltered.build();
               }
             },
-            new Function<CompilerInputAndSource, Collection<GoogNamespace>>() {
+            new Function<SourceAndDepInfo, Collection<GoogNamespace>>() {
               @Override
-              public Collection<GoogNamespace>
-              apply(CompilerInputAndSource cis) {
-                return GoogNamespace.allOf(cis.ci.getProvides());
+              public Collection<GoogNamespace> apply(SourceAndDepInfo sdi) {
+                return sdi.di.provides;
               }
             },
             inputsByCiName.values(),
@@ -249,11 +254,9 @@ final class ComputeJsDepGraph extends Step {
           moduleTopoSort.getDependenciesTransitive(moduleName);
 
       ImmutableList.Builder<Source> orderedSources = ImmutableList.builder();
-      for (CompilerInputAndSource cis
-           : compilerInputsTopoSort.getSortedItems()) {
-        orderedSources.add(cis.s);
-        providedByPossibleDependencies.addAll(
-            GoogNamespace.allOf(cis.ci.getProvides()));
+      for (SourceAndDepInfo sdi : sourcesTopoSort.getSortedItems()) {
+        orderedSources.add(sdi.s);
+        providedByPossibleDependencies.addAll(sdi.di.provides);
       }
 
       // Build a Module with the inputs in topo-order.
@@ -271,7 +274,7 @@ final class ComputeJsDepGraph extends Step {
   @Override
   public void skip(Log log) throws MojoExecutionException {
     try {
-      getModulesIng().read();
+      modulesIng.read();
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to load JS module graph", ex);
     }
@@ -287,24 +290,51 @@ final class ComputeJsDepGraph extends Step {
     PathValue jsOutputDir = commonPlanner.ingredients.pathValue(
         new File(commonPlanner.projectBuildOutputDirectory.value, "js"));
 
-    try {
-      return ImmutableList.<Step>of(
-          new CompileJs(
-              optionsIng, getModulesIng(),
-              jsOutputDir));
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Could not find JS module graph", ex);
+    return ImmutableList.<Step>of(
+        new CompileJs(
+            optionsIng, modulesIng,
+            jsOutputDir));
+  }
+
+  private static
+  ImmutableMap<ModuleName, ModuleInfo> buildModuleInfoMap(
+      Iterable<? extends Source> sources, JsDepInfo depInfo) {
+    Multimap<ModuleName, SourceAndDepInfo> sourcesPerModule =
+        Multimaps.newMultimap(
+            Maps.<ModuleName, Collection<SourceAndDepInfo>>newTreeMap(),
+            new Supplier<Collection<SourceAndDepInfo>>() {
+              @Override
+              public Collection<SourceAndDepInfo> get() {
+                return Sets.newTreeSet(
+                    new Comparator<SourceAndDepInfo>() {
+                      @Override
+                      public int compare(
+                          SourceAndDepInfo a, SourceAndDepInfo b) {
+                        return a.s.relativePath.compareTo(b.s.relativePath);
+                      }
+                    });
+              }
+            });
+
+    collectSourceFiles(sources, sourcesPerModule, depInfo);
+
+    ImmutableMap.Builder<ModuleName, ModuleInfo> b = ImmutableMap.builder();
+    for (Map.Entry<ModuleName, ? extends Iterable<SourceAndDepInfo>> e
+        : sourcesPerModule.asMap().entrySet()) {
+      ModuleName name = e.getKey();
+      b.put(name, new ModuleInfo(name, e.getValue()));
     }
+    return b.build();
   }
 
 
-
   private static void collectSourceFiles(
-      String moduleNamePrefix,
       Iterable<? extends Source> sources,
-      Multimap<ModuleName, CompilerInputAndSource> sourceFilesByModuleName,
-      CompilerInputFactory ciFactory) {
+      Multimap<ModuleName, SourceAndDepInfo> sourceFilesByModuleName,
+      JsDepInfo depInfo) {
     for (Source s : sources) {
+      String moduleNamePrefix = moduleNamePrefixFor(s.root.ps);
+
       File parentRelPath = s.relativePath.getParentFile();
       ModuleName moduleName;
       if (parentRelPath != null) {
@@ -315,26 +345,48 @@ final class ComputeJsDepGraph extends Step {
         moduleName = new ModuleName(moduleNamePrefix);
       }
 
-      CompilerInput ci = ciFactory.create(s);
+      JsDepInfo.HashAndDepInfo di = depInfo.depinfo.get(s.canonicalPath);
+      if (di == null) {
+        throw new IllegalArgumentException(
+            "Missing dependency info for " + s);
+      }
 
       sourceFilesByModuleName.put(
           moduleName,
-          new CompilerInputAndSource(ci, s));
+          new SourceAndDepInfo(s, di));
     }
   }
 
-  static final class CompilerInputAndSource
-  implements Comparable<CompilerInputAndSource> {
-    final CompilerInput ci;
-    final Source s;
+  static String moduleNamePrefixFor(Set<? extends SourceFileProperty> ps) {
+    String first = "src";
+    String second = "main";
+    for (SourceFileProperty p : ps) {
+      switch (p) {
+        case LOAD_AS_NEEDED:
+          // Leave deps in the same module as sources since we will use the
+          // dependency graph to pick which deps to promote to sources later.
+          continue;
+        case TEST_ONLY:
+          second = "test";
+          continue;
+      }
+      throw new AssertionError(p.name());
+    }
+    return first + "." + second;
+  }
 
-    CompilerInputAndSource(CompilerInput ci, Source s) {
-      this.ci = ci;
+  static final class SourceAndDepInfo
+  implements Comparable<SourceAndDepInfo> {
+    final Source s;
+    final JsDepInfo.HashAndDepInfo di;
+
+    SourceAndDepInfo(Source s, JsDepInfo.HashAndDepInfo di) {
       this.s = s;
+      this.di = di;
     }
 
     @Override
-    public int compareTo(CompilerInputAndSource that) {
+    public int compareTo(SourceAndDepInfo that) {
       return this.s.canonicalPath.compareTo(that.s.canonicalPath);
     }
 
@@ -342,76 +394,102 @@ final class ComputeJsDepGraph extends Step {
     public String toString() {
       return "{Source " + s.canonicalPath + "}";
     }
+
+    boolean isOptional() {
+      return s.root.ps.contains(SourceFileProperty.LOAD_AS_NEEDED);
+    }
   }
 
-  interface CompilerInputFactory {
-    CompilerInput create(Source source);
-  }
+  static final class ModuleInfo {
+    final ModuleName name;
+    final ImmutableList<SourceAndDepInfo> sources;
+    /** The set of symbols that this module has committed to providing. */
+    private final Set<GoogNamespace> provides = Sets.newLinkedHashSet();
+    /** The set of symbols that this module could provide as needed. */
+    private final Set<GoogNamespace> canProvide = Sets.newLinkedHashSet();
+    /** The set of symbols that this module requires. */
+    private final Set<GoogNamespace> requires = Sets.newLinkedHashSet();
+    /**
+     * The set of symbols that would be newly required were the module to
+     * commit to providing the key.
+     */
+    private final Multimap<GoogNamespace, GoogNamespace> implies =
+        HashMultimap.create();
 
-  static abstract class Identifier
-  implements Comparable<Identifier>, Serializable {
-    private static final long serialVersionUID = -5072636170709799520L;
-
-    final String text;
-
-    static final Function<Identifier, String> GET_TEXT =
-        new Function<Identifier, String>() {
-          @Override
-          public String apply(Identifier id) {
-            return id.text;
+    ModuleInfo(ModuleName name, Iterable<? extends SourceAndDepInfo> sources) {
+      this.name = name;
+      this.sources = ImmutableList.copyOf(sources);
+      for (SourceAndDepInfo sdi : this.sources) {
+        if (sdi.isOptional()) {
+          canProvide.addAll(sdi.di.provides);
+          for (GoogNamespace p : sdi.di.provides) {
+            implies.putAll(p, sdi.di.requires);
           }
-        };
-
-    Identifier(String text) {
-      this.text = Preconditions.checkNotNull(text);
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-      if (o == null || o.getClass() != getClass()) {
-        return false;
+        } else {
+          provides.addAll(sdi.di.provides);
+          requires.addAll(sdi.di.requires);
+        }
       }
-      return text.equals(((Identifier) o).text);
+      this.requires.removeAll(this.provides);
     }
 
-    @Override
-    public final int hashCode() {
-      return text.hashCode();
-    }
+    /**
+     * Makes a best effort to commit to providing the given symbols which
+     * may then require other symbols.
+     *
+     * @param reqs the set of symbols that the caller would like this module
+     *    to provide.  Modified in place to remove those that were actually
+     *    provided, and to require anything that must be provided in order
+     *    for this module to provide symbols that were newly committed to.
+     */
+    void prettyPleaseProvide(Set<GoogNamespace> reqs) {
+      Set<GoogNamespace> newlyRequired = Sets.newLinkedHashSet();
+      Set<GoogNamespace> added = Sets.newLinkedHashSet();
 
-    @Override
-    public final int compareTo(Identifier that) {
-      return this.text.compareTo(that.text);
-    }
-
-
-    @Override
-    public String toString() {
-      return "{" + getClass().getSimpleName() + " " + text + "}";
-    }
-  }
-
-  static final class ModuleName extends Identifier {
-    private static final long serialVersionUID = 5721482936852117897L;
-
-    ModuleName(String text) {
-      super(text);
-    }
-  }
-
-  static final class GoogNamespace extends Identifier {
-    private static final long serialVersionUID = -4018457478547773405L;
-
-    GoogNamespace(String text) {
-      super(text);
-    }
-
-    static ImmutableList<GoogNamespace> allOf(Iterable<? extends String> xs) {
-      ImmutableList.Builder<GoogNamespace> b = ImmutableList.builder();
-      for (String x : xs) {
-        b.add(new GoogNamespace(x));
+      for (GoogNamespace req : reqs) {
+        if (!canProvide.contains(req)) {
+          continue;
+        }
+        added.add(req);
+        newlyRequired.addAll(implies.removeAll(req));
       }
-      return b.build();
+
+      // Advertise that we provide the things we've committed to providing.
+      provides.addAll(added);
+      canProvide.removeAll(added);
+
+      // Advertise that we no longer require things that are provided
+      // internally.
+      newlyRequired.removeAll(added);
+      requires.addAll(newlyRequired);
+
+      // Update the input o that which is required after this call.
+      reqs.addAll(newlyRequired);
+      reqs.removeAll(provides);
+    }
+
+    Set<GoogNamespace> getRequired() {
+      return Collections.unmodifiableSet(requires);
+    }
+
+    Set<GoogNamespace> getProvides() {
+      return Collections.unmodifiableSet(provides);
+    }
+
+    Iterable<SourceAndDepInfo> getUsedSources() {
+      return Iterables.filter(
+          sources,
+          new Predicate<SourceAndDepInfo>() {
+
+            @SuppressWarnings("synthetic-access")
+            @Override
+            public boolean apply(SourceAndDepInfo sdi) {
+              // Required sources need not export any symbols.
+              return !sdi.isOptional()
+                  || !Collections.disjoint(
+                      sdi.di.provides, ModuleInfo.this.provides);
+            }
+          });
     }
   }
 }
