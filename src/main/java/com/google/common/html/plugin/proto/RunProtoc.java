@@ -106,6 +106,10 @@ final class RunProtoc extends Step {
     argv.add("--include_imports")
         .add("--descriptor_set_out")
         .add(descriptorSetFile.value.getPath());
+    File descriptorSetDir = descriptorSetFile.value.getParentFile();
+    if (descriptorSetDir != null) {
+      descriptorSetDir.mkdirs();
+    }
 
     // Protoc is a little finicky about requiring that output directories
     // exist, though it will happily create directories for the packages.
@@ -117,14 +121,15 @@ final class RunProtoc extends Step {
     for (TypedFile root : protoSources.spec().roots) {
       if ((rootSet == RootSet.TEST
            || !root.ps.contains(SourceFileProperty.TEST_ONLY))
-          && roots.add(root.f)) {
+          && roots.add(root.f)
+          && root.f.exists()) {
         argv.add("--proto_path").add(root.f.getPath());
       }
     }
 
     for (FileIngredient input : sources) {
       TypedFile root = input.source.root;
-      if (roots.add(root.f)) {
+      if (roots.add(root.f) && root.f.exists()) {
         argv.add("--proto_path").add(root.f.getPath());
         // We're not guarding against ambiguity here.
         // We warn on it below.
