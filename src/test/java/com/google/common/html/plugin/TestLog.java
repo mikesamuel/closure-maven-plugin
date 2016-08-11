@@ -5,84 +5,102 @@ import org.apache.maven.plugin.logging.Log;
 /** */
 public final class TestLog implements Log {
 
+  private boolean verbose;
+
+  public boolean verbose() {
+    return verbose;
+  }
+
+  public TestLog verbose(boolean b) {
+    this.verbose = b;
+    return this;
+  }
+
+  private void log(String prefix, CharSequence msg, Throwable err) {
+    if (verbose) {
+      System.err.println(msg != null ? prefix + ": " + msg : prefix);
+      if (err != null) { err.printStackTrace(); }
+    }
+  }
+
   @Override
   public void debug(CharSequence msg) {
-    // Do nothing
+    debug(msg, null);
   }
 
   @Override
   public void debug(Throwable err) {
-    // Do nothing
+    debug(null, err);
   }
 
   @Override
   public void debug(CharSequence msg, Throwable err) {
-    // Do nothing
+    log("DEBUG", msg, err);
   }
 
   @Override
   public void error(CharSequence msg) {
-    // Do nothing
+    error(msg, null);
   }
 
   @Override
   public void error(Throwable err) {
-    // Do nothing
+    error(null, err);
   }
 
   @Override
   public void error(CharSequence msg, Throwable err) {
-    // Do nothing
+    log("ERROR", msg, err);
   }
 
   @Override
   public void info(CharSequence msg) {
-    // Do nothing
+    info(msg, null);
   }
 
   @Override
   public void info(Throwable err) {
-    // Do nothing
+    info(null, err);
   }
 
   @Override
   public void info(CharSequence msg, Throwable err) {
-    // Do nothing
+    log("INFO", msg, err);
   }
 
   @Override
   public boolean isDebugEnabled() {
-    return false;
+    return verbose;
   }
 
   @Override
   public boolean isErrorEnabled() {
-    return false;
+    return verbose;
   }
 
   @Override
   public boolean isInfoEnabled() {
-    return false;
+    return verbose;
   }
 
   @Override
   public boolean isWarnEnabled() {
-    return false;
+    return verbose;
   }
 
   @Override
   public void warn(CharSequence msg) {
-    // Do nothing
+    warn(msg, null);
   }
 
   @Override
   public void warn(Throwable err) {
-    // Do nothing
+    warn(null, err);
   }
 
   @Override
   public void warn(CharSequence msg, Throwable err) {
-    // Do nothing
+    log("WARN", msg, err);
   }
 
 }
