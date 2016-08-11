@@ -28,6 +28,14 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <extracts>
+            <!-- HACK: We shouldn't need to extract this, but extracting it
+                 as a dep by default results in the Java side not being
+                 built -->
+            <extract>proto</extract>
+          </extracts>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -46,6 +54,11 @@
       <artifactId>junit</artifactId>
       <version>4.8.2</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.common.html.types</groupId>
+      <artifactId>proto</artifactId>
+      <version>1.0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.google.template</groupId>
