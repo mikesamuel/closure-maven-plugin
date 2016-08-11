@@ -10,6 +10,7 @@ public final class Extracts extends Options {
 
   private static final long serialVersionUID = 6857217093408402466L;
 
+  /** Artifacts from which to extract dependencies or source files. */
   public Extract[] extract;
 
   @Override
