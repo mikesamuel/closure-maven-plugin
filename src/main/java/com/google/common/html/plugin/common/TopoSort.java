@@ -181,6 +181,15 @@ public final class TopoSort<I extends Comparable<? super I>,
     }
     cycle.add(node.key);
     if (!seen.add(node.key)) {
+      if (!cycle.get(0).equals(node.key)) {
+        // Produce a shorter cycle.
+        // We might find a cycle by starting at something that depends
+        // on an element in the cycle but which is itself not part of the cycle
+        // so, rerun with something we know is on the cycle.
+        Set<I> shortCycleSeen = Sets.newTreeSet();
+        List<Object> shortCycle = Lists.newArrayList();
+        checkForCycles(shortCycleSeen, shortCycle, node);
+      }
       throw new CyclicRequirementException(
           ImmutableList.copyOf(cycle), null, null);
     }
