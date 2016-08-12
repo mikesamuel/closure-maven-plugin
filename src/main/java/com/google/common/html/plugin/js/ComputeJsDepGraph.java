@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
@@ -28,6 +29,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.TopoSort;
+import com.google.common.html.plugin.common.Words;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
 import com.google.common.html.plugin.js.Identifier.ModuleName;
 import com.google.common.html.plugin.common.CommonPlanner;
@@ -117,7 +119,7 @@ final class ComputeJsDepGraph extends Step {
         if (log.isDebugEnabled()) {
           log.debug(
               "JS bundle " + options.getId() + " still requires "
-              + allRequired);
+              + GoogNamespace.shortLogForm(allRequired));
         }
 
         for (ModuleInfo mi : moduleInfo.values()) {
@@ -128,7 +130,7 @@ final class ComputeJsDepGraph extends Step {
         if (log.isDebugEnabled()) {
           log.debug(
               "JS bundle " + options.getId() + " provides "
-              + allProvided);
+              + GoogNamespace.shortLogForm(allProvided));
         }
 
         // Avoid inf recursion when there are unsatisfied requirements by
@@ -154,7 +156,13 @@ final class ComputeJsDepGraph extends Step {
           "JS bundle " + options.getId() + " modules");
       for (Map.Entry<ModuleName, ImmutableList<SourceAndDepInfo>> e
            : sourcesPerModule.entrySet()) {
-        sb.append("\t" + e.getKey() + " : " + e.getValue());
+        sb.append("\n\t").append(e.getKey().text);
+        String sep = " : ";
+        for (SourceAndDepInfo sdi : e.getValue()) {
+          sb.append(sep);
+          sep = ", ";
+          sb.append(sdi.s.relativePath.getName());
+        }
       }
       log.debug(sb);
     }
@@ -337,22 +345,27 @@ final class ComputeJsDepGraph extends Step {
       Multimap<ModuleName, SourceAndDepInfo> sourceFilesByModuleName,
       JsDepInfo depInfo) {
     for (Source s : sources) {
-      String moduleNamePrefix = moduleNamePrefixFor(s.root.ps);
-
-      File parentRelPath = s.relativePath.getParentFile();
-      ModuleName moduleName;
-      if (parentRelPath != null) {
-        moduleName = new ModuleName(
-            moduleNamePrefix + "."
-            + parentRelPath.getPath().replaceAll("[/\\\\]", "."));
-      } else {
-        moduleName = new ModuleName(moduleNamePrefix);
-      }
-
       JsDepInfo.HashAndDepInfo di = depInfo.depinfo.get(s.canonicalPath);
       if (di == null) {
         throw new IllegalArgumentException(
             "Missing dependency info for " + s);
+      }
+
+      ModuleName moduleName;
+      if (di.isModule) {
+        moduleName = new ModuleName(di.provides.iterator().next().text);
+      } else {
+        String extensionlessRelativePath =
+            FilenameUtils.removeExtension(s.relativePath.getPath());
+        if (Words.endsWithWordOrIs(extensionlessRelativePath, "main")
+            || Words.endsWithWordOrIs(extensionlessRelativePath, "test")) {
+          moduleName = new ModuleName(
+              extensionlessRelativePath.replaceAll("[/\\\\]", "."));
+        } else {
+          moduleName = s.root.ps.contains(SourceFileProperty.TEST_ONLY)
+              ? ModuleName.DEFAULT_TEST_MODULE_NAME
+              : ModuleName.DEFAULT_MAIN_MODULE_NAME;
+        }
       }
 
       sourceFilesByModuleName.put(

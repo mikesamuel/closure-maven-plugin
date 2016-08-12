@@ -255,6 +255,7 @@ public final class JsOptions extends SourceOptions {
     if (this.languageOut != null) {
       compilerOptions.setLanguageOut(this.languageOut);
     }
+    compilerOptions.setClosurePass(true);
     return compilerOptions;
   }
 

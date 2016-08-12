@@ -25,6 +25,7 @@ import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
+import com.google.common.html.plugin.js.Identifier.ModuleName;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -32,7 +33,9 @@ import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerInput;
+import com.google.javascript.jscomp.JSModule;
 import com.google.javascript.jscomp.SourceFile;
+import com.google.javascript.rhino.Node;
 
 /**
  * Updates a mapping of JS sources to requires and provides while avoiding
@@ -145,6 +148,7 @@ final class ComputeJsDepInfo extends Step {
 
         newMapValue = new JsDepInfo.HashAndDepInfo(
             hash,
+            inp.isModule(),
             inp.getName(),
             googNamespaces(inp.getProvides()),
             googNamespaces(inp.getRequires()));

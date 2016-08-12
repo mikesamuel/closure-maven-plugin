@@ -37,6 +37,8 @@ public final class JsDepInfo implements Serializable {
      * were parsed.
      */
     public final Hash hash;
+    /** Any module declaration present in the source file. */
+    public final boolean isModule;
     /**
      * Statically findable arguments to {@code goog.provide}.
      */
@@ -52,10 +54,12 @@ public final class JsDepInfo implements Serializable {
 
     HashAndDepInfo(
         Hash hash,
+        boolean isModule,
         String closureCompilerInputName,
         Iterable<? extends GoogNamespace> provides,
         Iterable<? extends GoogNamespace> requires) {
       this.hash = hash;
+      this.isModule = isModule;
       this.closureCompilerInputName = closureCompilerInputName;
       this.provides = ImmutableSet.copyOf(provides);
       this.requires = ImmutableSet.copyOf(requires);
