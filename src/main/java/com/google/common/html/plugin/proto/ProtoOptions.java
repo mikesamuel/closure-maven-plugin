@@ -2,7 +2,10 @@ package com.google.common.html.plugin.proto;
 
 import java.io.File;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.SourceOptions;
 
 /**
@@ -27,15 +30,29 @@ public final class ProtoOptions extends SourceOptions {
 
   /**
    * Path of output descriptor set file.
-   * TODO: link
+   * @see <a href="https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Descriptors">Descriptors</a>
    */
   public File descriptorSetFile;
 
   /**
    * Path of output descriptor set file or test protos.
-   * TODO: link
+   * @see <a href="https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Descriptors">Descriptors</a>
    */
   public File testDescriptorSetFile;
+
+  /**
+   * Protobuf packages to only compile only to JS.
+   * If a package appears on the {@link #jsOnly} and {@link #javaOnly} lists
+   * then it will be compiled to both.
+   */
+  public String[] jsOnly;
+
+  /**
+   * Protobuf packages to only compile only to Java.
+   * If a package appears on the {@link #jsOnly} and {@link #javaOnly} lists
+   * then it will be compiled to both.
+   */
+  public String[] javaOnly;
 
   @Override
   public ProtoOptions clone() throws CloneNotSupportedException {
@@ -44,11 +61,34 @@ public final class ProtoOptions extends SourceOptions {
 
   @Override
   protected void createLazyDefaults() {
-    // Done
+    if (jsOnly == null) {
+      jsOnly = new String[0];
+    }
+    if (javaOnly == null) {
+      javaOnly = new String[0];
+    }
   }
 
   @Override
   protected ImmutableList<String> sourceExtensions() {
     return ImmutableList.of("proto");
+  }
+
+  ProtoFinalOptions freeze(
+      File defaultMainRoot, File defaultTestRoot, GenfilesDirs gfd,
+      File defaultDescriptorSetFile, File defaultTestDescriptorSetFile) {
+    return new ProtoFinalOptions(
+        getId(),
+        toDirectoryScannerSpec(defaultMainRoot, defaultTestRoot, gfd),
+        Optional.fromNullable(protobufVersion),
+        Optional.fromNullable(protocExec),
+        (descriptorSetFile != null
+         ? descriptorSetFile
+         : defaultDescriptorSetFile),
+        (testDescriptorSetFile != null
+         ? testDescriptorSetFile
+         : defaultTestDescriptorSetFile),
+        ImmutableSet.copyOf(jsOnly),
+        ImmutableSet.copyOf(javaOnly));
   }
 }

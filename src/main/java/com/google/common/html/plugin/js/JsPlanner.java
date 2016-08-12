@@ -77,7 +77,7 @@ public final class JsPlanner {
       planner.addStep(
           new FindJsSources(
               this,
-              ingredients.options(JsOptions.class, oneJs),
+              ingredients.hashedInMemory(JsOptions.class, oneJs),
               planner.genfiles, depInfoIng, modulesIng,
               ingredients.pathValue(defaultJsSource),
               ingredients.pathValue(defaultJsTestSource)));

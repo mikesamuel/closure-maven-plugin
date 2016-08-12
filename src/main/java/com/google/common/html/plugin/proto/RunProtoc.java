@@ -23,7 +23,7 @@ import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.ProcessRunner;
@@ -41,7 +41,7 @@ final class RunProtoc extends Step {
   RunProtoc(
       ProcessRunner processRunner,
       RunProtoc.RootSet rootSet,
-      OptionsIngredient<ProtoOptions> options,
+      HashedInMemory<ProtoFinalOptions> options,
       DirScanFileSetIngredient protoSources,
       FileSetIngredient protocSet,
       Bundle<FileIngredient> inputs,
@@ -71,8 +71,9 @@ final class RunProtoc extends Step {
   @Override
   public void execute(Log log) throws MojoExecutionException {
     @SuppressWarnings("unused")
-    OptionsIngredient<ProtoOptions> options =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
+    HashedInMemory<ProtoFinalOptions> options =
+        ((HashedInMemory<?>) inputs.get(0))
+        .asSuperType(ProtoFinalOptions.class);
     DirScanFileSetIngredient protoSources =
         (DirScanFileSetIngredient) inputs.get(1);
     FileSetIngredient protocSet = (FileSetIngredient) inputs.get(2);

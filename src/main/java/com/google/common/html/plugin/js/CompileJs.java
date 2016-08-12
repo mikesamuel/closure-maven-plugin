@@ -11,11 +11,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.json.simple.JSONArray;
 
-import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -28,7 +27,7 @@ import com.google.javascript.jscomp.CommandLineRunner;
 final class CompileJs extends Step {
 
   public CompileJs(
-      OptionsIngredient<JsOptions> optionsIng,
+      HashedInMemory<JsOptions> optionsIng,
       SerializedObjectIngredient<Modules> modulesIng,
       PathValue jsOutputDir) {
     super(
@@ -43,8 +42,8 @@ final class CompileJs extends Step {
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
-    OptionsIngredient<JsOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    HashedInMemory<JsOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
     SerializedObjectIngredient<Modules> modulesIng =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(Modules.class);
@@ -59,7 +58,7 @@ final class CompileJs extends Step {
     jsOutputDir.value.mkdirs();
 
     ImmutableList.Builder<String> argvBuilder = ImmutableList.builder();
-    optionsIng.getOptions().addArgv(log, argvBuilder);
+    optionsIng.getValue().addArgv(log, argvBuilder);
 
     argvBuilder.add("--manage_closure_dependencies").add("true");
     argvBuilder.add("--js_output_file")

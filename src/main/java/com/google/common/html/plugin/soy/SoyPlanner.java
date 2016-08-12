@@ -15,7 +15,7 @@ import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.UriValue;
@@ -52,7 +52,7 @@ public final class SoyPlanner {
     SoyOptions opts = OptionsUtils.prepareOne(soyOpts);
     Ingredients ingredients = planner.ingredients;
 
-    OptionsIngredient<SoyOptions> soyOptions = ingredients.options(
+    HashedInMemory<SoyOptions> soyOptions = ingredients.hashedInMemory(
         SoyOptions.class, opts);
     SerializedObjectIngredient<GenfilesDirs> genfiles = planner.genfiles;
 

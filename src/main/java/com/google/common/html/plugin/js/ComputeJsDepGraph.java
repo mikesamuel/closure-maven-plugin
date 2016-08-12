@@ -35,7 +35,7 @@ import com.google.common.html.plugin.js.Identifier.ModuleName;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -53,7 +53,7 @@ final class ComputeJsDepGraph extends Step {
 
   public ComputeJsDepGraph(
       JsPlanner planner,
-      OptionsIngredient<JsOptions> optionsIng,
+      HashedInMemory<JsOptions> optionsIng,
       SerializedObjectIngredient<JsDepInfo> depInfo,
       SerializedObjectIngredient<Modules> modulesIng,
       FileSetIngredient sources) {
@@ -71,14 +71,14 @@ final class ComputeJsDepGraph extends Step {
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
-    OptionsIngredient<JsOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    HashedInMemory<JsOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
     SerializedObjectIngredient<JsDepInfo> depInfoIng =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(JsDepInfo.class);
     FileSetIngredient fs = (FileSetIngredient) inputs.get(2);
 
-    JsOptions options = optionsIng.getOptions();
+    JsOptions options = optionsIng.getValue();
     JsDepInfo depInfo = depInfoIng.getStoredObject().get();
 
     Iterable<? extends Source> sources = Lists.transform(
@@ -294,8 +294,8 @@ final class ComputeJsDepGraph extends Step {
 
   @Override
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    OptionsIngredient<JsOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    HashedInMemory<JsOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
 
     CommonPlanner commonPlanner = planner.planner;
 

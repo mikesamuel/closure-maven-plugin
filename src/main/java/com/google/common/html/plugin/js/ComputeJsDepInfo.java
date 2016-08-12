@@ -20,12 +20,11 @@ import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
-import com.google.common.html.plugin.js.Identifier.ModuleName;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -33,9 +32,7 @@ import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerInput;
-import com.google.javascript.jscomp.JSModule;
 import com.google.javascript.jscomp.SourceFile;
-import com.google.javascript.rhino.Node;
 
 /**
  * Updates a mapping of JS sources to requires and provides while avoiding
@@ -45,7 +42,7 @@ final class ComputeJsDepInfo extends Step {
   private final SerializedObjectIngredient<JsDepInfo> depInfoIng;
 
   ComputeJsDepInfo(
-      OptionsIngredient<JsOptions> options,
+      HashedInMemory<JsOptions> options,
       SerializedObjectIngredient<JsDepInfo> depInfoIng,
       DirScanFileSetIngredient fs) {
     super(
@@ -68,11 +65,11 @@ final class ComputeJsDepInfo extends Step {
       throw new MojoExecutionException("Failed to read dependency info", ex);
     }
 
-    OptionsIngredient<JsOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    HashedInMemory<JsOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
     DirScanFileSetIngredient fs = (DirScanFileSetIngredient) inputs.get(1);
 
-    JsOptions options = optionsIng.getOptions();
+    JsOptions options = optionsIng.getValue();
 
     Optional<JsDepInfo> depInfoOpt = depInfoIng.getStoredObject();
     ImmutableMap<File, JsDepInfo.HashAndDepInfo> oldDepInfoMap =

@@ -18,7 +18,7 @@ import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -37,31 +37,24 @@ import com.google.common.html.plugin.plan.StepSource;
  */
 final class FindProtoFilesAndProtoc extends Step {
   private final ProcessRunner processRunner;
-  private final ToolFinder<ProtoOptions> protocFinder;
+  private final ToolFinder<ProtoFinalOptions> protocFinder;
   private final Ingredients ingredients;
   private final SerializedObjectIngredient<ProtoIO> protoSpec;
   private final SettableFileSetIngredient protocExec;
 
   FindProtoFilesAndProtoc(
       ProcessRunner processRunner,
-      ToolFinder<ProtoOptions> protocFinder,
+      ToolFinder<ProtoFinalOptions> protocFinder,
       Ingredients ingredients,
 
-      OptionsIngredient<ProtoOptions> options,
+      HashedInMemory<ProtoFinalOptions> options,
       SerializedObjectIngredient<GenfilesDirs> genfiles,
-      PathValue defaultProtoSourcePath,
-      PathValue defaultProtoTestSourcePath,
-      PathValue defaultMainDescriptorFilePath,
-      PathValue defaultTestDescriptorFilePath,
 
       SerializedObjectIngredient<ProtoIO> protoSpec,
       SettableFileSetIngredient protocExec) {
     super(
         PlanKey.builder("find-proto-files").addInp(options).build(),
-        ImmutableList.<Ingredient>of(
-            options, genfiles,
-            defaultProtoSourcePath, defaultProtoTestSourcePath,
-            defaultMainDescriptorFilePath, defaultTestDescriptorFilePath),
+        ImmutableList.<Ingredient>of(options, genfiles),
         ImmutableSet.<StepSource>of(
             StepSource.PROTO_SRC, StepSource.PROTO_GENERATED),
         Sets.immutableEnumSet(
@@ -78,36 +71,19 @@ final class FindProtoFilesAndProtoc extends Step {
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
-    OptionsIngredient<ProtoOptions> options =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
-    SerializedObjectIngredient<GenfilesDirs> genfiles =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
-        .asSuperType(GenfilesDirs.class);
-    PathValue defaultProtoSourcePath = (PathValue) inputs.get(2);
-    PathValue defaultProtoTestSourcePath = (PathValue) inputs.get(3);
-    PathValue defaultMainDescriptorFilePath = (PathValue) inputs.get(4);
-    PathValue defaultTestDescriptorFilePath = (PathValue) inputs.get(5);
+    HashedInMemory<ProtoFinalOptions> options =
+        ((HashedInMemory<?>) inputs.get(0))
+        .asSuperType(ProtoFinalOptions.class);
 
-    GenfilesDirs gf = genfiles.getStoredObject().get();
+    ProtoFinalOptions protoOptions = options.getValue();
 
-    ProtoOptions protoOptions = options.getOptions();
-
-    DirectoryScannerSpec protoSources = protoOptions.toDirectoryScannerSpec(
-        defaultProtoSourcePath.value,
-        defaultProtoTestSourcePath.value,
-        gf);
+    DirectoryScannerSpec protoSources = protoOptions.sources;
 
     setProtocExec();
 
-    File mainDescriptorSetFile =
-        protoOptions.descriptorSetFile != null
-        ? protoOptions.descriptorSetFile
-        : defaultMainDescriptorFilePath.value;
+    File mainDescriptorSetFile = protoOptions.descriptorSetFile;
 
-    File testDescriptorSetFile =
-        protoOptions.testDescriptorSetFile != null
-        ? protoOptions.testDescriptorSetFile
-        : defaultTestDescriptorFilePath.value;
+    File testDescriptorSetFile = protoOptions.testDescriptorSetFile;
 
     protoSpec.setStoredObject(new ProtoIO(
         protoSources,
@@ -133,8 +109,9 @@ final class FindProtoFilesAndProtoc extends Step {
 
   @Override
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    OptionsIngredient<ProtoOptions> options =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
+    HashedInMemory<ProtoFinalOptions> options =
+        ((HashedInMemory<?>) inputs.get(0))
+        .asSuperType(ProtoFinalOptions.class);
     SerializedObjectIngredient<GenfilesDirs> genfiles =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
@@ -202,8 +179,9 @@ final class FindProtoFilesAndProtoc extends Step {
 
   private void setProtocExec() {
     System.err.println();
-    OptionsIngredient<ProtoOptions> options =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(ProtoOptions.class);
-    protocFinder.find(options.getOptions(), ingredients, protocExec);
+    HashedInMemory<ProtoFinalOptions> options =
+        ((HashedInMemory<?>) inputs.get(0))
+        .asSuperType(ProtoFinalOptions.class);
+    protocFinder.find(options.getValue(), ingredients, protocExec);
   }
 }

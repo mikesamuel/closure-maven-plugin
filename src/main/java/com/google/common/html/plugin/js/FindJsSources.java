@@ -11,7 +11,7 @@ import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.DirectoryScannerSpec;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -25,7 +25,7 @@ final class FindJsSources extends Step {
   private final SerializedObjectIngredient<Modules> modulesIng;
 
   protected FindJsSources(
-      JsPlanner planner, OptionsIngredient<JsOptions> options,
+      JsPlanner planner, HashedInMemory<JsOptions> options,
       SerializedObjectIngredient<GenfilesDirs> genfilesHolder,
       SerializedObjectIngredient<JsDepInfo> depInfoIng,
       SerializedObjectIngredient<Modules> modulesIng,
@@ -58,15 +58,15 @@ final class FindJsSources extends Step {
 
   @Override
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    OptionsIngredient<JsOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    HashedInMemory<JsOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
     SerializedObjectIngredient<GenfilesDirs> genfilesHolder =
         ((SerializedObjectIngredient<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
     PathValue defaultJsSource = (PathValue) inputs.get(2);
     PathValue defaultJsTestSource = (PathValue) inputs.get(3);
 
-    JsOptions options = optionsIng.getOptions();
+    JsOptions options = optionsIng.getValue();
     GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
 
     DirectoryScannerSpec sourcesSpec = options.toDirectoryScannerSpec(

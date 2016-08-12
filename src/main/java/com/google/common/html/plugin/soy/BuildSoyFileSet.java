@@ -25,7 +25,7 @@ import com.google.common.html.plugin.common.Ingredients.Bundle;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -55,7 +55,7 @@ final class BuildSoyFileSet extends Step {
       Ingredients ingredients,
       LifecyclePhase phase,
       SerializedObjectIngredient<GenfilesDirs> genfiles,
-      OptionsIngredient<SoyOptions> options,
+      HashedInMemory<SoyOptions> options,
       DirScanFileSetIngredient soySources,
       SerializedObjectIngredient<ProtoIO> protoIO,
       Bundle<UriValue> projectClassPathElements,
@@ -97,8 +97,8 @@ final class BuildSoyFileSet extends Step {
     SerializedObjectIngredient<GenfilesDirs> genfilesHolder =
         ((SerializedObjectIngredient<?>) inputs.get(0))
         .asSuperType(GenfilesDirs.class);
-    OptionsIngredient<SoyOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(1)).asSuperType(SoyOptions.class);
+    HashedInMemory<SoyOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(1)).asSuperType(SoyOptions.class);
     SerializedObjectIngredient<ProtoIO> protoIOHolder =
         ((SerializedObjectIngredient<?>) inputs.get(2))
         .asSuperType(ProtoIO.class);
@@ -113,7 +113,7 @@ final class BuildSoyFileSet extends Step {
     PathValue outputDir = (PathValue) inputs.get(4);
     PathValue projectBuildOutputDirectory = (PathValue) inputs.get(5);
 
-    final SoyOptions opts = optionsIng.getOptions();
+    final SoyOptions opts = optionsIng.getValue();
     GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
 
     try {

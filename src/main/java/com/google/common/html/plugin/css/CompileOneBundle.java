@@ -11,7 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -26,7 +26,7 @@ final class CompileOneBundle extends Step {
   CompileOneBundle(
       File outPath,
       SubstitutionMapProvider substMap,
-      OptionsIngredient<CssOptions> options,
+      HashedInMemory<CssOptions> options,
       SerializedObjectIngredient<CssBundle> bundle,
       ImmutableList<FileIngredient> inputFiles) {
     super(
@@ -47,9 +47,9 @@ final class CompileOneBundle extends Step {
   @Override
   public void execute(Log log) throws MojoExecutionException {
     CssOptions cssOptions =
-        ((OptionsIngredient<?>) inputs.get(0))
+        ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(CssOptions.class)
-        .getOptions();
+        .getValue();
 
     CssBundle bundle =
         ((SerializedObjectIngredient<?>) inputs.get(1))

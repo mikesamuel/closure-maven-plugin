@@ -10,7 +10,7 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 
@@ -87,7 +87,7 @@ public final class CssPlanner {
 
 
   private
-  ImmutableList<OptionsIngredient<CssOptions>> optionsIngredients(
+  ImmutableList<HashedInMemory<CssOptions>> optionsIngredients(
       CssOptions[] options)
   throws MojoExecutionException {
     // Multiple the options out so that there is at most one output
@@ -102,10 +102,10 @@ public final class CssPlanner {
         options != null
         ? ImmutableList.copyOf(options)
         : ImmutableList.<CssOptions>of());
-    ImmutableList.Builder<OptionsIngredient<CssOptions>> b =
+    ImmutableList.Builder<HashedInMemory<CssOptions>> b =
         ImmutableList.builder();
     for (CssOptions o : cssOptionSets) {
-      b.add(planner.ingredients.options(CssOptions.class, o));
+      b.add(planner.ingredients.hashedInMemory(CssOptions.class, o));
     }
     return b.build();
   }

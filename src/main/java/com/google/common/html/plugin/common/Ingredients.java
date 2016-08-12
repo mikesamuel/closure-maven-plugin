@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.plan.Hash;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.KeyedSerializable;
 import com.google.common.html.plugin.plan.PlanKey;
 
 /**
@@ -225,19 +226,19 @@ public class Ingredients {
    * Specifies how the compiler should interpret a group of source files and
    * where to look for those source files.
    */
-  public <T extends Options> OptionsIngredient<T> options(
-      Class<T> optionsType, final T options) {
-    final PlanKey key = Preconditions.checkNotNull(options.getKey());
-    OptionsIngredient<?> ing = get(
-        OptionsIngredient.class,
+  public <T extends KeyedSerializable> HashedInMemory<T> hashedInMemory(
+      Class<T> valueType, final T value) {
+    final PlanKey key = Preconditions.checkNotNull(value.getKey());
+    HashedInMemory<?> ing = get(
+        HashedInMemory.class,
         key,
-        new Supplier<OptionsIngredient<T>>() {
+        new Supplier<HashedInMemory<T>>() {
           @Override
-          public OptionsIngredient<T> get() {
-            return new OptionsIngredient<>(key, options);
+          public HashedInMemory<T> get() {
+            return new HashedInMemory<>(key, value);
           }
         });
-    return ing.asSuperType(optionsType);
+    return ing.asSuperType(valueType);
   }
 
   /**
@@ -505,53 +506,36 @@ public class Ingredients {
    * Specifies how the compiler should interpret a group of source files and
    * where to look for those source files.
    */
-  public static final class OptionsIngredient<T extends Options>
+  public static final class HashedInMemory<T extends Serializable>
   extends Ingredient {
-    private final T options;
+    private final T value;
 
-    OptionsIngredient(PlanKey key, T options) {
+    HashedInMemory(PlanKey key, T value) {
       super(key);
-      this.options = clone(options);
+      this.value = value;
     }
 
     @Override
     public Optional<Hash> hash() throws NotSerializableException {
-      return Optional.of(Hash.hashSerializable(options));
+      return Optional.of(Hash.hashSerializable(value));
     }
-
-    /**
-     * An ID for the options which must be unique among a bundle of options
-     * to the same compiler.
-     */
-    public String getId() { return options.getId(); }
 
     /**
      * A shallow copy of options since options are often mutable objects.
      */
-    public T getOptions() {
-      return clone(this.options);
+    public T getValue() {
+      return this.value;
     }
 
     /**
      * Runtime recast that the underlying options value has the given type.
      */
-    public <ST extends Options>
-    OptionsIngredient<ST> asSuperType(Class<ST> superType) {
-      Preconditions.checkState(superType.isInstance(options));
+    public <ST extends Serializable>
+    HashedInMemory<ST> asSuperType(Class<ST> superType) {
+      Preconditions.checkState(superType.isInstance(value));
       @SuppressWarnings("unchecked")
-      OptionsIngredient<ST> casted = (OptionsIngredient<ST>) this;
+      HashedInMemory<ST> casted = (HashedInMemory<ST>) this;
       return casted;
-    }
-
-    private static <T extends Options> T clone(T options) {
-      @SuppressWarnings("unchecked")
-      Class<? extends T> optionsType =
-          (Class<? extends T>) options.getClass();
-      try {
-        return optionsType.cast(options.clone());
-      } catch (CloneNotSupportedException ex) {
-        throw new IllegalArgumentException("Failed ot clone options", ex);
-      }
     }
   }
 

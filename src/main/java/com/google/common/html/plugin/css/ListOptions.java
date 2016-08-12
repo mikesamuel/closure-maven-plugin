@@ -13,7 +13,7 @@ import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.plan.Ingredient;
@@ -28,7 +28,7 @@ final class ListOptions extends Step {
 
   ListOptions(
       CssPlanner planner,
-      ImmutableList<OptionsIngredient<CssOptions>> options,
+      ImmutableList<HashedInMemory<CssOptions>> options,
       SerializedObjectIngredient<GenfilesDirs> genfiles,
       SerializedObjectIngredient<CssOptionsById> optionsListFile) {
     super(
@@ -46,10 +46,10 @@ final class ListOptions extends Step {
   public void execute(Log log) throws MojoExecutionException {
     ImmutableList.Builder<CssOptions> options = ImmutableList.builder();
     for (int i = 1, n = inputs.size(); i < n; ++i) {
-      OptionsIngredient<CssOptions> optionsInput =
-          ((OptionsIngredient<?>) inputs.get(i))
+      HashedInMemory<CssOptions> optionsInput =
+          ((HashedInMemory<?>) inputs.get(i))
           .asSuperType(CssOptions.class);
-      options.add(optionsInput.getOptions());
+      options.add(optionsInput.getValue());
     }
 
     optionsListFile.setStoredObject(new CssOptionsById(options.build()));
@@ -107,7 +107,7 @@ final class ListOptions extends Step {
           planner.planner.substitutionMapProvider,
           ingredients,
           planner.cssOutputDir(),
-          ingredients.options(CssOptions.class, options),
+          ingredients.hashedInMemory(CssOptions.class, options),
           sources,
           ingredients.stringValue(planner.defaultCssOutputPathTemplate()),
           ingredients.stringValue(planner.defaultCssSourceMapPathTemplate()),

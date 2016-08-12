@@ -28,14 +28,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <extracts>
-            <!-- HACK: We shouldn't need to extract this, but extracting it
-                 as a dep by default results in the Java side not being
-                 built -->
-            <extract>proto</extract>
-          </extracts>
-        </configuration>
       </plugin>
     </plugins>
   </build>

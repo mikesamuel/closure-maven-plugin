@@ -39,7 +39,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.ToolFinder;
 import com.google.common.html.plugin.plan.HashStore;
 import com.google.common.html.plugin.plan.Plan;
-import com.google.common.html.plugin.proto.ProtoOptions;
+import com.google.common.html.plugin.proto.ProtoFinalOptions;
 import com.google.common.html.plugin.soy.SoyOptions;
 import com.google.common.io.Files;
 
@@ -287,8 +287,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
              required=true, readonly=true )
   protected List<ArtifactRepository> remoteRepositories;
 
-  ToolFinder<ProtoOptions> protocExecutable() {
-    return new ToolFinder<ProtoOptions>() {
+  ToolFinder<ProtoFinalOptions> protocExecutable() {
+    return new ToolFinder<ProtoFinalOptions>() {
 
       static final String PROTOC_PLUGIN_GROUP_ID = "com.comoyo.maven.plugins";
       static final String PROTOC_PLUGIN_ARTIFACT_ID = "protoc-bundled-plugin";
@@ -296,7 +296,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       @SuppressWarnings("synthetic-access")
       @Override
       public void find(
-          ProtoOptions options, Ingredients ingredients,
+          ProtoFinalOptions options, Ingredients ingredients,
           SettableFileSetIngredient protocPathOut) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
 
@@ -327,15 +327,17 @@ abstract class AbstractClosureMojo extends AbstractMojo {
         Cheats.cheatSet(
             ProtocBundledMojo.class, protocBundledMojo,
             "remoteRepositories", remoteRepositories);
-        if (options.protobufVersion != null) {
+        if (options.protobufVersion.isPresent()) {
+          String protobufVersion = options.protobufVersion.get();
           Cheats.cheatSet(
               ProtocBundledMojo.class, protocBundledMojo,
-              "protobufVersion", options.protobufVersion);
+              "protobufVersion", protobufVersion);
         }
-        if (options.protocExec != null) {
+        if (options.protocExec.isPresent()) {
+          File protocExec = options.protocExec.get();
           Cheats.cheatSet(
               ProtocBundledMojo.class, protocBundledMojo,
-              "protocExec", options.protocExec);
+              "protocExec", protocExec);
         }
 
         try {

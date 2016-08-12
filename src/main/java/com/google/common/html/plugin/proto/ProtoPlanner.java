@@ -7,7 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients
@@ -21,7 +21,7 @@ import com.google.common.html.plugin.common.ToolFinder;
 public final class ProtoPlanner {
 
   private final CommonPlanner planner;
-  private final ToolFinder<ProtoOptions> protocFinder;
+  private final ToolFinder<ProtoFinalOptions> protocFinder;
   private File defaultProtoSource;
   private File defaultProtoTestSource;
   private File defaultMainDescriptorFile;
@@ -31,7 +31,7 @@ public final class ProtoPlanner {
 
   /** */
   public ProtoPlanner(
-      CommonPlanner planner, ToolFinder<ProtoOptions> protocFinder)
+      CommonPlanner planner, ToolFinder<ProtoFinalOptions> protocFinder)
   throws IOException {
     this.planner = planner;
     this.protocFinder = protocFinder;
@@ -83,10 +83,14 @@ public final class ProtoPlanner {
     Preconditions.checkNotNull(defaultTestDescriptorFile);
     Preconditions.checkNotNull(opts);
 
-    ProtoOptions protoOptions = OptionsUtils.prepareOne(opts);
+    ProtoFinalOptions protoOptions = OptionsUtils.prepareOne(opts).freeze(
+        defaultProtoSource, defaultProtoTestSource,
+        planner.genfiles.getStoredObject().get(),
+        defaultMainDescriptorFile, defaultTestDescriptorFile);
 
-    OptionsIngredient<ProtoOptions> protoOptionsIng =
-        planner.ingredients.options(ProtoOptions.class, protoOptions);
+    HashedInMemory<ProtoFinalOptions> protoOptionsIng =
+        planner.ingredients.hashedInMemory(
+            ProtoFinalOptions.class, protoOptions);
 
     SettableFileSetIngredient protocExec =
         planner.ingredients.namedFileSet("protocExec");
@@ -95,10 +99,6 @@ public final class ProtoPlanner {
         planner.processRunner, protocFinder, planner.ingredients,
         protoOptionsIng,
         planner.genfiles,
-        planner.ingredients.pathValue(defaultProtoSource),
-        planner.ingredients.pathValue(defaultProtoTestSource),
-        planner.ingredients.pathValue(defaultMainDescriptorFile),
-        planner.ingredients.pathValue(defaultTestDescriptorFile),
         protoIO, protocExec));
   }
 

@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients.PathValue;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.plan.PlanKey;
@@ -30,7 +30,7 @@ final class SoyToJs extends Step {
   private final SoyFileSet sfs;
 
   SoyToJs(
-      OptionsIngredient<SoyOptions> options,
+      HashedInMemory<SoyOptions> options,
       FileSetIngredient soySources,
       FileIngredient protoDescriptors,
       PathValue jsOutDir,
@@ -49,13 +49,13 @@ final class SoyToJs extends Step {
 
   @Override
   public void execute(Log log) throws MojoExecutionException {
-    OptionsIngredient<SoyOptions> optionsIng =
-        ((OptionsIngredient<?>) inputs.get(0))
+    HashedInMemory<SoyOptions> optionsIng =
+        ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(SoyOptions.class);
     FileSetIngredient soySources = (FileSetIngredient) inputs.get(1);
     PathValue jsOutDir = (PathValue) inputs.get(3);
 
-    SoyOptions options = optionsIng.getOptions();
+    SoyOptions options = optionsIng.getValue();
 
     ImmutableList<Js> allJsSrc = ImmutableList.copyOf(options.js);
 

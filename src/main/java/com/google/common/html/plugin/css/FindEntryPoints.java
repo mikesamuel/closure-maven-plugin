@@ -16,7 +16,7 @@ import com.google.common.html.plugin.common.Sources;
 import com.google.common.html.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
+import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Ingredients.StringValue;
@@ -38,7 +38,7 @@ final class FindEntryPoints extends Step {
       SubstitutionMapProvider substMap,
       Ingredients ingredients,
       File cssOutputDirectory,
-      OptionsIngredient<CssOptions> options,
+      HashedInMemory<CssOptions> options,
       DirScanFileSetIngredient cssSources,
       StringValue defaultCssOutputPathTemplate,
       StringValue defaultCssSourceMapTemplate,
@@ -64,9 +64,9 @@ final class FindEntryPoints extends Step {
     ImmutableList.Builder<CssBundle> b = ImmutableList.builder();
 
     Preconditions.checkState(inputs.size() == 4);
-    CssOptions cssOpts = ((OptionsIngredient<?>) inputs.get(0))
+    CssOptions cssOpts = ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(CssOptions.class)
-        .getOptions();
+        .getValue();
     DirScanFileSetIngredient cssSources =
         (DirScanFileSetIngredient) inputs.get(1);
     StringValue defaultCssOutputPathTemplate = (StringValue) inputs.get(2);
@@ -125,8 +125,8 @@ final class FindEntryPoints extends Step {
   @Override
   public ImmutableList<Step> extraSteps(Log log)
   throws MojoExecutionException {
-    OptionsIngredient<CssOptions> options =
-        ((OptionsIngredient<?>) inputs.get(0))
+    HashedInMemory<CssOptions> options =
+        ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(CssOptions.class);
 
     // For each entry point, we need to schedule a compile.

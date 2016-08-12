@@ -1,18 +1,17 @@
 package com.google.common.html.plugin.common;
 
-import java.io.Serializable;
-
 import org.apache.maven.plugins.annotations.Parameter;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.html.plugin.plan.KeyedSerializable;
 import com.google.common.html.plugin.plan.PlanKey;
 
 /**
  * Options for a compiler.
  */
 @SuppressWarnings("serial")  // is abstract
-public abstract class Options implements Cloneable, Serializable {
+public abstract class Options implements Cloneable, KeyedSerializable {
 
   /**
    * An ID that must be unique among a bundle of options of the same kind used
@@ -27,8 +26,8 @@ public abstract class Options implements Cloneable, Serializable {
   boolean wasIdImplied;
 
   /**
-   * An ID that must be unique among a bundle of options of the same kind used
-   * in a compilation batch.
+   * An ID that must be unique among a bundle of instances of the same kind used
+   * in a compilation.
    * <p>
    * May be null if this has not been disambiguated as per
    * {@link OptionsUtils#disambiguateIds}.
@@ -67,6 +66,7 @@ public abstract class Options implements Cloneable, Serializable {
   /**
    * A key ingredient that must not overlap with options of a different kind.
    */
+  @Override
   public final PlanKey getKey() {
     return PlanKey.builder("opt")
         .addString(getClass().getName())
