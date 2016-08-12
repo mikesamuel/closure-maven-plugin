@@ -1,6 +1,7 @@
 package com.google.common.html.plugin.proto;
 
 import java.io.File;
+import java.util.Arrays;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -67,6 +68,13 @@ public final class ProtoOptions extends SourceOptions {
     if (javaOnly == null) {
       javaOnly = new String[0];
     }
+
+    // We have Java sources available as Java dependencies of this
+    // because it is tightly integrated into soy, but not so for JavaScript.
+    jsOnly = ImmutableSet.<String>builder()
+        .addAll(Arrays.asList(jsOnly))
+        .add("webutil.html.types")
+        .build().toArray(jsOnly);
   }
 
   @Override

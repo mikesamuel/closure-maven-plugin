@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.html.plugin.common.CommonPlanner;
+import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
 import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -95,11 +96,26 @@ public final class ProtoPlanner {
     SettableFileSetIngredient protocExec =
         planner.ingredients.namedFileSet("protocExec");
 
+    SerializedObjectIngredient<ProtoPackageMap> protoPackageMap;
+    try {
+      protoPackageMap = planner.ingredients.serializedObject(
+          new File(protoDir, "proto-package-map.ser"),
+          ProtoPackageMap.class);
+    } catch (IOException ex) {
+      throw new MojoExecutionException(
+          "Failed to locate intermediate object", ex);
+    }
+
+    DirScanFileSetIngredient protoSources =
+        planner.ingredients.fileset(protoOptions.sources);
+
+    planner.addStep(new GenerateProtoPackageMap(
+        protoSources, protoPackageMap));
+
     planner.addStep(new FindProtoFilesAndProtoc(
         planner.processRunner, protocFinder, planner.ingredients,
-        protoOptionsIng,
-        planner.genfiles,
-        protoIO, protocExec));
+        protoOptionsIng, planner.genfiles, protoPackageMap,
+        protoIO, protoSources, protocExec));
   }
 
 }

@@ -28,6 +28,7 @@ import org.codehaus.plexus.component.repository.ComponentDependency;
 
 import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
@@ -42,6 +43,7 @@ import com.google.common.html.plugin.plan.Plan;
 import com.google.common.html.plugin.proto.ProtoFinalOptions;
 import com.google.common.html.plugin.soy.SoyOptions;
 import com.google.common.io.Files;
+import com.google.common.io.Resources;
 
 abstract class AbstractClosureMojo extends AbstractMojo {
   @Parameter(
@@ -293,10 +295,21 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       static final String PROTOC_PLUGIN_GROUP_ID = "com.comoyo.maven.plugins";
       static final String PROTOC_PLUGIN_ARTIFACT_ID = "protoc-bundled-plugin";
 
-      @SuppressWarnings("synthetic-access")
       @Override
       public void find(
-          ProtoFinalOptions options, Ingredients ingredients,
+          Log log, ProtoFinalOptions options, Ingredients ingredients,
+          SettableFileSetIngredient protocPathOut) {
+        find(
+            log, options.protobufVersion, options.protocExec,
+            ingredients, protocPathOut);
+      }
+
+      @SuppressWarnings("synthetic-access")
+      void find(
+          Log log,
+          Optional<String>protobufVersionOpt,
+          Optional<File>protocExecOpt,
+          Ingredients ingredients,
           SettableFileSetIngredient protocPathOut) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
 
@@ -327,14 +340,14 @@ abstract class AbstractClosureMojo extends AbstractMojo {
         Cheats.cheatSet(
             ProtocBundledMojo.class, protocBundledMojo,
             "remoteRepositories", remoteRepositories);
-        if (options.protobufVersion.isPresent()) {
-          String protobufVersion = options.protobufVersion.get();
+        if (protobufVersionOpt.isPresent()) {
+          String protobufVersion = protobufVersionOpt.get();
           Cheats.cheatSet(
               ProtocBundledMojo.class, protocBundledMojo,
               "protobufVersion", protobufVersion);
         }
-        if (options.protocExec.isPresent()) {
-          File protocExec = options.protocExec.get();
+        if (protocExecOpt.isPresent()) {
+          File protocExec = protocExecOpt.get();
           Cheats.cheatSet(
               ProtocBundledMojo.class, protocBundledMojo,
               "protocExec", protocExec);
@@ -351,7 +364,34 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           protocPathOut.setFiles(
               ImmutableList.of(ingredients.file(protocFile)));
         } catch (InvocationTargetException ex) {
-          protocPathOut.setProblem(ex.getTargetException());
+          Throwable targetException = ex.getTargetException();
+          if (targetException instanceof MojoExecutionException
+              && !protobufVersionOpt.isPresent()
+              && !protocExecOpt.isPresent()) {
+            // Fall back to the one blessed by the plugin POM.
+            String pluginProtobufVersion = null;
+            try {
+              pluginProtobufVersion =
+                  Resources.toString(
+                      getClass().getResource("protobuf-version"),
+                      Charsets.UTF_8)
+                  .trim();
+            } catch (IOException ioex) {
+              log.warn(ioex);
+            }
+            if (pluginProtobufVersion != null) {
+              log.info(
+                  "Falling back to protobuf-version " + pluginProtobufVersion);
+              find(
+                  log,
+                  Optional.of(pluginProtobufVersion),
+                  protocExecOpt,
+                  ingredients,
+                  protocPathOut);
+            }
+          } else {
+            protocPathOut.setProblem(targetException);
+          }
         } catch (IOException ex) {
           protocPathOut.setProblem(ex);
         }

@@ -1,11 +1,11 @@
-package com.google.common.html.plugin.extract;
+package com.google.common.html.plugin.common;
 
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.extract.CStyleLexer.Token;
+import com.google.common.html.plugin.common.CStyleLexer;
+import com.google.common.html.plugin.common.CStyleLexer.Token;
 
 import junit.framework.TestCase;
 
@@ -60,27 +60,5 @@ public class CStyleLexerTest extends TestCase {
           Joiner.on("\n\n").join(got));
       assertEquals(want, got);
     }
-  }
-
-
-  @Test
-  public static void testProtoPackageFinder() {
-    FindProtoPackageStmt finder = new FindProtoPackageStmt();
-    assertEquals(
-        "foo/bar/baz.proto",
-        finder.chooseRelativePath(
-            "proto/foo/bar/baz.proto",
-
-            "// Copy\nsyntax = proto2;\npackage foo.bar;\n"
-            .getBytes(Charsets.UTF_8))
-        );
-    assertEquals(
-        "proto/foo/bar/baz.proto",
-        finder.chooseRelativePath(
-            "proto/foo/bar/baz.proto",
-
-            "// Copy\nsyntax = proto2;\n"
-            .getBytes(Charsets.UTF_8))
-        );
   }
 }

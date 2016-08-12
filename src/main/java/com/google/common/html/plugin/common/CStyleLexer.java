@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.common.html.plugin.common;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -10,7 +10,7 @@ import com.google.common.base.Preconditions;
 /**
  * Lexes into C-style tokens.
  */
-final class CStyleLexer implements Iterable<CStyleLexer.Token> {
+public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
   final String content;
 
   static final Pattern TOKEN = Pattern.compile(
@@ -27,10 +27,14 @@ final class CStyleLexer implements Iterable<CStyleLexer.Token> {
       Pattern.DOTALL
       );
 
-  CStyleLexer(String content) {
+  /** @param content the content to lex. */
+  public CStyleLexer(String content) {
     this.content = content;
   }
 
+  /**
+   * An iterator over non-whitespace, non-comment tokens.
+   */
   @Override
   public Iterator<Token> iterator() {
     return new Iterator<Token>() {
@@ -116,10 +120,14 @@ final class CStyleLexer implements Iterable<CStyleLexer.Token> {
   }
 
 
-  final class Token {
-    final TokenType type;
-    final int left;
-    final int right;
+  /** A semantically significant run of characters. */
+  public final class Token {
+    /** The type of the token. */
+    public final TokenType type;
+    /** Index in content of the leftmost character (inclusive). */
+    public final int left;
+    /** Index in content of the rightmost character (exclusive). */
+    public final int right;
 
     Token(TokenType type, int left, int right) {
       this.type = type;
@@ -127,21 +135,30 @@ final class CStyleLexer implements Iterable<CStyleLexer.Token> {
       this.right = right;
     }
 
-    boolean hasText(String s) {
+    /** True iff the token text matches s exactly. */
+    public boolean hasText(String s) {
       int n = s.length();
       return right - left == n && content.regionMatches(left, s, 0, n);
     }
 
+    /** The token text. */
     @Override
     public String toString() {
       return content.substring(left, right);
     }
   }
 
-  enum TokenType {
+  /**
+   * A rough partition of tokens.
+   */
+  public enum TokenType {
+    /** A token that represents a keyword or identifier. */
     WORD,
+    /** A numeric token.  Signs and width suffixes are separate tokens. */
     NUMBER,
+    /** A run of non-letter/digit symbols. */
     PUNCTUATION,
+    /** A double or single quoted string. */
     STRING,
     ;
   }

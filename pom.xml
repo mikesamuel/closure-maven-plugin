@@ -21,6 +21,8 @@
     <protoc-plugin.version>1.4.55</protoc-plugin.version>
     <soy.version>2016-07-23-SNAPSHOT</soy.version>
     <java.version>1.7</java.version>
+    <!-- Used in a resource filter -->
+    <protobuf-java.version>3.0.0-beta-2</protobuf-java.version>
   </properties>
 
   <dependencies>
@@ -194,6 +196,12 @@
 
   <build>
     <defaultGoal>verify</defaultGoal>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

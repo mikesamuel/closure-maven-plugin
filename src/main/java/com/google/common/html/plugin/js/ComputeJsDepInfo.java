@@ -11,7 +11,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -25,11 +24,15 @@ import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
-import com.google.common.html.plugin.plan.Hash;
+import com.google.common.html.plugin.js.JsDepInfo.DepInfo;
+import com.google.common.html.plugin.plan.FileMetadataMapBuilder;
+import com.google.common.html.plugin.plan.FileMetadataMapBuilder.Extractor;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.Metadata;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
+import com.google.common.io.ByteSource;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerInput;
 import com.google.javascript.jscomp.SourceFile;
@@ -72,31 +75,23 @@ final class ComputeJsDepInfo extends Step {
     JsOptions options = optionsIng.getValue();
 
     Optional<JsDepInfo> depInfoOpt = depInfoIng.getStoredObject();
-    ImmutableMap<File, JsDepInfo.HashAndDepInfo> oldDepInfoMap =
+    ImmutableMap<File, Metadata<DepInfo>> oldDepInfoMap =
         depInfoOpt.isPresent()
         ? depInfoOpt.get().depinfo
-        : ImmutableMap.<File, JsDepInfo.HashAndDepInfo>of();
+        : ImmutableMap.<File, Metadata<DepInfo>>of();
 
     Iterable<? extends Source> sources = Lists.transform(
         fs.sources(), FileIngredient.GET_SOURCE);
 
-    ImmutableMap<File, JsDepInfo.HashAndDepInfo> newDepInfo = computeDepInfo(
-        log, oldDepInfoMap, options,
-        new CompilerInputFactory() {
-          @Override
-          public CompilerInput create(Source source) {
-            SourceFile sourceFile = new SourceFile.Builder()
-                .withCharset(Charsets.UTF_8)
-                .withOriginalPath(source.relativePath.getPath())
-                .buildFromFile(source.canonicalPath);
-            return new CompilerInput(sourceFile);
-          }
-          @Override
-          public Hash hash(Source source) throws IOException {
-            return Hash.hash(source);
-          }
-        },
-        sources);
+    ImmutableMap<File, Metadata<DepInfo>> newDepInfo;
+    try {
+      newDepInfo = computeDepInfo(
+          log, oldDepInfoMap, options,
+          FileMetadataMapBuilder.REAL_FILE_LOADER,
+          sources);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to extract dependency info", ex);
+    }
 
     depInfoIng.setStoredObject(new JsDepInfo(newDepInfo));
     try {
@@ -107,52 +102,42 @@ final class ComputeJsDepInfo extends Step {
   }
 
   @VisibleForTesting
-  static ImmutableMap<File, JsDepInfo.HashAndDepInfo> computeDepInfo(
+  static ImmutableMap<File, Metadata<DepInfo>> computeDepInfo(
       Log log,
-      ImmutableMap<File, JsDepInfo.HashAndDepInfo> oldDepInfoMap,
+      ImmutableMap<File, Metadata<DepInfo>> oldDepInfoMap,
       JsOptions options,
-      CompilerInputFactory ciFactory,
+      Function<Source, ByteSource> loader,
       Iterable<? extends Source> sources)
-  throws MojoExecutionException {
-
-    // Create a new hash by either copying entries from the old or recomputing.
-    ImmutableMap.Builder<File, JsDepInfo.HashAndDepInfo> newDepInfoBuilder =
-        ImmutableMap.builder();
-
+  throws IOException {
     final Compiler parsingCompiler = new Compiler(
         new MavenLogJSErrorManager(log));
     parsingCompiler.initOptions(options.toCompilerOptions());
 
+    return FileMetadataMapBuilder.updateFromSources(
+        oldDepInfoMap,
+        loader,
+        new Extractor<DepInfo>() {
+          @Override
+          public DepInfo extractMetadata(Source source, byte[] content)
+          throws IOException {
+            String code = new String(content, Charsets.UTF_8);
 
-    // For each file, check its hash and recompute as appropriate
-    for (Source source : sources) {
-      File mapKey = source.canonicalPath;
-      JsDepInfo.HashAndDepInfo oldMapValue = oldDepInfoMap.get(mapKey);
-      Hash oldHash = oldMapValue != null ? oldMapValue.hash : null;
-      Hash hash;
-      try {
-        hash = ciFactory.hash(source);
-      } catch (IOException ex) {
-        throw new MojoExecutionException(
-            "Could not hash " + source.canonicalPath, ex);
-      }
-      JsDepInfo.HashAndDepInfo newMapValue;
-      if (hash.equals(oldHash)) {
-        newMapValue = Preconditions.checkNotNull(oldMapValue);
-      } else {
-        CompilerInput inp = ciFactory.create(source);
-        inp.setCompiler(parsingCompiler);
+            SourceFile sourceFile = new SourceFile.Builder()
+                .withCharset(Charsets.UTF_8)
+                .withOriginalPath(source.relativePath.getPath())
+                .buildFromCode(source.canonicalPath.getPath(), code);
 
-        newMapValue = new JsDepInfo.HashAndDepInfo(
-            hash,
-            inp.isModule(),
-            inp.getName(),
-            googNamespaces(inp.getProvides()),
-            googNamespaces(inp.getRequires()));
-      }
-      newDepInfoBuilder.put(mapKey, newMapValue);
-    }
-    return newDepInfoBuilder.build();
+            CompilerInput inp = new CompilerInput(sourceFile);
+            inp.setCompiler(parsingCompiler);
+
+            return new DepInfo(
+                inp.isModule(),
+                inp.getName(),
+                googNamespaces(inp.getProvides()),
+                googNamespaces(inp.getRequires()));
+          }
+        },
+        sources);
   }
 
   @Override
@@ -179,7 +164,7 @@ final class ComputeJsDepInfo extends Step {
 
       };
 
-  private static Iterable<Identifier.GoogNamespace> googNamespaces(
+  static Iterable<Identifier.GoogNamespace> googNamespaces(
       Iterable<? extends String> symbols) {
     return Iterables.transform(symbols, TO_GOOG_NS);
   }

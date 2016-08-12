@@ -13,6 +13,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.DirectoryScanner;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -129,6 +130,15 @@ public final class Sources {
   public static final class Source implements Comparable<Source>, Serializable {
 
     private static final long serialVersionUID = -6057344928125267557L;
+
+    /** Maps sources to their canonical paths. */
+    public static final Function<Source, File> GET_CANON_FILE
+    = new Function<Source, File>() {
+      @Override
+      public File apply(Source s) {
+        return s.canonicalPath;
+      }
+    };
 
     /** The canonical path to the source file on the local file system. */
     public final File canonicalPath;

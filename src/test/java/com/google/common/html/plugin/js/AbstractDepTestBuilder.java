@@ -1,11 +1,14 @@
 package com.google.common.html.plugin.js;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -15,9 +18,9 @@ import com.google.common.html.plugin.common.OptionsUtils;
 import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.TypedFile;
-import com.google.common.html.plugin.plan.Hash;
-import com.google.javascript.jscomp.CompilerInput;
-import com.google.javascript.jscomp.SourceFile;
+import com.google.common.html.plugin.js.JsDepInfo.DepInfo;
+import com.google.common.html.plugin.plan.Metadata;
+import com.google.common.io.ByteSource;
 
 abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
   private final Map<String, String> fileContent = Maps.newLinkedHashMap();
@@ -70,33 +73,21 @@ abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
   abstract void run(
       Log alog, JsOptions options, ImmutableList<Source> sourceList,
       JsDepInfo depInfo)
-  throws MojoExecutionException ;
+  throws IOException, MojoExecutionException ;
 
-  void run() throws MojoExecutionException {
+  void run() throws IOException, MojoExecutionException {
     ImmutableList<Source> sourceList = this.sources.build();
     JsOptions options = OptionsUtils.prepareOne(new JsOptions());
     JsDepInfo depInfo = new JsDepInfo(ComputeJsDepInfo.computeDepInfo(
-        log, ImmutableMap.<File, JsDepInfo.HashAndDepInfo>of(),
+        log, ImmutableMap.<File, Metadata<DepInfo>>of(),
         options,
-        new CompilerInputFactory() {
+        new Function<Source, ByteSource>() {
+          @SuppressWarnings("synthetic-access")
           @Override
-          public CompilerInput create(Source source) {
-            @SuppressWarnings("synthetic-access")
-            String content = Preconditions.checkNotNull(
-                fileContent.get(source.canonicalPath.getPath()),
-                source.canonicalPath.getPath());
-            SourceFile sf = SourceFile.builder()
-                .withOriginalPath(source.relativePath.getPath())
-                .buildFromCode(source.canonicalPath.getPath(), content);
-            return new CompilerInput(sf);
-          }
-          @Override
-          public Hash hash(Source source) {
-            @SuppressWarnings("synthetic-access")
-            String content = Preconditions.checkNotNull(
-                fileContent.get(source.canonicalPath.getPath()),
-                source.canonicalPath.getPath());
-            return Hash.hashString(content);
+          public ByteSource apply(Source s) {
+            String contentKey = s.canonicalPath.getPath();
+            String charContent = fileContent.get(contentKey);
+            return ByteSource.wrap(charContent.getBytes(Charsets.UTF_8));
           }
         },
         sourceList));

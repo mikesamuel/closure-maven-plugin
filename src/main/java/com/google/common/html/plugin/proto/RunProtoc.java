@@ -36,11 +36,13 @@ import com.google.common.html.plugin.plan.StepSource;
 
 final class RunProtoc extends Step {
   final ProcessRunner processRunner;
-  final RunProtoc.RootSet rootSet;
+  final RootSet rootSet;
+  final LangSet langSet;
 
   RunProtoc(
       ProcessRunner processRunner,
-      RunProtoc.RootSet rootSet,
+      RootSet rootSet,
+      LangSet langSet,
       HashedInMemory<ProtoFinalOptions> options,
       DirScanFileSetIngredient protoSources,
       FileSetIngredient protocSet,
@@ -49,9 +51,10 @@ final class RunProtoc extends Step {
       PathValue jsGenfilesPath,
       PathValue descriptorSetFile) {
     super(
-        PlanKey.builder("proto-to-java")
-            .addInp(options, protoSources)
+        PlanKey.builder("run-protoc")
             .addString(rootSet.name())
+            .addString(langSet.name())
+            .addInp(options, protoSources)
             .build(),
         ImmutableList.<Ingredient>builder()
             .add(options, protoSources, protocSet,
@@ -59,13 +62,14 @@ final class RunProtoc extends Step {
             .build(),
         Sets.immutableEnumSet(
             StepSource.PROTO_SRC, StepSource.PROTO_GENERATED,
-            StepSource.PROTOC),
+            StepSource.PROTOC, StepSource.PROTO_PACKAGE_MAP),
         Sets.immutableEnumSet(
             StepSource.PROTO_DESCRIPTOR_SET,
             // Compiles .proto to .js
             StepSource.JS_GENERATED));
     this.processRunner = processRunner;
     this.rootSet = Preconditions.checkNotNull(rootSet);
+    this.langSet = langSet;
   }
 
   @Override
@@ -104,18 +108,24 @@ final class RunProtoc extends Step {
     ImmutableList.Builder<String> argv = ImmutableList.builder();
     argv.add(protoc.canonicalPath.getPath());
 
-    argv.add("--include_imports")
-        .add("--descriptor_set_out")
-        .add(descriptorSetFile.value.getPath());
-    File descriptorSetDir = descriptorSetFile.value.getParentFile();
-    if (descriptorSetDir != null) {
-      descriptorSetDir.mkdirs();
+    argv.add("--include_imports");
+    if (langSet == LangSet.ALL) {
+      argv.add("--descriptor_set_out")
+          .add(descriptorSetFile.value.getPath());
+      File descriptorSetDir = descriptorSetFile.value.getParentFile();
+      if (descriptorSetDir != null) {
+        descriptorSetDir.mkdirs();
+      }
     }
 
     // Protoc is a little finicky about requiring that output directories
     // exist, though it will happily create directories for the packages.
-    argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
-    argv.add("--js_out").add(ensureDirExists(jsGenfilesPath.value));
+    if (langSet.emitJava) {
+      argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
+    }
+    if (langSet.emitJs) {
+      argv.add("--js_out").add(ensureDirExists(jsGenfilesPath.value));
+    }
 
     // Build a proto search path.
     Set<File> roots = Sets.newLinkedHashSet();
@@ -200,5 +210,20 @@ final class RunProtoc extends Step {
     MAIN,
     TEST,
     ;
+  }
+
+  enum LangSet {
+    ALL(true, true),
+    JAVA_ONLY(true, false),
+    JS_ONLY(false, true),
+    ;
+
+    final boolean emitJava;
+    final boolean emitJs;
+
+    LangSet(boolean emitJava, boolean emitJs) {
+      this.emitJava = emitJava;
+      this.emitJs = emitJs;
+    }
   }
 }

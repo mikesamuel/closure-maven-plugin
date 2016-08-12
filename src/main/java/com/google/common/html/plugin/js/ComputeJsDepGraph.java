@@ -32,6 +32,7 @@ import com.google.common.html.plugin.common.TopoSort;
 import com.google.common.html.plugin.common.Words;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
 import com.google.common.html.plugin.js.Identifier.ModuleName;
+import com.google.common.html.plugin.js.JsDepInfo.DepInfo;
 import com.google.common.html.plugin.common.CommonPlanner;
 import com.google.common.html.plugin.common.Ingredients.FileIngredient;
 import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
@@ -42,6 +43,7 @@ import com.google.common.html.plugin.common.Ingredients
 import com.google.common.html.plugin.common.Sources.Source;
 import com.google.common.html.plugin.common.SourceFileProperty;
 import com.google.common.html.plugin.plan.Ingredient;
+import com.google.common.html.plugin.plan.Metadata;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
@@ -345,11 +347,12 @@ final class ComputeJsDepGraph extends Step {
       Multimap<ModuleName, SourceAndDepInfo> sourceFilesByModuleName,
       JsDepInfo depInfo) {
     for (Source s : sources) {
-      JsDepInfo.HashAndDepInfo di = depInfo.depinfo.get(s.canonicalPath);
-      if (di == null) {
+      Metadata<DepInfo> mdi = depInfo.depinfo.get(s.canonicalPath);
+      if (mdi == null) {
         throw new IllegalArgumentException(
             "Missing dependency info for " + s);
       }
+      DepInfo di = mdi.metadata;
 
       ModuleName moduleName;
       if (di.isModule) {
@@ -395,9 +398,9 @@ final class ComputeJsDepGraph extends Step {
   static final class SourceAndDepInfo
   implements Comparable<SourceAndDepInfo> {
     final Source s;
-    final JsDepInfo.HashAndDepInfo di;
+    final DepInfo di;
 
-    SourceAndDepInfo(Source s, JsDepInfo.HashAndDepInfo di) {
+    SourceAndDepInfo(Source s, DepInfo di) {
       this.s = s;
       this.di = di;
     }

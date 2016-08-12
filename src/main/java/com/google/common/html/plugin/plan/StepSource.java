@@ -67,6 +67,11 @@ public enum StepSource {
    * The protocol buffer compiler executable.
    */
   PROTOC("/usr/bin/protoc"),
+  /**
+   * An intermediate input that maps .proto files including dependencies to
+   * their package declarations.
+   */
+  PROTO_PACKAGE_MAP("target/proto/package-map.ser"),
 
   /** Soy source files for the current project. */
   SOY_SRC("src/main/soy/**/*.soy"),

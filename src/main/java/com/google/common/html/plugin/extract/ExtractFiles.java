@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,9 +15,11 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.html.plugin.common.CStyleLexer;
 import com.google.common.html.plugin.common.GenfilesDirs;
 import com.google.common.html.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -32,6 +33,7 @@ import com.google.common.html.plugin.plan.Ingredient;
 import com.google.common.html.plugin.plan.PlanKey;
 import com.google.common.html.plugin.plan.Step;
 import com.google.common.html.plugin.plan.StepSource;
+import com.google.common.html.plugin.proto.ProtoPackageMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -156,40 +158,16 @@ final class DefaultPathChooser implements PathChooser {
 final class FindProtoPackageStmt implements PathChooser {
   @Override
   public String chooseRelativePath(String entryName, byte[] content) {
-    String packageName = null;
 
     CStyleLexer lex = new CStyleLexer(new String(content, Charsets.UTF_8));
 
-    Iterator<CStyleLexer.Token> it = lex.iterator();
-    while (it.hasNext()) {
-      CStyleLexer.Token t = it.next();
-      if (t.type == CStyleLexer.TokenType.WORD && t.hasText("package")) {
-        if (it.hasNext()) {
-          t = it.next();
-          if (t.type == CStyleLexer.TokenType.WORD) {
-            StringBuilder sb = new StringBuilder(t.toString());
-            while (it.hasNext() && it.next().hasText(".")) {
-              if (it.hasNext()) {
-                t = it.next();
-                if (t.type == CStyleLexer.TokenType.WORD) {
-                  sb.append('/').append(t.toString());
-                } else {
-                  sb.setLength(0);
-                  break;
-                }
-              }
-            }
-            packageName = sb.toString();
-          }
-        }
-      }
-    }
+    Optional<String> packageName = ProtoPackageMap.getPackage(lex);
 
-    if (packageName == null) {
+    if (!packageName.isPresent()) {
       return new DefaultPathChooser().chooseRelativePath(entryName, content);
     }
     int lastSlash = entryName.lastIndexOf('/');
-    return packageName.replace('.', '/')
+    return packageName.get().replace('.', '/')
         + "/" + entryName.substring(lastSlash + 1);
   }
 }

@@ -86,7 +86,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
   }
 
   @Test
-  public static void testModulesWithMissingDep() {
+  public static void testModulesWithMissingDep() throws Exception {
     try {
       new TestBuilder()
       .fileContent(
@@ -106,7 +106,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
   }
 
   @Test
-  public static void testModulesWithModuleCycle() {
+  public static void testModulesWithModuleCycle() throws Exception {
     try {
       new TestBuilder()
       .fileContent(
@@ -140,7 +140,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
   }
 
   @Test
-  public static void testModulesWithInternalCycle() {
+  public static void testModulesWithInternalCycle() throws Exception {
     try {
       new TestBuilder()
       .fileContent(

@@ -1,5 +1,7 @@
 package com.google.common.html.plugin.common;
 
+import org.apache.maven.plugin.logging.Log;
+
 import com.google.common.html.plugin.common.Ingredients
      .SettableFileSetIngredient;
 
@@ -13,6 +15,6 @@ public interface ToolFinder<OPTIONS> {
    * @param toolPathOut receives the tool files as main sources.
    */
   void find(
-      OPTIONS options, Ingredients ingredients,
+      Log log, OPTIONS options, Ingredients ingredients,
       SettableFileSetIngredient toolPathOut);
 }

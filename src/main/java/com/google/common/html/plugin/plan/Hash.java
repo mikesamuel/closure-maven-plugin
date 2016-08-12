@@ -187,6 +187,15 @@ public final class Hash implements Serializable {
     return new Hash(md.digest());
   }
 
+  /**
+   * A hash of the given bytes.
+   */
+  public static Hash hashBytes(byte[] bytes) {
+    MessageDigest md = newDigest();
+    md.update(bytes);
+    return new Hash(md.digest());
+  }
+
   private static MessageDigest newDigest() {
     MessageDigest md = null;
     try {

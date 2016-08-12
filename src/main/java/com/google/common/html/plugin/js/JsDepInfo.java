@@ -7,7 +7,7 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.html.plugin.js.Identifier.GoogNamespace;
-import com.google.common.html.plugin.plan.Hash;
+import com.google.common.html.plugin.plan.Metadata;
 import com.google.javascript.jscomp.CompilerInput;
 
 /**
@@ -20,23 +20,18 @@ public final class JsDepInfo implements Serializable {
   /**
    * Maps source file canonical paths to dependency info.
    */
-  public final ImmutableMap<File, HashAndDepInfo> depinfo;
+  public final ImmutableMap<File, Metadata<DepInfo>> depinfo;
 
-  JsDepInfo(Map<? extends File, ? extends HashAndDepInfo> depinfo) {
+  JsDepInfo(Map<? extends File, ? extends Metadata<DepInfo>> depinfo) {
     this.depinfo = ImmutableMap.copyOf(depinfo);
   }
 
   /**
    * Information about which symbols a JS source file requires/provides.
    */
-  public static final class HashAndDepInfo implements Serializable {
+  public static final class DepInfo implements Serializable {
     private static final long serialVersionUID = 8112272591344220966L;
 
-    /**
-     * Hash of the contents of the JS file from which provides/requires
-     * were parsed.
-     */
-    public final Hash hash;
     /** Any module declaration present in the source file. */
     public final boolean isModule;
     /**
@@ -52,17 +47,23 @@ public final class JsDepInfo implements Serializable {
      */
     public final String closureCompilerInputName;
 
-    HashAndDepInfo(
-        Hash hash,
+    DepInfo(
         boolean isModule,
         String closureCompilerInputName,
         Iterable<? extends GoogNamespace> provides,
         Iterable<? extends GoogNamespace> requires) {
-      this.hash = hash;
       this.isModule = isModule;
       this.closureCompilerInputName = closureCompilerInputName;
       this.provides = ImmutableSet.copyOf(provides);
       this.requires = ImmutableSet.copyOf(requires);
+    }
+
+    @Override
+    public String toString() {
+      return "{DepInfo" + (isModule ? " module" : "")
+          + (provides.isEmpty() ? "" : " provides(" + provides + ")")
+          + (requires.isEmpty() ? "" : " requires(" + requires + ")")
+          + "}";
     }
   }
 }
