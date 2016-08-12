@@ -184,12 +184,12 @@ final class BuildSoyFileSet extends Step {
       @Override
       public Object reflect(ClassLoader cl, Object sfsBuilder)
       throws MojoExecutionException, ReflectiveOperationException {
-        Method addFileMethod = sfsBuilder.getClass().getMethod(
-            "add", CharSequence.class, String.class);
         @SuppressWarnings("rawtypes")
         Class<? extends Enum> soyFileKindClass =
             cl.loadClass(SoyFileKind.class.getName())
             .asSubclass(Enum.class);
+        Method addWithKindMethod = sfsBuilder.getClass().getMethod(
+            "addWithKind", CharSequence.class, soyFileKindClass, String.class);
         for (Source source : sources) {
           String relPath = source.relativePath.getPath();
           SoyFileKind kindNotInClassLoader =
@@ -203,7 +203,7 @@ final class BuildSoyFileSet extends Step {
             CharSequence content = Files.toString(
                 source.canonicalPath, Charsets.UTF_8);
             try {
-              addFileMethod.invoke(sfsBuilder, content, kind, relPath);
+              addWithKindMethod.invoke(sfsBuilder, content, kind, relPath);
             } catch (InvocationTargetException ex) {
               Throwable target = ex.getTargetException();
               if (target instanceof IOException) {
