@@ -11,6 +11,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.json.simple.JSONArray;
 
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.html.plugin.common.Ingredients.OptionsIngredient;
@@ -88,6 +90,7 @@ final class CompileJs extends Step {
                   stdin, stdout, stderr) {
                 // Subclass to get access to the constructor.
               };
+              runner.setExitCodeReceiver(Functions.constant(null));
               runner.run();
               if (runner.hasErrors()) {
                 throw new MojoExecutionException("JS compilation failed");
