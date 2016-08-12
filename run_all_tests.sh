@@ -4,4 +4,4 @@ set -ex
 
 cd -- "$(dirname "$0")"
 
-mvn install -Prun-its
+mvn -Djava.awt.headless=true install -Prun-its
