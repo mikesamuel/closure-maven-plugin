@@ -27,8 +27,8 @@ public final class Extract implements Serializable {
   private Optional<String> groupId = Optional.absent();
   private Optional<String> artifactId = Optional.absent();
   private Optional<String> version = Optional.absent();
-  private Set<String> suffixes = Sets.newLinkedHashSet();
-  private EnumSet<SourceFileProperty> props = EnumSet.noneOf(
+  private final Set<String> suffixes = Sets.newLinkedHashSet();
+  private final EnumSet<SourceFileProperty> props = EnumSet.noneOf(
       SourceFileProperty.class);
 
   /** Zero-argument constructor for plexus configurator */
