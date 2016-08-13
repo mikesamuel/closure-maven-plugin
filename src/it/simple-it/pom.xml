@@ -11,6 +11,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.7</java.version>
   </properties>
 
   <build>
@@ -28,6 +29,15 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -56,6 +66,13 @@
       <groupId>com.google.template</groupId>
       <artifactId>soy</artifactId>
       <version>2016-07-23-SNAPSHOT</version>
+    </dependency>
+    <!-- We test compiled JS by running it in Rhino -->
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
+      <version>1.7.7.1</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
