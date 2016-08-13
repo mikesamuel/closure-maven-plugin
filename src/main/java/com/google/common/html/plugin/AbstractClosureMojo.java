@@ -380,6 +380,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
               log.warn(ioex);
             }
             if (pluginProtobufVersion != null) {
+              // Falling back allows projects that have no need for .proto to
+              // work without a protobuf-java <dependency>.
               log.info(
                   "Falling back to protobuf-version " + pluginProtobufVersion);
               find(

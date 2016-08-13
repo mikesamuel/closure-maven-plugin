@@ -38,3 +38,10 @@ assert proto1Java.isFile();
 File proto1Js = new File(  // JS files are named after the message types.
     [targetDir, "src", "main", "js", "name.js"].join(File.separator));
 assert proto1Js.isFile();
+
+// Check that the compiled JS output ends up in the right place.
+File jsOutputDir = new File(new File(targetDir, "classes"), "js");
+File mainJsModule = new File(jsOutputDir, "main.js");
+File helloWorldJsModule = new File(jsOutputDir, "hello.world.js");
+assert mainJsModule.isFile();
+assert helloWorldJsModule.isFile();

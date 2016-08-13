@@ -55,17 +55,12 @@ final class CompileJs extends Step {
       return;
     }
 
-    jsOutputDir.value.mkdirs();
-
     ImmutableList.Builder<String> argvBuilder = ImmutableList.builder();
     optionsIng.getValue().addArgv(log, argvBuilder);
 
-    argvBuilder.add("--manage_closure_dependencies").add("true");
-    argvBuilder.add("--js_output_file")
-        .add(jsOutputDir.value.getPath()
-            // The %outname% substitution is defined in
-            // AbstractCommandLineRunner.
-             + File.separator + "compiled-%outname%.js");
+    argvBuilder.add("--module_output_path_prefix")
+        .add(jsOutputDir.value.getPath() + File.separator);
+    jsOutputDir.value.mkdirs();
 
     modules.addClosureCompilerFlags(argvBuilder);
 
