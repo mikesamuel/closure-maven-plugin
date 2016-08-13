@@ -43,6 +43,8 @@ public final class CompiledJsTest extends TestCase {
 
   @Test
   public void testCompiledJs() throws Exception {
+    // The main module calls a soy template and alerts the output.
+    // Replace alert with something that lets us capture the output.
     cx.evaluateString(
         scope, "var _alerts_ = []; alert = function (s) { _alerts_.push(s); }",
         "test", 1, null);
