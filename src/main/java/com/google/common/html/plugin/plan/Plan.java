@@ -180,8 +180,11 @@ public class Plan {
       log.debug("Reusing output of " + step.key);
     } else {
       log.debug("Executing " + step.key);
+      long t0 = System.nanoTime();
       step.execute(log);
-      log.debug("Executed " + step.key);
+      long t1 = System.nanoTime();
+      long deltaMillis = (t1 - t0) / 1000000 /* ns / ms */;
+      log.debug("Executed " + step.key + ".  Took " + deltaMillis + " ms");
     }
 
     // Add steps before updating satisfaction counts, so that we don't declare
