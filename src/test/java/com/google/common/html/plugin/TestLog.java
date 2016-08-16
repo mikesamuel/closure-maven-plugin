@@ -2,15 +2,20 @@ package com.google.common.html.plugin;
 
 import org.apache.maven.plugin.logging.Log;
 
-/** */
+/** A log object useful for testing. */
 public final class TestLog implements Log {
 
   private boolean verbose;
 
+  /** True if log trace is dumped to stderr, false when dropped silently. */
   public boolean verbose() {
     return verbose;
   }
 
+  /**
+   * @param b true if log trace should be dumped to stderr, false when it
+   *     should be dropped silently.
+   */
   public TestLog verbose(boolean b) {
     this.verbose = b;
     return this;
