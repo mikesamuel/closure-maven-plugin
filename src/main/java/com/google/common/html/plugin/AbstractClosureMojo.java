@@ -11,10 +11,8 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.util.List;
 
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -219,22 +217,11 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       hashStore = new HashStore();
     }
 
-    // Supply the runtime classpath so that we can use java classes generated
-    // during the compile phase in the process-classes phase.
-    ImmutableList.Builder<URI> runtimeClassPath = ImmutableList.builder();
-    try {
-      for (String rtClassPathElement : project.getRuntimeClasspathElements()) {
-        runtimeClassPath.add(new File(rtClassPathElement).toURI());
-      }
-    } catch (DependencyResolutionRequiredException ex) {
-      throw new MojoExecutionException("Bad mojo", ex);
-    }
-
     CommonPlanner planner;
     try {
       planner = new CommonPlanner(
           log, baseDir, outputDir, outputClassesDir, substitutionMapProvider,
-          runtimeClassPath.build(), hashStore);
+          hashStore);
     } catch (IOException ex) {
       throw new MojoExecutionException("failed to initialize planner", ex);
     }

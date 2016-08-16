@@ -2,7 +2,6 @@ package com.google.common.html.plugin.common;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -32,8 +31,6 @@ public class CommonPlanner {
   public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
   /** The {@code target/classes} directory. */
   public final PathValue projectBuildOutputDirectory;
-  /** The runtime classpath including the target directory. */
-  public final ImmutableList<URI> runtimeClassPath;
 
   /**
    * May be used by steps to run a compiler but stubbed out in tests.
@@ -46,7 +43,6 @@ public class CommonPlanner {
   public CommonPlanner(
       Log log, File baseDir, File outputDir, File projectBuildOutputDirectory,
       SubstitutionMapProvider substitutionMapProvider,
-      Iterable<? extends URI> runtimeClassPath,
       HashStore hashStore)
   throws IOException {
     this.ingredients = new Ingredients();
@@ -58,7 +54,6 @@ public class CommonPlanner {
     this.substitutionMapProvider = substitutionMapProvider;
     this.genfiles = ingredients.serializedObject(
         new File(outputDir, "closure-genfiles.ser"), GenfilesDirs.class);
-    this.runtimeClassPath = ImmutableList.copyOf(runtimeClassPath);
 
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();
