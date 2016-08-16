@@ -36,6 +36,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.template.soy.SoyFileSet;
+import com.google.template.soy.SoyToJbcSrcCompiler;
 
 final class SoyToJava extends Step {
   private final ReflectionableOperation<Void, SoyFileSet> makeSoyFileSet;
@@ -114,7 +115,8 @@ final class SoyToJava extends Step {
     URL[] classPath = protobufClassPathUrls.build().toArray(new URL[0]);
     ClassLoader parentClassLoader = ClassLoader.getSystemClassLoader();
 
-    class CompileToJar implements ReflectionableOperation<SoyFileSet, Void> {
+    class CompileToJar
+    implements ReflectionableOperation<SoyFileSet, Void> {
 
       @Override
       public Void direct(SoyFileSet sfs) throws MojoExecutionException {
@@ -123,7 +125,7 @@ final class SoyToJava extends Step {
         Optional<ByteSink> srcJarOut = Optional.of(
             Files.asByteSink(srcJarOutFile, writeModes));
         try {
-          sfs.compileToJar(classJarOut, srcJarOut);
+          SoyToJbcSrcCompiler.compile(sfs, classJarOut, srcJarOut);
         } catch (IOException ex) {
           throw new MojoExecutionException(
               "Failed to write compiled Soy output to a JAR", ex);
@@ -150,9 +152,13 @@ final class SoyToJava extends Step {
         Object srcJarOut = optionalOf.invoke(
             null, asByteSink.invoke(null, srcJarOutFile, writeModes));
 
-        Method compileToJar = sfs.getClass().getMethod(
-            "compileToJar", byteSinkClass, optionalClass);
-        compileToJar.invoke(sfs, classJarOut, srcJarOut);
+        Class<?> soyFileSetClass = cl.loadClass(
+            SoyFileSet.class.getName());
+        Class<?> soyToJbcsrcCompilerClass = cl.loadClass(
+            SoyToJbcSrcCompiler.class.getName());
+        Method compile = soyToJbcsrcCompilerClass.getMethod(
+            "compile", soyFileSetClass, byteSinkClass, optionalClass);
+        compile.invoke(null, sfs, classJarOut, srcJarOut);
         return null;
       }
 
