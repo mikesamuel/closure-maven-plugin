@@ -279,7 +279,10 @@
                   <artifactId>proto</artifactId>
                   <version>1.0.4-SNAPSHOT</version>
                   <type>jar</type>
-                  <overWrite>false</overWrite>
+                  <!-- This is heavy handed, but avoids problems with Eclipse m2e wiping out
+                       target/classes directory but not the markersDirectory where this plugin
+                       stores unpack state -->
+                  <overWrite>true</overWrite>
                   <outputDirectory>${project.build.outputDirectory}/src/main/proto</outputDirectory>
                   <includes>**/*.proto</includes>
                 </artifactItem>
