@@ -55,6 +55,7 @@ public final class CompiledJsTest extends TestCase {
     NativeArray alerts = (NativeArray)
         ScriptableObject.getProperty(scope, "_alerts_");
 
-    assertEquals("Hello, <b>Cle&lt;eland</b>!", cx.toString(alerts.get(0)));
+    assertEquals(
+        "Hello, <b>Cle&lt;eland</b>!", Context.toString(alerts.get(0)));
   }
 }
