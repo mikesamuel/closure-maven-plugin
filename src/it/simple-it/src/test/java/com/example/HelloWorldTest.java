@@ -131,7 +131,6 @@ public final class HelloWorldTest extends TestCase {
     @Singleton
     public List<SoyCustomValueConverter> provideSoyValueConverters(
         SoyProtoValueConverter protoConverter) {
-      System.err.println("PROVIDE VALUE CONVERTERS");
       // Note: The order of data converters matters. Converters that only accept
       // specific input types should come before converters that will convert
       // anything.
@@ -142,7 +141,6 @@ public final class HelloWorldTest extends TestCase {
     @Singleton
     public SoyProtoTypeProvider provideProtoTypeProvider()
     throws IOException, DescriptorValidationException {
-      System.err.println("PROVIDE PROTO TYPE PROVIDER");
       File descriptorFile = new File(
           Joiner.on(File.separator).join(
               "target", "src", "main", "proto", "descriptors.pd"));
