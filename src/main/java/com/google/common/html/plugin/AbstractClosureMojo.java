@@ -27,6 +27,7 @@ import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.repository.ComponentDependency;
 
 import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -195,8 +196,10 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
     File hashStoreFile = new File(
         outputDir,
-        "closure-" + pluginDescriptor.getName()
-        + "-plugin-hash-store.json");
+        (CaseFormat.UPPER_CAMEL.to(
+              CaseFormat.LOWER_UNDERSCORE, getClass().getSimpleName())
+           .replace('_', '-'))
+        + "-hash-store.json");
 
     HashStore hashStore = null;
     if (hashStoreFile.exists()) {
