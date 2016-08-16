@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.IOException;
 
@@ -8,16 +8,16 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.DirectoryScannerSpec;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients.DirScanFileSetIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.Ingredients.SerializedObjectIngredient;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 
 final class FindJsSources extends Step {
   private final JsPlanner planner;

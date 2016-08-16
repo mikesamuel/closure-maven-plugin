@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,13 +13,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.common.html.plugin.TestLog;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.common.TypedFile;
-import com.google.common.html.plugin.js.JsDepInfo.DepInfo;
-import com.google.common.html.plugin.plan.Metadata;
+import com.google.closure.plugin.TestLog;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.js.JsDepInfo.DepInfo;
+import com.google.closure.plugin.plan.Metadata;
 import com.google.common.io.ByteSource;
 
 abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {

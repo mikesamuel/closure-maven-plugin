@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.css;
+package com.google.closure.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,22 +11,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Sources;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Sources;
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients.StringValue;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.common.TypedFile;
-import com.google.common.html.plugin.css.CssImportGraph.Dependencies;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.common.Ingredients.StringValue;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.css.CssImportGraph.Dependencies;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 
 final class FindEntryPoints extends Step {
   final SubstitutionMapProvider substMap;

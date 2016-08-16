@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.plan;
+package com.google.closure.plugin.plan;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;

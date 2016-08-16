@@ -1,9 +1,9 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import org.junit.Test;
 
 import com.google.common.base.Optional;
-import com.google.common.html.plugin.common.CStyleLexer;
+import com.google.closure.plugin.common.CStyleLexer;
 
 import junit.framework.TestCase;
 

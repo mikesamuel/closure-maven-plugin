@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.Serializable;
 import java.util.Map;

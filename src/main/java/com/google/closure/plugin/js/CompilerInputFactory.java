@@ -1,9 +1,9 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.IOException;
 
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.plan.Hash;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.Hash;
 import com.google.javascript.jscomp.CompilerInput;
 
 interface CompilerInputFactory {

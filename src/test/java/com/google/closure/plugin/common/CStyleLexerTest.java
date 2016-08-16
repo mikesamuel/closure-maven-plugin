@@ -1,11 +1,11 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.common.CStyleLexer;
-import com.google.common.html.plugin.common.CStyleLexer.Token;
+import com.google.closure.plugin.common.CStyleLexer;
+import com.google.closure.plugin.common.CStyleLexer.Token;
 
 import junit.framework.TestCase;
 

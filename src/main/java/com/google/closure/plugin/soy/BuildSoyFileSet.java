@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.soy;
+package com.google.closure.plugin.soy;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,22 +12,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
-import com.google.common.html.plugin.proto.ProtoIO;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.proto.ProtoIO;
 import com.google.common.io.Files;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.template.soy.SoyFileSet;

@@ -1,8 +1,8 @@
-package com.google.common.html.plugin.soy;
+package com.google.closure.plugin.soy;
 
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.html.plugin.common.Options;
+import com.google.closure.plugin.common.Options;
 import com.google.template.soy.jssrc.SoyJsSrcOptions;
 
 /**

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 import java.util.Map;
@@ -18,21 +18,21 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.Ingredients.Bundle;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients.Bundle;
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.common.ProcessRunner;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.common.TypedFile;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.ProcessRunner;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 
 final class RunProtoc extends Step {
   final ProcessRunner processRunner;

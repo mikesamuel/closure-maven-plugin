@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.closure.plugin;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -8,22 +8,22 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.css.CssOptions;
-import com.google.common.html.plugin.css.CssPlanner;
-import com.google.common.html.plugin.extract.ExtractPlanner;
-import com.google.common.html.plugin.extract.Extracts;
-import com.google.common.html.plugin.js.JsOptions;
-import com.google.common.html.plugin.js.JsPlanner;
-import com.google.common.html.plugin.proto.ProtoIO;
-import com.google.common.html.plugin.proto.ProtoOptions;
-import com.google.common.html.plugin.proto.ProtoPlanner;
-import com.google.common.html.plugin.soy.SoyOptions;
-import com.google.common.html.plugin.soy.SoyPlanner;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.css.CssOptions;
+import com.google.closure.plugin.css.CssPlanner;
+import com.google.closure.plugin.extract.ExtractPlanner;
+import com.google.closure.plugin.extract.Extracts;
+import com.google.closure.plugin.js.JsOptions;
+import com.google.closure.plugin.js.JsPlanner;
+import com.google.closure.plugin.proto.ProtoIO;
+import com.google.closure.plugin.proto.ProtoOptions;
+import com.google.closure.plugin.proto.ProtoPlanner;
+import com.google.closure.plugin.soy.SoyOptions;
+import com.google.closure.plugin.soy.SoyPlanner;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import java.io.File;
 import java.io.Serializable;
@@ -6,7 +6,7 @@ import java.io.Serializable;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.SourceFileProperty;
 
 /**
  * Like an {@link ExtractsList} but after all the extracts have been resolved

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 import java.util.Arrays;
@@ -6,8 +6,8 @@ import java.util.Arrays;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.SourceOptions;
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.SourceOptions;
 
 /**
  * Options for protoc.

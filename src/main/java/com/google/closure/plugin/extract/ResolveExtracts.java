@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -15,19 +15,19 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.TypedFile;
-import com.google.common.html.plugin.extract.ResolvedExtractsList
+import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 
 final class ResolveExtracts extends Step {
   private final Ingredients ingredients;

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,21 +19,21 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.common.CStyleLexer;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CStyleLexer;
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.StringValue;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.extract.ResolvedExtractsList
+import com.google.closure.plugin.common.Ingredients.StringValue;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
-import com.google.common.html.plugin.proto.ProtoPackageMap;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.proto.ProtoPackageMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import java.io.Serializable;
 import java.util.EnumSet;
@@ -7,7 +7,7 @@ import java.util.Set;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.SourceFileProperty;
 
 /**
  * Identifies an artifact to extract source files from.

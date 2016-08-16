@@ -1,9 +1,9 @@
-package com.google.common.html.plugin.css;
+package com.google.closure.plugin.css;
 
 import java.io.Serializable;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.common.Sources;
+import com.google.closure.plugin.common.Sources;
 
 final class CssBundle implements Serializable {
 

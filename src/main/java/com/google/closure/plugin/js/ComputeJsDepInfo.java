@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,22 +16,22 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.js.Identifier.GoogNamespace;
-import com.google.common.html.plugin.js.JsDepInfo.DepInfo;
-import com.google.common.html.plugin.plan.FileMetadataMapBuilder;
-import com.google.common.html.plugin.plan.FileMetadataMapBuilder.Extractor;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.Metadata;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.js.Identifier.GoogNamespace;
+import com.google.closure.plugin.js.JsDepInfo.DepInfo;
+import com.google.closure.plugin.plan.FileMetadataMapBuilder;
+import com.google.closure.plugin.plan.FileMetadataMapBuilder.Extractor;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.Metadata;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 import com.google.common.io.ByteSource;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerInput;

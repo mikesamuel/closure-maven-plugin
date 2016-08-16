@@ -1,6 +1,6 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
-import com.google.common.html.plugin.common.Options;
+import com.google.closure.plugin.common.Options;
 
 /**
  * Specify how to extract JS, CSS, Proto, and Soy dependencies from Maven

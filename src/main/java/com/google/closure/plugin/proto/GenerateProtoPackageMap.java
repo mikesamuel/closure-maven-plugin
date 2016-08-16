@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,17 +9,17 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.CStyleLexer;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CStyleLexer;
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.plan.FileMetadataMapBuilder;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.PlanKey;
-import com.google.common.html.plugin.plan.Step;
-import com.google.common.html.plugin.plan.StepSource;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.FileMetadataMapBuilder;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.Step;
+import com.google.closure.plugin.plan.StepSource;
 
 final class GenerateProtoPackageMap extends Step {
 

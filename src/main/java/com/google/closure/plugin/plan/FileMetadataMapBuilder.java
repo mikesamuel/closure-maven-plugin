@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.plan;
+package com.google.closure.plugin.plan;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,8 +9,8 @@ import java.util.Map;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.html.plugin.common.Ingredients.FileIngredient;
-import com.google.common.html.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.Ingredients.FileIngredient;
+import com.google.closure.plugin.common.Sources.Source;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;

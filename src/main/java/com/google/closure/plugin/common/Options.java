@@ -1,11 +1,11 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.plan.KeyedSerializable;
-import com.google.common.html.plugin.plan.PlanKey;
+import com.google.closure.plugin.plan.KeyedSerializable;
+import com.google.closure.plugin.plan.PlanKey;
 
 /**
  * Options for a compiler.

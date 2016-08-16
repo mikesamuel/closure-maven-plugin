@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -14,10 +14,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableClassToInstanceMap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.TestLog;
-import com.google.common.html.plugin.common.SourceOptions.SourceRootBuilder;
-import com.google.common.html.plugin.js.JsOptions.DependencyMode;
-import com.google.common.html.plugin.js.JsOptions.FormattingOption;
+import com.google.closure.plugin.TestLog;
+import com.google.closure.plugin.common.SourceOptions.SourceRootBuilder;
+import com.google.closure.plugin.js.JsOptions.DependencyMode;
+import com.google.closure.plugin.js.JsOptions.FormattingOption;
 import com.google.javascript.jscomp.CompilationLevel;
 import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.SourceMap;

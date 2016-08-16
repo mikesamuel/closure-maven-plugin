@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.plan;
+package com.google.closure.plugin.plan;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -7,7 +7,7 @@ import java.io.StringWriter;
 import org.junit.Test;
 
 import com.google.common.base.Optional;
-import com.google.common.html.plugin.TestLog;
+import com.google.closure.plugin.TestLog;
 
 import junit.framework.TestCase;
 

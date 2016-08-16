@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,10 +7,10 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.SubstitutionMapProvider;
-import com.google.common.html.plugin.common.Ingredients.PathValue;
-import com.google.common.html.plugin.plan.HashStore;
-import com.google.common.html.plugin.plan.Plan;
-import com.google.common.html.plugin.plan.Step;
+import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.plan.HashStore;
+import com.google.closure.plugin.plan.Plan;
+import com.google.closure.plugin.plan.Step;
 
 /**
  * Common plan elements that are used by the various language type planners..

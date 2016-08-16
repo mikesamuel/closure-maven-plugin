@@ -1,8 +1,8 @@
-package com.google.common.html.plugin;
+package com.google.closure.plugin;
 
 import org.junit.Test;
 
-import com.google.common.html.plugin.common.Words;
+import com.google.closure.plugin.common.Words;
 
 import junit.framework.TestCase;
 

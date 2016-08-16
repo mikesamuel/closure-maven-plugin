@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.closure.plugin;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,16 +31,16 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
-import com.google.common.html.plugin.common.Cheats;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Cheats;
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.ToolFinder;
-import com.google.common.html.plugin.plan.HashStore;
-import com.google.common.html.plugin.plan.Plan;
-import com.google.common.html.plugin.proto.ProtoFinalOptions;
-import com.google.common.html.plugin.soy.SoyOptions;
+import com.google.closure.plugin.common.ToolFinder;
+import com.google.closure.plugin.plan.HashStore;
+import com.google.closure.plugin.plan.Plan;
+import com.google.closure.plugin.proto.ProtoFinalOptions;
+import com.google.closure.plugin.soy.SoyOptions;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 

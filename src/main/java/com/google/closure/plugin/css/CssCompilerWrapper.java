@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.css;
+package com.google.closure.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
 import com.google.common.css.compiler.commandline.ClosureCommandLineCompiler;
-import com.google.common.html.plugin.common.Sources;
+import com.google.closure.plugin.common.Sources;
 import com.google.common.io.Files;
 
 final class CssCompilerWrapper {

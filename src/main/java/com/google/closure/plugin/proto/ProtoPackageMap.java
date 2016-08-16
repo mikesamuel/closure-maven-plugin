@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 import java.io.Serializable;
@@ -7,9 +7,9 @@ import java.util.Map;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.html.plugin.common.CStyleLexer;
-import com.google.common.html.plugin.plan.Hash;
-import com.google.common.html.plugin.plan.Metadata;
+import com.google.closure.plugin.common.CStyleLexer;
+import com.google.closure.plugin.plan.Hash;
+import com.google.closure.plugin.plan.Metadata;
 
 /** Relates proto input files to their package declarations. */
 public final class ProtoPackageMap implements Serializable {

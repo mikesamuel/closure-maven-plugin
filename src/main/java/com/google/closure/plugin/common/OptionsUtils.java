@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;

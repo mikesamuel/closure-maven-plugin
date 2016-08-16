@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.plan;
+package com.google.closure.plugin.plan;
 
 /**
  * An ingredient that a {@link Step} can combine into an output.

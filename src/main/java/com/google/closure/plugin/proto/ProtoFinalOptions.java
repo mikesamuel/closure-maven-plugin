@@ -1,13 +1,13 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.common.DirectoryScannerSpec;
-import com.google.common.html.plugin.plan.KeyedSerializable;
-import com.google.common.html.plugin.plan.PlanKey;
+import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.plan.KeyedSerializable;
+import com.google.closure.plugin.plan.PlanKey;
 
 /**
  * An immutable representation of the same data as {@link ProtoOptions} that

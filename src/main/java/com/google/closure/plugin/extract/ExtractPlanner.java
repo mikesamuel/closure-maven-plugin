@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.extract;
+package com.google.closure.plugin.extract;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,15 +12,15 @@ import org.apache.maven.project.MavenProject;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.extract
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.extract
     .ResolvedExtractsList.ResolvedExtract;
 
 /**

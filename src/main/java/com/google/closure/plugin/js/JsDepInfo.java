@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.File;
 import java.io.Serializable;
@@ -6,8 +6,8 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.js.Identifier.GoogNamespace;
-import com.google.common.html.plugin.plan.Metadata;
+import com.google.closure.plugin.js.Identifier.GoogNamespace;
+import com.google.closure.plugin.plan.Metadata;
 import com.google.javascript.jscomp.CompilerInput;
 
 /**

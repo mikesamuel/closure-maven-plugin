@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.util.Arrays;
 
@@ -7,8 +7,8 @@ import org.junit.Test;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.html.plugin.common.Options;
-import com.google.common.html.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.Options;
+import com.google.closure.plugin.common.OptionsUtils;
 
 import junit.framework.TestCase;
 

@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.io.File;
 import java.io.IOException;

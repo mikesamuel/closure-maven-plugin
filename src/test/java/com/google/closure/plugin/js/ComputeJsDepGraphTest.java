@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -6,10 +6,10 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.common.TopoSort;
-import com.google.common.html.plugin.TestLog;
-import com.google.common.html.plugin.common.SourceFileProperty;
-import com.google.common.html.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.TopoSort;
+import com.google.closure.plugin.TestLog;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.Sources.Source;
 
 import junit.framework.TestCase;
 

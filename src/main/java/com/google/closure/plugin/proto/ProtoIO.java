@@ -1,9 +1,9 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 import java.io.Serializable;
 
-import com.google.common.html.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.DirectoryScannerSpec;
 
 /**
  * Protobuf compiler inputs and outputs derived from the proto options and

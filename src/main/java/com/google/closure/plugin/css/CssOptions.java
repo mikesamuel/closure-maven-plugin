@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.css;
+package com.google.closure.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,10 +25,10 @@ import com.google.common.css.SourceCode;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.Vendor;
 import com.google.common.css.JobDescription.OptimizeStrategy;
-import com.google.common.html.plugin.common.Asplodable;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.SourceOptions;
-import com.google.common.html.plugin.common.Sources;
+import com.google.closure.plugin.common.Asplodable;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.SourceOptions;
+import com.google.closure.plugin.common.Sources;
 import com.google.common.io.Files;
 
 //@Mojo(name="css")

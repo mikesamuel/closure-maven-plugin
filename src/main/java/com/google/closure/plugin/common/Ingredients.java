@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,11 +29,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.html.plugin.common.Sources.Source;
-import com.google.common.html.plugin.plan.Hash;
-import com.google.common.html.plugin.plan.Ingredient;
-import com.google.common.html.plugin.plan.KeyedSerializable;
-import com.google.common.html.plugin.plan.PlanKey;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.Hash;
+import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.KeyedSerializable;
+import com.google.closure.plugin.plan.PlanKey;
 
 /**
  * Pools ingredients based on key.

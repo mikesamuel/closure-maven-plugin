@@ -1,21 +1,21 @@
-package com.google.common.html.plugin.soy;
+package com.google.closure.plugin.soy;
 
 import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Optional;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.DirectoryScannerSpec;
-import com.google.common.html.plugin.common.GenfilesDirs;
-import com.google.common.html.plugin.common.Ingredients;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.proto.ProtoIO;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.proto.ProtoIO;
 
 /**
  * Adds steps related to Soy template compilation.

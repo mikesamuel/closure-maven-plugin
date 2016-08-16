@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.TestLog;
+import com.google.closure.plugin.TestLog;
 
 import junit.framework.TestCase;
 

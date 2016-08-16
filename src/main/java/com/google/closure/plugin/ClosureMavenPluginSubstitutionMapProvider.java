@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.closure.plugin;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

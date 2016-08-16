@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.proto;
+package com.google.closure.plugin.proto;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,15 +6,15 @@ import java.io.IOException;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Preconditions;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.Ingredients.DirScanFileSetIngredient;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.Ingredients.DirScanFileSetIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.ToolFinder;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.ToolFinder;
 
 /**
  * Adds steps that feed .proto files to protoc.

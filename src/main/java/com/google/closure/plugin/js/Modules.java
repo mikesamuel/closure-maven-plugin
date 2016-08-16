@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.js;
+package com.google.closure.plugin.js;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.Map;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.html.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.Sources.Source;
 import com.google.javascript.jscomp.CommandLineRunner;
 
 /**

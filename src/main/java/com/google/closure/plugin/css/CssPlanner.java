@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.css;
+package com.google.closure.plugin.css;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,10 +8,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
-import com.google.common.html.plugin.common.CommonPlanner;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.Ingredients.HashedInMemory;
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
 
 /**

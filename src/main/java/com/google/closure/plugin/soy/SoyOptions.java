@@ -1,4 +1,4 @@
-package com.google.common.html.plugin.soy;
+package com.google.closure.plugin.soy;
 
 import java.util.Map;
 
@@ -7,9 +7,9 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.html.plugin.common.Options;
-import com.google.common.html.plugin.common.OptionsUtils;
-import com.google.common.html.plugin.common.SourceOptions;
+import com.google.closure.plugin.common.Options;
+import com.google.closure.plugin.common.OptionsUtils;
+import com.google.closure.plugin.common.SourceOptions;
 import com.google.template.soy.SoyFileSet;
 
 /**

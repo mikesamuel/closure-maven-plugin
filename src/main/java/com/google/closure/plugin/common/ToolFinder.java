@@ -1,8 +1,8 @@
-package com.google.common.html.plugin.common;
+package com.google.closure.plugin.common;
 
 import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.html.plugin.common.Ingredients
+import com.google.closure.plugin.common.Ingredients
      .SettableFileSetIngredient;
 
 /**

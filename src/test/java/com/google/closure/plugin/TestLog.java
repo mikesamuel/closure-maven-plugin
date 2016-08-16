@@ -1,4 +1,4 @@
-package com.google.common.html.plugin;
+package com.google.closure.plugin;
 
 import org.apache.maven.plugin.logging.Log;
 
