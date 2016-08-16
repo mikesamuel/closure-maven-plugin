@@ -261,14 +261,6 @@ public final class JsOptions extends SourceOptions {
 
   private static void addFlag(
       String name, Field f, Object value, ImmutableList.Builder<String> argv) {
-    if (false && value instanceof Boolean) {
-      argv.add(
-          ((Boolean) value).booleanValue()
-          ? name
-          : name.replaceFirst("[^\\-]", "no$0"));  // --debug -> --nodebug
-      return;
-    }
-
     String valueStr;
     if (value instanceof CharSequence
         || value instanceof Boolean

@@ -17,7 +17,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.google.common.base.Ascii;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
@@ -26,9 +25,29 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+/**
+ * Utilities for dealing with plexus-configurable options bundles.
+ */
 public final class OptionsUtils {
   private OptionsUtils() {}
 
+  /**
+   * Best effort to look up a class and ensures that it is a sub-type of the
+   * given type.
+   * <p>
+   * Some compilers allow plugging-in customizations by providing an instance
+   * of an interface.  One way to bridge the gap between that and string flag
+   * values or XML plexus configuration elements is by convention -- provide
+   * the name of a public concrete class with a public zero-argument constructor
+   * that is a sub-type.
+   *
+   * @param name a qualified class name available from this class's
+   *      class loader.
+   * @param superType a super-type of the class to load.
+   *
+   * @return some class when that class can be loaded and obeys the type
+   *      constraints above.
+   */
   public static <ST>
   Optional<Class<? extends ST>> classForName(
       Log log, String name, Class<ST> superType) {
@@ -54,6 +73,12 @@ public final class OptionsUtils {
     return Optional.absent();
   }
 
+  /**
+   * Best effort to create an instance of the given class using its default
+   * constructor without escalating privileges.
+   * <p>
+   * @return absent if instance creation failed.
+   */
   public static <T>
   Optional<T> createInstanceUsingDefaultConstructor(
       Log log, Class<T> superType, Class<?> c) {
@@ -95,6 +120,10 @@ public final class OptionsUtils {
     return Optional.absent();
   }
 
+  /**
+   * Best effort to derive a string to primitive value map from a string of JSON
+   * text.
+   */
   public static Optional<ImmutableMap<String, Object>> keyValueMapFromJson(
       Log log, String json) {
     ImmutableMap.Builder<String, Object> b = ImmutableMap.builder();
@@ -127,23 +156,6 @@ public final class OptionsUtils {
       }
     }
     return Optional.of(b.build());
-  }
-
-  public static boolean splitOnColon(
-      Log log, String parameter, String form,
-      Function<String[], ?> f,
-      String parameterValue) {
-    int colon = parameterValue.indexOf(':');
-    if (colon < 0) {
-      log.error(
-          parameter + " `" + parameterValue + "` should have the form " + form);
-      return false;
-    }
-    f.apply(new String[] {
-        parameterValue.substring(0, colon),
-        parameterValue.substring(colon + 1),
-    });
-    return true;
   }
 
   /**

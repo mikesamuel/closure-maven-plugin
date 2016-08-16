@@ -5,8 +5,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+/**
+ * Some projects use package-private APIs to programmatically build compile
+ * configurations.
+ * I prefer programmatic APIs to building flag lists, so use reflection in
+ * dodgy ways while I negotiate programmatic APIs and push them into central.
+ *
+ * TODO: push changes back into the main projects until this is unnecessary.
+ */
 public final class Cheats {
 
+  /**
+   * Escalates privileges to call the named method.
+   *
+   * @param argumentTypesAndArgs [erasedType0, arg0, erasedType1, arg1, ...]
+   */
   public static <TT, RT> RT cheatCall(
       Class<RT> returnType,
       Class<TT> thisType, TT thisValue,
@@ -42,6 +55,7 @@ public final class Cheats {
     }
   }
 
+  /** Escalates privileges to set a field. */
   public static <TT>
   void cheatSet(
       Class<TT> thisType, TT thisValue, String fieldName, Object newValue) {
@@ -61,6 +75,7 @@ public final class Cheats {
     }
   }
 
+  /** Escalates privileges to read a field. */
   public static <TT, FT>
   FT cheatGet(
       Class<TT> thisType, TT thisValue, Class<FT> fieldType, String fieldName) {
