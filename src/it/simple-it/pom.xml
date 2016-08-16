@@ -49,13 +49,6 @@
       <artifactId>protobuf-java</artifactId>
       <version>3.0.0-beta-2</version>
     </dependency>
-    <!-- Our JUnit tests run JBC templates -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.2</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.google.common.html.types</groupId>
       <artifactId>proto</artifactId>
@@ -65,6 +58,14 @@
       <groupId>com.google.template</groupId>
       <artifactId>soy</artifactId>
       <version>2016-07-23-SNAPSHOT</version>
+    </dependency>
+
+    <!-- Our JUnit tests run JBC templates -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.2</version>
+      <scope>test</scope>
     </dependency>
     <!-- We test compiled JS by running it in Rhino -->
     <dependency>
