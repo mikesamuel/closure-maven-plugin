@@ -156,7 +156,7 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
     }
 
     SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-    new SoyPlanner(LifecyclePhase.PROCESS_SOURCES, planner, protoIO)
+    new SoyPlanner(planner, protoIO)
         .defaultSoySource(defaultSoySource)
         .plan(soyOptions);
 

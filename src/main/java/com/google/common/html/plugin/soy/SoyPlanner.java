@@ -3,7 +3,6 @@ package com.google.common.html.plugin.soy;
 import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 
 import com.google.common.base.Optional;
 import com.google.common.html.plugin.common.CommonPlanner;
@@ -24,17 +23,14 @@ import com.google.common.html.plugin.proto.ProtoIO;
 public final class SoyPlanner {
   private final CommonPlanner planner;
   private final SerializedObjectIngredient<ProtoIO> protoIO;
-  private final LifecyclePhase phase;
   private Optional<File> defaultSoySource = Optional.absent();
 
   /** */
   public SoyPlanner(
-      LifecyclePhase phase,
       CommonPlanner planner,
       SerializedObjectIngredient<ProtoIO> protoIO) {
     this.planner = planner;
     this.protoIO = protoIO;
-    this.phase = phase;
   }
 
   /** Sets the default soy source root. */
@@ -62,7 +58,7 @@ public final class SoyPlanner {
     DirScanFileSetIngredient soySources = ingredients.fileset(dsSpec);
 
     planner.addStep(new BuildSoyFileSet(
-        ingredients, phase,
+        ingredients,
         genfiles, soyOptions, soySources, protoIO,
         ingredients.pathValue(planner.outputDir),
         planner.projectBuildOutputDirectory));

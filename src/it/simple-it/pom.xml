@@ -25,7 +25,6 @@
           <execution>
             <goals>
               <goal>generate-closure-sources</goal>
-              <goal>compile-closure</goal>
             </goals>
           </execution>
         </executions>
