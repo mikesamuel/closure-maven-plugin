@@ -302,12 +302,10 @@ final class ComputeJsDepGraph extends Step {
     CommonPlanner commonPlanner = planner.planner;
 
     PathValue jsOutputDir = commonPlanner.ingredients.pathValue(
-        new File(commonPlanner.projectBuildOutputDirectory.value, "js"));
+        new File(commonPlanner.closureOutputDirectory.value, "js"));
 
     return ImmutableList.<Step>of(
-        new CompileJs(
-            optionsIng, modulesIng,
-            jsOutputDir));
+        new CompileJs(optionsIng, modulesIng, jsOutputDir));
   }
 
   private static

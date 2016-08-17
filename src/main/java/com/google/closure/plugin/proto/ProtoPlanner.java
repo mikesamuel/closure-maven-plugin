@@ -27,7 +27,6 @@ public final class ProtoPlanner {
   private File defaultProtoTestSource;
   private File defaultMainDescriptorFile;
   private File defaultTestDescriptorFile;
-  private final File protoDir;
   private final SerializedObjectIngredient<ProtoIO> protoIO;
 
   /** */
@@ -37,10 +36,8 @@ public final class ProtoPlanner {
     this.planner = planner;
     this.protocFinder = protocFinder;
 
-    this.protoDir = new File(planner.outputDir, "proto");
     this.protoIO = planner.ingredients.serializedObject(
-        new File(protoDir, "protoc-files.ser"),
-        ProtoIO.class);
+        "protoc-files.ser", ProtoIO.class);
   }
 
 
@@ -99,8 +96,7 @@ public final class ProtoPlanner {
     SerializedObjectIngredient<ProtoPackageMap> protoPackageMap;
     try {
       protoPackageMap = planner.ingredients.serializedObject(
-          new File(protoDir, "proto-package-map.ser"),
-          ProtoPackageMap.class);
+          "proto-package-map.ser", ProtoPackageMap.class);
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to locate intermediate object", ex);

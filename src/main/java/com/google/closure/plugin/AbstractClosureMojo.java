@@ -32,6 +32,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.closure.plugin.common.Cheats;
+import com.google.closure.plugin.common.StableCssSubstitutionMapProvider;
 import com.google.closure.plugin.common.CommonPlanner;
 import com.google.closure.plugin.common.Ingredients;
 import com.google.closure.plugin.common.Ingredients
@@ -62,6 +63,21 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       required=true,
       readonly=true)
   protected File outputClassesDir;
+
+  /**
+   * Directory root for compiled CSS and JS and other resources that are useful
+   * on the client including the CSS rename map and CSS & JS source maps.
+   * By default, this is under the classes directory so these files will be
+   * packaged in the project JAR making these available as resources on the
+   * class-path under "{@code /closure/}&hellip;".
+   */
+  @Parameter(
+      property="closureOutputDirectory",
+      // By default, the compiled JS, CSS, etc. are put in the classes directory
+      // so that they are available as resources.
+      defaultValue="${project.build.outputDirectory}/closure",
+      required=true)
+  protected File closureOutputDirectory;
 
   @Parameter(defaultValue="${project}", readonly=true, required=true)
   protected MavenProject project;
@@ -135,28 +151,13 @@ abstract class AbstractClosureMojo extends AbstractMojo {
   protected File javaTestGenfiles;
 
   @Parameter(
-      defaultValue=
-          "${project.build.directory}/css/{reldir}"
-          + "/compiled{-basename}{-orient}.css",
+      defaultValue="{reldir}/{basename}{-orient}.css",
       readonly=true,
       required=true)
   protected String defaultCssOutputPathTemplate;
 
-  /**
-   * The output from the CSS class renaming. Provides a map of class
-   * names to what they were renammed to.
-   * Defaults to target/css/{reldir}/rename-map{-basename}{-orient}.json
-   */
   @Parameter(
-      defaultValue="${project.build.directory}/css/css-rename-map.json",
-      readonly=true,
-      required=true)
-  protected File cssRenameMap;
-
-  @Parameter(
-      defaultValue=
-          "${project.build.directory}/css/{reldir}"
-          + "/source-map{-basename}{-orient}.json",
+      defaultValue="{reldir}/source-map{-basename}{-orient}.json",
       readonly=true,
       required=true)
   protected String defaultCssSourceMapPathTemplate;
@@ -179,21 +180,11 @@ abstract class AbstractClosureMojo extends AbstractMojo {
     if (!outputDir.exists()) {
       outputDir.mkdirs();
     }
-
     Log log = this.getLog();
-
-    log.info("Reading CSS rename map " + cssRenameMap);
-    ClosureMavenPluginSubstitutionMapProvider substitutionMapProvider;
-    try {
-      substitutionMapProvider = new ClosureMavenPluginSubstitutionMapProvider(
-          Files.asCharSource(cssRenameMap, Charsets.UTF_8));
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to read CSS rename map " + cssRenameMap, ex);
-    }
+    Ingredients ingredients = new Ingredients(outputDir);
 
     File hashStoreFile = new File(
-        outputDir,
+        ingredients.getCacheDir(),
         (CaseFormat.UPPER_CAMEL.to(
               CaseFormat.LOWER_UNDERSCORE, getClass().getSimpleName())
            .replace('_', '-'))
@@ -217,14 +208,27 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       hashStore = new HashStore();
     }
 
+    File cssRenameMapFile = new File(
+        new File(closureOutputDirectory, "css"), "css-rename-map.json");
+    log.info("Reading CSS rename map " + cssRenameMapFile);
+    StableCssSubstitutionMapProvider substitutionMapProvider;
+    try {
+      substitutionMapProvider = new StableCssSubstitutionMapProvider(
+          cssRenameMapFile);
+    } catch (IOException ex) {
+      throw new MojoExecutionException(
+          "Failed to read CSS rename map " + cssRenameMapFile, ex);
+    }
+
     CommonPlanner planner;
     try {
       planner = new CommonPlanner(
-          log, baseDir, outputDir, outputClassesDir, substitutionMapProvider,
-          hashStore);
+          log, baseDir, outputDir, outputClassesDir, closureOutputDirectory,
+          substitutionMapProvider, hashStore, ingredients);
     } catch (IOException ex) {
       throw new MojoExecutionException("failed to initialize planner", ex);
     }
+
 
     formulatePlan(planner);
 
@@ -247,13 +251,13 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       log.warn("Problem writing hash store", ex);
     }
 
-    log.debug("Writing rename map to " + cssRenameMap);
+    log.debug("Writing rename map to " + cssRenameMapFile);
     try {
-      cssRenameMap.getParentFile().mkdirs();
-      try (Writer cssRenameOut = Files.asCharSink(cssRenameMap, Charsets.UTF_8)
+      cssRenameMapFile.getParentFile().mkdirs();
+      try (Writer out = Files.asCharSink(cssRenameMapFile, Charsets.UTF_8)
               .openBufferedStream()) {
         substitutionMapProvider.get()
-             .write(OutputRenamingMapFormat.JSON, cssRenameOut);
+             .write(OutputRenamingMapFormat.JSON, out);
       }
     } catch (IOException ex) {
       log.warn("Problem writing CSS rename map", ex);

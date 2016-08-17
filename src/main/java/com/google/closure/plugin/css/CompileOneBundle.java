@@ -10,10 +10,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
+import com.google.closure.plugin.common.Ingredients.Bundle;
 import com.google.closure.plugin.common.Ingredients.FileIngredient;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
 import com.google.closure.plugin.plan.Ingredient;
 import com.google.closure.plugin.plan.PlanKey;
 import com.google.closure.plugin.plan.Step;
@@ -24,23 +23,24 @@ final class CompileOneBundle extends Step {
   private final SubstitutionMapProvider substMap;
 
   CompileOneBundle(
-      File outPath,
       SubstitutionMapProvider substMap,
       HashedInMemory<CssOptions> options,
-      SerializedObjectIngredient<CssBundle> bundle,
-      ImmutableList<FileIngredient> inputFiles) {
+      HashedInMemory<CssBundle> bundle,
+      Bundle<FileIngredient> inputFiles) {
     super(
-        PlanKey.builder("compile-css").addString(outPath.getPath()).build(),
-        ImmutableList.<Ingredient>builder().add(options).add(bundle)
-            .addAll(inputFiles).build(),
-            Sets.immutableEnumSet(
-                StepSource.CSS_SRC, StepSource.CSS_GENERATED),
-            Sets.immutableEnumSet(
-                StepSource.CSS_COMPILED,
-                StepSource.CSS_SOURCE_MAP,
-                StepSource.CSS_RENAME_MAP,
-                // Since the CSS_RENAME_MAP is an input to the JSCompiler.
-                StepSource.JS_GENERATED));
+        PlanKey.builder("compile-css")
+            .addInp(options)
+            .addString(bundle.getValue().outputs.css.getPath())
+            .build(),
+        ImmutableList.<Ingredient>of(options, bundle, inputFiles),
+        Sets.immutableEnumSet(
+            StepSource.CSS_SRC, StepSource.CSS_GENERATED),
+        Sets.immutableEnumSet(
+            StepSource.CSS_COMPILED,
+            StepSource.CSS_SOURCE_MAP,
+            StepSource.CSS_RENAME_MAP,
+            // Since the CSS_RENAME_MAP is an input to the JSCompiler.
+            StepSource.JS_GENERATED));
     this.substMap = substMap;
   }
 
@@ -51,10 +51,9 @@ final class CompileOneBundle extends Step {
         .asSuperType(CssOptions.class)
         .getValue();
 
-    CssBundle bundle =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
+    CssBundle bundle = ((HashedInMemory<?>) inputs.get(1))
         .asSuperType(CssBundle.class)
-        .getStoredObject().get();
+        .getValue();
 
     Preconditions.checkState(bundle.optionsId.equals(cssOptions.getId()));
 

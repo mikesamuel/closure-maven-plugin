@@ -38,7 +38,8 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
       // Controlled by plugin
       "--logging_level", "--jszip", "--js_output_file", "--module",
       "--variable_renaming_report", "--create_renaming_report",
-      "--property_renaming_report", "--js", "--externs", "--json_streams");
+      "--property_renaming_report", "--js", "--externs", "--json_streams",
+      "--create_renaming_reports", "--create_source_map");
 
   static final ImmutableSet<String> SPECIAL_FIELDS = ImmutableSet.of(
       "source", "testSource", "jsGenfiles", "jsTestGenfiles", "externSource");
@@ -64,7 +65,7 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
     Class<?> flagsClass = JsOptions.FieldToFlagMap.FLAGS_CLASS;
 
     StringBuilder generatedCode = new StringBuilder();
-    List<Field> problems = Lists.newArrayList();
+    List<String> problems = Lists.newArrayList();
     Set<String> namesSeen = Sets.newLinkedHashSet();
 
     for (Field flagsField : flagsClass.getDeclaredFields()) {
@@ -93,12 +94,12 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
       try {
         correspondingField = JsOptions.class.getField(fieldName);
       } catch (@SuppressWarnings("unused") NoSuchFieldException ex) {
-        problems.add(flagsField);
+        problems.add(flagsField + ":" + option.name());
       }
 
       if (correspondingField != null) {
         if (!plexusCompatibleType.equals(correspondingField.getType())) {
-          problems.add(flagsField);
+          problems.add(flagsField + ":" + option.name());
         }
       }
       namesSeen.add(fieldName);

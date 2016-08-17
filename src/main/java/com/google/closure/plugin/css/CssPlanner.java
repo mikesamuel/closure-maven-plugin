@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.CommonPlanner;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
 
@@ -81,8 +82,10 @@ public final class CssPlanner {
     return this.defaultCssSourceMapPathTemplate;
   }
 
-  File cssOutputDir() {
-    return new File(planner.outputDir, "css");
+  /** Output directory for compiled CSS files. */
+  public PathValue cssOutputDir() {
+    return planner.ingredients.pathValue(
+        new File(planner.closureOutputDirectory.value, "css"));
    }
 
 
@@ -123,7 +126,7 @@ public final class CssPlanner {
 
     SerializedObjectIngredient<CssOptionsById> optionsListFile =
         planner.ingredients.serializedObject(
-            new File(cssOutputDir(), "css-options.ser"),
+            "css-options.ser",
             CssOptionsById.class);
 
     planner.addStep(

@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.css.SubstitutionMapProvider;
 import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.plan.HashStore;
 import com.google.closure.plugin.plan.Plan;
@@ -24,13 +23,16 @@ public class CommonPlanner {
   /** The maven {@code target} directory. */
   public final File outputDir;
   /** The common CSS identifier substitution map provider. */
-  public final SubstitutionMapProvider substitutionMapProvider;
+  public final StableCssSubstitutionMapProvider substitutionMapProvider;
   /** Factory for all ingredients for plan steps. */
   public final Ingredients ingredients;
   /** Where to put generated files. */
   public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
   /** The {@code target/classes} directory. */
   public final PathValue projectBuildOutputDirectory;
+  /** The {@code target/classses/closure}. */
+  public final PathValue closureOutputDirectory;
+
 
   /**
    * May be used by steps to run a compiler but stubbed out in tests.
@@ -42,18 +44,20 @@ public class CommonPlanner {
   /** */
   public CommonPlanner(
       Log log, File baseDir, File outputDir, File projectBuildOutputDirectory,
-      SubstitutionMapProvider substitutionMapProvider,
-      HashStore hashStore)
+      File closureOutputDirectory,
+      StableCssSubstitutionMapProvider substitutionMapProvider,
+      HashStore hashStore, Ingredients ingredients)
   throws IOException {
-    this.ingredients = new Ingredients();
+    this.ingredients = ingredients;
     this.log = log;
     this.baseDir = baseDir;
     this.outputDir = outputDir;
     this.projectBuildOutputDirectory = ingredients.pathValue(
         projectBuildOutputDirectory);
+    this.closureOutputDirectory = ingredients.pathValue(closureOutputDirectory);
     this.substitutionMapProvider = substitutionMapProvider;
     this.genfiles = ingredients.serializedObject(
-        new File(outputDir, "closure-genfiles.ser"), GenfilesDirs.class);
+        "closure-genfiles.ser", GenfilesDirs.class);
 
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();

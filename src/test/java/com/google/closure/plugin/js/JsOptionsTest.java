@@ -77,15 +77,6 @@ public final class JsOptionsTest extends TestCase {
 
 
   @Test
-  public static void testCreateNameMapFiles() throws Exception {
-    JsOptions opts = new JsOptions();
-    opts.createNameMapFiles = sampleValueFor(
-        "createNameMapFiles", Boolean.class);
-    sanityCheckArgv(opts);
-  }
-
-
-  @Test
   public static void testThirdParty() throws Exception {
     JsOptions opts = new JsOptions();
     opts.thirdParty = sampleValueFor("thirdParty", Boolean.class);
@@ -134,15 +125,6 @@ public final class JsOptionsTest extends TestCase {
     JsOptions opts = new JsOptions();
     opts.moduleOutputPathPrefix = sampleValueFor(
         "moduleOutputPathPrefix", String.class);
-
-    sanityCheckArgv(opts);
-  }
-
-
-  @Test
-  public static void testCreateSourceMap() throws Exception {
-    JsOptions opts = new JsOptions();
-    opts.createSourceMap = sampleValueFor("createSourceMap", String.class);
 
     sanityCheckArgv(opts);
   }

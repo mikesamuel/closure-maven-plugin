@@ -62,6 +62,9 @@ final class CompileJs extends Step {
         .add(jsOutputDir.value.getPath() + File.separator);
     jsOutputDir.value.mkdirs();
 
+    argvBuilder.add("--create_renaming_reports");
+    argvBuilder.add("--create_source_map").add("%outname%-source-map.json");
+
     modules.addClosureCompilerFlags(argvBuilder);
 
     final ImmutableList<String> argv = argvBuilder.build();

@@ -17,11 +17,11 @@ import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.closure.plugin.common.Ingredients.FileIngredient;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.closure.plugin.common.Ingredients.StringValue;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.common.TypedFile;
 import com.google.closure.plugin.css.CssImportGraph.Dependencies;
 import com.google.closure.plugin.plan.Ingredient;
 import com.google.closure.plugin.plan.PlanKey;
@@ -31,31 +31,30 @@ import com.google.closure.plugin.plan.StepSource;
 final class FindEntryPoints extends Step {
   final SubstitutionMapProvider substMap;
   final Ingredients ingredients;
-  final File cssOutputDirectory;
   final SerializedObjectIngredient<CssBundleList> bundleList;
 
   FindEntryPoints(
       SubstitutionMapProvider substMap,
       Ingredients ingredients,
-      File cssOutputDirectory,
       HashedInMemory<CssOptions> options,
       DirScanFileSetIngredient cssSources,
       StringValue defaultCssOutputPathTemplate,
       StringValue defaultCssSourceMapTemplate,
-      SerializedObjectIngredient<CssBundleList> bundleList) {
+      SerializedObjectIngredient<CssBundleList> bundleList,
+      PathValue cssOutputDirectory) {
     super(
         PlanKey.builder("css-find-entry-points")
-            .addInp(options, cssSources).build(),
+            .addInp(options, cssSources, cssOutputDirectory).build(),
         ImmutableList.<Ingredient>of(
             options,
             cssSources,
             defaultCssOutputPathTemplate,
-            defaultCssSourceMapTemplate),
+            defaultCssSourceMapTemplate,
+            cssOutputDirectory),
         Sets.immutableEnumSet(StepSource.CSS_SRC, StepSource.CSS_GENERATED),
         ImmutableSet.<StepSource>of());
     this.substMap = substMap;
     this.ingredients = ingredients;
-    this.cssOutputDirectory = cssOutputDirectory;
     this.bundleList = bundleList;
   }
 
@@ -63,7 +62,7 @@ final class FindEntryPoints extends Step {
   public void execute(Log log) throws MojoExecutionException {
     ImmutableList.Builder<CssBundle> b = ImmutableList.builder();
 
-    Preconditions.checkState(inputs.size() == 4);
+    Preconditions.checkState(inputs.size() == 5);
     CssOptions cssOpts = ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(CssOptions.class)
         .getValue();
@@ -71,6 +70,7 @@ final class FindEntryPoints extends Step {
         (DirScanFileSetIngredient) inputs.get(1);
     StringValue defaultCssOutputPathTemplate = (StringValue) inputs.get(2);
     StringValue defaultCssSourceMapPathTemplate = (StringValue) inputs.get(3);
+    PathValue cssOutputDirectory = (PathValue) inputs.get(4);
 
     CssImportGraph importGraph;
     try {
@@ -94,10 +94,14 @@ final class FindEntryPoints extends Step {
             "Failed to resolve all dependencies of "
                 + entryPoint.canonicalPath);
       }
+      String basePath = cssOutputDirectory.value.getPath();
+      if (!(basePath.isEmpty() || basePath.endsWith(File.separator))) {
+        basePath += File.separator;
+      }
       CssOptions.Outputs cssCompilerOutputs = new CssOptions.Outputs(
           cssOpts, entryPoint,
-          defaultCssOutputPathTemplate.value,
-          defaultCssSourceMapPathTemplate.value);
+          basePath + defaultCssOutputPathTemplate.value,
+          basePath + defaultCssSourceMapPathTemplate.value);
       b.add(new CssBundle(
           cssOpts.getId(), entryPoint, deps.allDependencies,
           cssCompilerOutputs));
@@ -125,7 +129,7 @@ final class FindEntryPoints extends Step {
   @Override
   public ImmutableList<Step> extraSteps(Log log)
   throws MojoExecutionException {
-    HashedInMemory<CssOptions> options =
+    HashedInMemory<CssOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(CssOptions.class);
 
@@ -133,20 +137,8 @@ final class FindEntryPoints extends Step {
     ImmutableList.Builder<Step> extraSteps = ImmutableList.builder();
     for (CssBundle b : bundleList.getStoredObject().get().bundles) {
 
-      SerializedObjectIngredient<CssBundle> bundle;
-      try {
-        bundle = ingredients.serializedObject(
-            b.entryPoint.reroot(new TypedFile(cssOutputDirectory))
-                .suffix(".bundle.ser"),
-            CssBundle.class);
-        bundle.setStoredObject(b);
-        bundle.write();
-      } catch (IOException ex) {
-        throw new MojoExecutionException(
-            "Failed to create intermediate inputs for "
-            + b.entryPoint.relativePath,
-            ex);
-      }
+      HashedInMemory<CssBundle> bundleIng = ingredients.hashedInMemory(
+          CssBundle.class, b);
 
       ImmutableList.Builder<FileIngredient> inputFiles =
           ImmutableList.builder();
@@ -155,11 +147,10 @@ final class FindEntryPoints extends Step {
       }
 
       extraSteps.add(new CompileOneBundle(
-          b.outputs.css,
           substMap,
-          options,
-          bundle,
-          inputFiles.build()));
+          optionsIng,
+          bundleIng,
+          ingredients.bundle(inputFiles.build())));
     }
     return extraSteps.build();
   }

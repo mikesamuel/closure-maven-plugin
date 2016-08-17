@@ -34,8 +34,8 @@ final class FindJsSources extends Step {
         PlanKey.builder("find-js")
             .addInp(
                 options, genfilesHolder, defaultJsSource, defaultJsTestSource)
-            .addString(depInfoIng.source.canonicalPath.getPath())
-            .addString(modulesIng.source.canonicalPath.getPath())
+            .addString(depInfoIng.file.getPath())
+            .addString(modulesIng.file.getPath())
             .build(),
         ImmutableList.<Ingredient>of(
             options, genfilesHolder, defaultJsSource, defaultJsTestSource),

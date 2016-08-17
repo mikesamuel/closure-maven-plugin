@@ -13,6 +13,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 
 import junit.framework.TestCase;
 
@@ -35,6 +36,7 @@ public final class CompiledJsTest extends TestCase {
 
   private void loadJsModule(String moduleResourcePath) throws IOException {
     try (InputStream in = getClass().getResourceAsStream(moduleResourcePath)) {
+      Preconditions.checkNotNull(in, "Missing resource " + moduleResourcePath);
       try (Reader code = new InputStreamReader(in, Charsets.UTF_8)) {
         cx.evaluateReader(scope, code, moduleResourcePath, 1, null);
       }
@@ -49,8 +51,8 @@ public final class CompiledJsTest extends TestCase {
         scope, "var _alerts_ = []; alert = function (s) { _alerts_.push(s); }",
         "test", 1, null);
 
-    loadJsModule("/js/main.js");
-    loadJsModule("/js/hello.world.js");
+    loadJsModule("/closure/js/main.js");
+    loadJsModule("/closure/js/hello.world.js");
 
     NativeArray alerts = (NativeArray)
         ScriptableObject.getProperty(scope, "_alerts_");

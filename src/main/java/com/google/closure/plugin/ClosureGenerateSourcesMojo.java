@@ -132,7 +132,7 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
 
     try {
       new CssPlanner(planner)
-          .cssRenameMap(cssRenameMap)
+          .cssRenameMap(planner.substitutionMapProvider.getBackingFile())
           .defaultCssSource(defaultCssSource)
           .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
           .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)

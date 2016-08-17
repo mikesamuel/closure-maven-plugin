@@ -78,6 +78,10 @@ final class CssCompilerWrapper {
 
     ErrorManager errorManager = new MavenCssErrorManager(log);
 
+    ensureParentDirectoryFor(sourceMapFile);
+    ensureParentDirectoryFor(renameFile);
+    ensureParentDirectoryFor(outputFile);
+
     String compiledCss =
         new ClosureCommandLineCompiler(job, exitCodeHandler, errorManager)
         .execute(renameFile.orNull(), sourceMapFile.orNull());
@@ -88,6 +92,13 @@ final class CssCompilerWrapper {
       Files.write(compiledCss, outputFile.get(), Charsets.UTF_8);
     }
     return exitCodeHandler.ok;
+  }
+
+  private static void ensureParentDirectoryFor(Optional<File> file)
+  throws IOException {
+    if (file.isPresent()) {
+      file.get().getCanonicalFile().getParentFile().mkdirs();
+    }
   }
 }
 

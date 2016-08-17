@@ -38,13 +38,28 @@ import com.google.closure.plugin.plan.PlanKey;
 /**
  * Pools ingredients based on key.
  */
-public class Ingredients {
+public final class Ingredients {
 
   private final Cache<PlanKey, Ingredient> ingredients =
       CacheBuilder.newBuilder()
       // TODO: is this right?
       .weakValues()
       .build();
+
+  /** A directory to store cached results. */
+  private final File cacheDir;
+
+  /**
+   * @param outputDir the target directory.
+   */
+  public Ingredients(File outputDir) {
+    this.cacheDir = new File(outputDir, ".closure-comp-cache");
+  }
+
+  /** A directory to store cached results. */
+  public File getCacheDir() {
+    return cacheDir;
+  }
 
   /**
    * Lazily allocate an ingredient with the given key based on a spec.
@@ -248,30 +263,19 @@ public class Ingredients {
    */
   public <T extends Serializable>
   SerializedObjectIngredient<T> serializedObject(
-      File file, Class<T> contentType)
+      String baseName, final Class<T> contentType)
   throws IOException {
-    return serializedObject(
-        singletonSource(file, ImmutableSet.<SourceFileProperty>of()),
-        contentType);
-  }
-
-  /**
-   * An ingredient back by a file dedicated to hold a serialized object of
-   * a specific type.  Reading and writing must be done explicitly and the
-   * hash is of the version in memory.
-   */
-  public <T extends Serializable>
-  SerializedObjectIngredient<T> serializedObject(
-      final Source source, final Class<T> contentType) {
-    final PlanKey key = PlanKey.builder("file")
-        .addString(source.canonicalPath.getPath())
+    final File canonFile = new File(cacheDir, baseName).getCanonicalFile();
+    final PlanKey key = PlanKey.builder("serialized-object")
+        .addString(baseName)
         .build();
     SerializedObjectIngredient<?> ing = get(
         SerializedObjectIngredient.class, key,
         new Supplier<SerializedObjectIngredient<T>>() {
           @Override
           public SerializedObjectIngredient<T> get() {
-            return new SerializedObjectIngredient<>(key, source, contentType);
+            return new SerializedObjectIngredient<>(
+                key, canonFile, contentType);
           }
         });
     return ing.asSuperType(contentType);
@@ -549,15 +553,15 @@ public class Ingredients {
   extends Ingredient {
 
     /** The file containing the serialized content. */
-    public final Source source;
+    public final File file;
     /** The type of objects that can be stored in the file. */
     public final Class<T> type;
     /** The stored instance if any. */
     private Optional<T> instance = Optional.absent();
 
-    SerializedObjectIngredient(PlanKey key, Source source, Class<T> type) {
+    SerializedObjectIngredient(PlanKey key, File file, Class<T> type) {
       super(key);
-      this.source = source;
+      this.file = file;
       this.type = type;
     }
 
@@ -583,7 +587,7 @@ public class Ingredients {
     public Optional<T> read() throws IOException {
       FileInputStream in;
       try {
-        in = new FileInputStream(source.canonicalPath);
+        in = new FileInputStream(file);
       } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
         return Optional.absent();
       }
@@ -623,12 +627,12 @@ public class Ingredients {
     }
 
     /**
-     * Writes the in-memory instance to the {@link #source persisting file}.
+     * Writes the in-memory instance to the {@link #file persisting file}.
      */
     public void write() throws IOException {
       Preconditions.checkState(instance.isPresent());
-      source.canonicalPath.getParentFile().mkdirs();
-      try (FileOutputStream out = new FileOutputStream(source.canonicalPath)) {
+      file.getParentFile().mkdirs();
+      try (FileOutputStream out = new FileOutputStream(file)) {
         try (ObjectOutputStream objOut = new ObjectOutputStream(out)) {
           objOut.writeObject(instance.get());
         }

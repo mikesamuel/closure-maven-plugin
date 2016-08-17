@@ -35,8 +35,6 @@ public final class JsOptions extends SourceOptions {
    */
   public File jsTestGenfiles;
 
-  /** If true, variable renaming and property renaming report files will be produced as {binary name}_vars_renaming_report.out and {binary name}_props_renaming_report.out. Note that this flag cannot be used in conjunction with either variable_renaming_report or property_renaming_report */
-  public Boolean createNameMapFiles;
   /** Check source validity but do not enforce Closure style rules and conventions */
   public Boolean thirdParty;
   /** Controls how detailed the compilation summary is. Values: 0 (never print summary), 1 (print summary only if there are errors or warnings), 2 (print summary if the 'checkTypes' diagnostic  group is enabled, see --jscomp_warning), 3 (always print summary). The default level is 1 */
@@ -49,8 +47,6 @@ public final class JsOptions extends SourceOptions {
   public String[] moduleWrapper;
   /** Prefix for filenames of compiled JS modules. {@code <module-name>.js} will be appended to this prefix. Directories will be created as needed. Use with --module */
   public String moduleOutputPathPrefix;
-  /** If specified, a source map file mapping the generated source files back to the original source file will be output to the specified path. The %outname% placeholder will expand to the name of the output file that the source map corresponds to. */
-  public String createSourceMap;
   /** The source map format to produce. Options are V3 and DEFAULT, which are equivalent. */
   public SourceMap.Format sourceMapFormat;
   /** Source map location mapping separated by a '|' (i.e. filesystem-path|webserver-path) */

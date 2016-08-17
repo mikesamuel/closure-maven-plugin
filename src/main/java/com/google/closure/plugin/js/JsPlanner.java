@@ -61,16 +61,12 @@ public final class JsPlanner {
     for (JsOptions oneJs : js) {
       SerializedObjectIngredient<JsDepInfo> depInfoIng =
           ingredients.serializedObject(
-              new File(
-                  new File(planner.outputDir, "js"),
-                  "dep-info-" + oneJs.getId() + ".ser"),
+              "dep-info-" + oneJs.getId() + ".ser",
               JsDepInfo.class);
 
       SerializedObjectIngredient<Modules> modulesIng =
           ingredients.serializedObject(
-              new File(
-                  new File(planner.outputDir, "js"),
-                  "modules-" + oneJs.getId() + ".ser"),
+              "modules-" + oneJs.getId() + ".ser",
               Modules.class);
 
 

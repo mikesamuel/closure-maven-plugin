@@ -1,6 +1,5 @@
 package com.google.closure.plugin.css;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -82,8 +81,6 @@ final class ListOptions extends Step {
     Ingredients ingredients = planner.planner.ingredients;
     for (CssOptions options :
          optionsListFile.getStoredObject().get().optionsById.values()) {
-      File bundlesFile = new File(
-          planner.cssOutputDir(), "css-bundles-" + options.getId() + ".ser");
       DirectoryScannerSpec dsSpec = options.toDirectoryScannerSpec(
           planner.defaultCssSource(), planner.defaultCssSource(), gf);
       DirScanFileSetIngredient sources = ingredients.fileset(dsSpec);
@@ -97,7 +94,7 @@ final class ListOptions extends Step {
       SerializedObjectIngredient<CssBundleList> bundlesOutput;
       try {
         bundlesOutput = ingredients.serializedObject(
-            bundlesFile, CssBundleList.class);
+            "css-bundles-" + options.getId() + ".ser", CssBundleList.class);
       } catch (IOException ex) {
         throw new MojoExecutionException(
             "Failed to find place to put intermediate results", ex);
@@ -106,12 +103,12 @@ final class ListOptions extends Step {
       extraSteps.add(new FindEntryPoints(
           planner.planner.substitutionMapProvider,
           ingredients,
-          planner.cssOutputDir(),
           ingredients.hashedInMemory(CssOptions.class, options),
           sources,
           ingredients.stringValue(planner.defaultCssOutputPathTemplate()),
           ingredients.stringValue(planner.defaultCssSourceMapPathTemplate()),
-          bundlesOutput));
+          bundlesOutput,
+          planner.cssOutputDir()));
     }
 
     return extraSteps.build();

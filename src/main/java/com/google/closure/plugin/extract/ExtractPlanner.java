@@ -48,8 +48,6 @@ public final class ExtractPlanner {
   throws IOException, MojoExecutionException {
     Extracts extracts = OptionsUtils.prepareOne(unpreparedExtracts);
 
-    File extractsDir = new File(planner.outputDir, "extracts");
-
     Ingredients ingredients = planner.ingredients;
 
     ImmutableList.Builder<Extract> allExtracts = ImmutableList.builder();
@@ -66,14 +64,13 @@ public final class ExtractPlanner {
     // First, hash the relevant configuration parts.
     SerializedObjectIngredient<ExtractsList> extractsList =
         ingredients.serializedObject(
-            new File(extractsDir, "partial-extracts.ser"),
-            ExtractsList.class);
+            "partial-extracts.ser", ExtractsList.class);
     extractsList.setStoredObject(new ExtractsList(allExtracts.build()));
 
     // Second, extract the deps from the project, and hash that.
     SerializedObjectIngredient<ResolvedExtractsList> dependenciesList =
         ingredients.serializedObject(
-            new File(extractsDir, "dependencies.ser"),
+            "dependencies.ser",
             ResolvedExtractsList.class);
     ImmutableSet.Builder<ResolvedExtract> deps = ImmutableSet.builder();
 
@@ -102,7 +99,7 @@ public final class ExtractPlanner {
     // Third, compare the two to flesh out partial identifiers.
     SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList =
         ingredients.serializedObject(
-            new File(extractsDir, "full-extracts.ser"),
+            "full-extracts.ser",
             ResolvedExtractsList.class);
     SettableFileSetIngredient archives =
         ingredients.namedFileSet("archives-list");
