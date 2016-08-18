@@ -19,6 +19,12 @@ import com.google.common.collect.ImmutableMap;
 /**
  * A persisted store of hashes that can be used to compare previous builds of
  * {@link Step}s to decide whether to rebuild.
+ *
+ * <p>
+ * TODO: Can we use
+ * https://github.com/sonatype/sisu-build-api/blob/master/src/main/java/org
+ * /sonatype/plexus/build/incremental/BuildContext.java
+ * via a getComponent instead?
  */
 public final class HashStore {
   private final ConcurrentMap<String, Hash> hashes = new ConcurrentHashMap<>();
