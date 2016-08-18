@@ -86,7 +86,6 @@ final class ResolveExtracts extends Step {
         depDisambiguation.put(
             re.groupId + ":" + re.artifactId + ":" + re.version, re);
       }
-      System.err.println("depDisambiguation=" + depDisambiguation);
 
       boolean allUnambiguous = true;
       for (Extract e : extracts) {
