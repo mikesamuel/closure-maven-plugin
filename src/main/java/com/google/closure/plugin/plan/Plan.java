@@ -9,6 +9,7 @@ import java.util.Set;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
+import com.google.closure.plugin.plan.Hashable.AutoResolvable;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
@@ -148,20 +149,24 @@ public class Plan {
     }
 
     // We need to rebuild if any of the inputs' or hashes don't match.
-    boolean hashesOk = true;
     List<Hash> inputHashes = Lists.newArrayList();
     for (Ingredient inp : step.inputs) {
       Optional<Hash> inpHash = Optional.absent();
       try {
         inpHash = inp.hash();
+        if (!inpHash.isPresent() && inp instanceof AutoResolvable) {
+          ((AutoResolvable) inp).resolve(log);
+          inpHash = inp.hash();
+        }
       } catch (IOException ex) {
         log.warn("Failed to hash " + inp.key + " for " + step.key, ex);
       }
       if (inpHash.isPresent()) {
         inputHashes.add(inpHash.get());
       } else {
-        hashesOk = false;
-        log.warn("Missing hash for " + inp.key);
+        throw new MojoExecutionException(
+            "Step " + step.getClass().getSimpleName()
+            + " is missing hash for " + inp.key);
       }
     }
 
@@ -170,8 +175,8 @@ public class Plan {
     Optional<Hash> storedStepHash = hashStore.getHash(step.key);
     Hash stepHash = Hash.hashAllHashes(inputHashes);
 
-    boolean reuse = hashesOk
-        && storedStepHash.isPresent()
+    boolean reuse =
+        storedStepHash.isPresent()
         && stepHash.equals(storedStepHash.get())
         && outputsExist;
 

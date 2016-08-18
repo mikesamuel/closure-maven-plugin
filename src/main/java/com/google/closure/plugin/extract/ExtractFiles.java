@@ -18,7 +18,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.CStyleLexer;
 import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
@@ -49,7 +49,7 @@ final class ExtractFiles extends Step {
         PlanKey.builder("extract-files").build(),
         ImmutableList.<Ingredient>of(
             resolvedExtractsList, genfiles, archives, outputDirPath),
-        ImmutableSet.<StepSource>of(),
+        Sets.immutableEnumSet(StepSource.RESOLVED_EXTRACTS),
         StepSource.ALL_GENERATED);
   }
 

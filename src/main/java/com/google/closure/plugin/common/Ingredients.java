@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.Hash;
+import com.google.closure.plugin.plan.Hashable;
 import com.google.closure.plugin.plan.Ingredient;
 import com.google.closure.plugin.plan.KeyedSerializable;
 import com.google.closure.plugin.plan.PlanKey;
@@ -470,7 +471,8 @@ public final class Ingredients {
    * A set of files whose hash is the file paths, not their content, and
    * which is hashable when explicitly resolved.
    */
-  public final class DirScanFileSetIngredient extends FileSetIngredient {
+  public final class DirScanFileSetIngredient
+  extends FileSetIngredient implements Hashable.AutoResolvable {
     private final DirectoryScannerSpec spec;
 
     private DirScanFileSetIngredient(PlanKey key, DirectoryScannerSpec spec) {
@@ -484,6 +486,7 @@ public final class Ingredients {
     }
 
     /** Scans the file-system to find matching files. */
+    @Override
     public synchronized void resolve(Log log) throws IOException {
       if (isResolved()) {
         return;
@@ -550,7 +553,7 @@ public final class Ingredients {
    * hash is of the version in memory.
    */
   public static final class SerializedObjectIngredient<T extends Serializable>
-  extends Ingredient {
+  extends Ingredient implements Hashable.AutoResolvable {
 
     /** The file containing the serialized content. */
     public final File file;
@@ -584,12 +587,12 @@ public final class Ingredients {
     }
 
     /** Read the content of the file into memory. */
-    public Optional<T> read() throws IOException {
+    public void read() throws IOException {
       FileInputStream in;
       try {
         in = new FileInputStream(file);
       } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
-        return Optional.absent();
+        return;  // This is best effort.
       }
       try {
         Object deserialized;
@@ -605,7 +608,6 @@ public final class Ingredients {
           }
         }
         instance = Optional.of(type.cast(deserialized));
-        return instance;
       } finally {
         in.close();
       }
@@ -637,6 +639,11 @@ public final class Ingredients {
           objOut.writeObject(instance.get());
         }
       }
+    }
+
+    @Override
+    public void resolve(Log log) throws IOException {
+      read();
     }
   }
 

@@ -118,12 +118,6 @@ final class FindProtoFilesAndProtoc extends Step {
   @Override
   public ImmutableList<Step> extraSteps(final Log log)
   throws MojoExecutionException {
-    try {
-      protoSources.resolve(log);
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to find .proto files", ex);
-    }
-
     HashedInMemory<ProtoFinalOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(ProtoFinalOptions.class);

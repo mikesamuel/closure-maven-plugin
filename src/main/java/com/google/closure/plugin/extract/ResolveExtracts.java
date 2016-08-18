@@ -44,10 +44,12 @@ final class ResolveExtracts extends Step {
       SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList,
       SettableFileSetIngredient archives) {
     super(
-        PlanKey.builder("resolve-extracts").build(),
+        PlanKey.builder("resolve-extracts")
+            .addInp(extractsList, dependenciesList)
+            .build(),
         ImmutableList.<Ingredient>of(extractsList, dependenciesList),
         ImmutableSet.<StepSource>of(),
-        ImmutableSet.<StepSource>of());
+        Sets.immutableEnumSet(StepSource.RESOLVED_EXTRACTS));
     this.ingredients = ingredients;
     this.resolvedExtractsList = resolvedExtractsList;
     this.archives = archives;

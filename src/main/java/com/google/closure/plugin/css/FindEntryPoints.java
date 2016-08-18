@@ -8,7 +8,6 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.closure.plugin.common.Ingredients;
@@ -79,8 +78,6 @@ final class FindEntryPoints extends Step {
 
     CssImportGraph importGraph;
     try {
-      cssSources.resolve(log);
-
       ImmutableList.Builder<Source> sources = ImmutableList.builder();
       for (FileIngredient sourceFile : cssSources.sources()) {
         sources.add(sourceFile.source);

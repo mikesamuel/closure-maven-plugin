@@ -43,9 +43,9 @@ public final class GenSymbolsPlanner {
     PathValue webFilesJava = ingredients.pathValue(
         javaSourcePath("WebFiles.java"));
 
-    planner.addStep(new FindOutputFiles(
-        outputFiles, webFilesJava,
-        ingredients.stringValue(genJavaPackageName)));
+    planner.addStep(new GenJavaSymbols(
+            outputFiles, webFilesJava,
+            ingredients.stringValue(genJavaPackageName)));
   }
 
   private File javaSourcePath(String basename) {

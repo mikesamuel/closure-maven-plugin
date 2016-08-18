@@ -2,6 +2,8 @@ package com.google.closure.plugin.plan;
 
 import java.io.IOException;
 
+import org.apache.maven.plugin.logging.Log;
+
 import com.google.common.base.Optional;
 
 /** Can be hashed. */
@@ -17,4 +19,15 @@ public interface Hashable {
    */
   public abstract Optional<Hash> hash() throws IOException;
 
+  /**
+   * A hashable which knows how to transition from an absent hash state to
+   * a present hash state.
+   */
+  public interface AutoResolvable extends Hashable {
+    /**
+     * If called when <code>!{@link #hash()}.isPresent()</code>, makes a
+     * best effort to make it {@linkplain Optional#isPresent() present}.
+     */
+    void resolve(Log log) throws IOException;
+  }
 }

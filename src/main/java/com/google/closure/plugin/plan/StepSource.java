@@ -8,6 +8,12 @@ import com.google.common.collect.Sets;
  * {@link Step} execution.
  */
 public enum StepSource {
+  /**
+   * Intermediate file containing a list of extracts with full
+   * artifact specifiers.
+   */
+  RESOLVED_EXTRACTS("target/.closure-cache/resolved-extracts.ser"),
+
   /** CSS source files for the current project. */
   CSS_SRC("src/main/css/**/*.css"),
   /**
@@ -53,7 +59,7 @@ public enum StepSource {
    * An intermediate file that records a mapping from source files to
    * lists of provides/requires.
    */
-  JS_DEP_INFO("target/js/dep-info.ser"),
+  JS_DEP_INFO("target/.closure-cache/dep-info.ser"),
 
   /** Protobuf source files for the current project. */
   PROTO_SRC("src/main/js/**/*.proto"),
@@ -75,7 +81,7 @@ public enum StepSource {
    * An intermediate input that maps .proto files including dependencies to
    * their package declarations.
    */
-  PROTO_PACKAGE_MAP("target/proto/package-map.ser"),
+  PROTO_PACKAGE_MAP("target/.closure-cache/proto-package-map.ser"),
 
   /** Soy source files for the current project. */
   SOY_SRC("src/main/soy/**/*.soy"),

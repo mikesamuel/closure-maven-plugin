@@ -9,7 +9,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.Ingredients;
+import com.google.closure.plugin.common.Ingredients.DirScanFileSetIngredient;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
+import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.common.Ingredients.SerializedObjectIngredient;
 import com.google.closure.plugin.common.OptionsUtils;
 
@@ -18,8 +23,8 @@ import com.google.closure.plugin.common.OptionsUtils;
  */
 public final class JsPlanner {
   final CommonPlanner planner;
-  private File defaultJsSource;
-  private File defaultJsTestSource;
+  private PathValue defaultJsSource;
+  private PathValue defaultJsTestSource;
 
   /** */
   public JsPlanner(CommonPlanner planner) {
@@ -28,13 +33,13 @@ public final class JsPlanner {
 
   /** Default source directory for production JS source files. */
   public JsPlanner defaultJsSource(File f) {
-    this.defaultJsSource = f;
+    this.defaultJsSource = planner.ingredients.pathValue(f);
     return this;
   }
 
   /** Default source directory for test-only JS source files. */
   public JsPlanner defaultJsTestSource(File f) {
-    this.defaultJsTestSource = f;
+    this.defaultJsTestSource = planner.ingredients.pathValue(f);
     return this;
   }
 
@@ -69,14 +74,20 @@ public final class JsPlanner {
               "modules-" + oneJs.getId() + ".ser",
               Modules.class);
 
+      HashedInMemory<JsOptions> optionsIng =
+          ingredients.hashedInMemory(JsOptions.class, oneJs);
+      HashedInMemory<GenfilesDirs> genfilesHolder = planner.genfiles;
 
-      planner.addStep(
-          new FindJsSources(
-              this,
-              ingredients.hashedInMemory(JsOptions.class, oneJs),
-              planner.genfiles, depInfoIng, modulesIng,
-              ingredients.pathValue(defaultJsSource),
-              ingredients.pathValue(defaultJsTestSource)));
+      GenfilesDirs genfiles = genfilesHolder.getValue();
+
+      DirectoryScannerSpec sourcesSpec = oneJs.toDirectoryScannerSpec(
+          defaultJsSource.value, defaultJsTestSource.value, genfiles);
+
+      DirScanFileSetIngredient fs = ingredients.fileset(sourcesSpec);
+
+      planner.addStep(new ComputeJsDepInfo(optionsIng, depInfoIng, fs));
+      planner.addStep(new ComputeJsDepGraph(
+          this, optionsIng, depInfoIng, modulesIng, fs));
     }
   }
 }
