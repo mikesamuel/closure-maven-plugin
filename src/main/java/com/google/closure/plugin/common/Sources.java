@@ -56,7 +56,7 @@ public final class Sources {
     Map<File, Source> found = Maps.newLinkedHashMap();
     for (TypedFile root : spec.roots) {
       if (!root.f.exists()) {
-        log.info("Skipping scan of non-extant root directory " + root);
+        log.debug("Skipping scan of non-extant root directory " + root.f);
         continue;
       }
 
