@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.CStyleLexer;
 import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.closure.plugin.common.Ingredients
@@ -41,7 +42,7 @@ final class ExtractFiles extends Step {
 
   ExtractFiles(
       SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList,
-      SerializedObjectIngredient<GenfilesDirs> genfiles,
+      HashedInMemory<GenfilesDirs> genfiles,
       SettableFileSetIngredient archives,
       StringValue outputDirPath) {
     super(
@@ -57,11 +58,10 @@ final class ExtractFiles extends Step {
     SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList =
         ((SerializedObjectIngredient<?>) inputs.get(0))
         .asSuperType(ResolvedExtractsList.class);
-    SerializedObjectIngredient<GenfilesDirs> genfiles =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
+    HashedInMemory<GenfilesDirs> genfiles = ((HashedInMemory<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
 
-    GenfilesDirs gf = genfiles.getStoredObject().get();
+    GenfilesDirs gf = genfiles.getValue();
 
     for (ResolvedExtract e
         : resolvedExtractsList.getStoredObject().get().extracts) {

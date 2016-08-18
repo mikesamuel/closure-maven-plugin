@@ -6,17 +6,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.CommonPlanner;
-import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
-import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.css.CssOptions;
 import com.google.closure.plugin.css.CssPlanner;
 import com.google.closure.plugin.extract.ExtractPlanner;
 import com.google.closure.plugin.extract.Extracts;
+import com.google.closure.plugin.genjava.GenSymbolsPlanner;
 import com.google.closure.plugin.js.JsOptions;
 import com.google.closure.plugin.js.JsPlanner;
 import com.google.closure.plugin.proto.ProtoIO;
@@ -25,7 +23,6 @@ import com.google.closure.plugin.proto.ProtoPlanner;
 import com.google.closure.plugin.soy.SoyOptions;
 import com.google.closure.plugin.soy.SoyPlanner;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -84,44 +81,6 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
   @Override
   protected void formulatePlan(CommonPlanner planner)
   throws MojoExecutionException {
-    File jsGenfiles = defaultJsGenfiles;
-    File jsTestGenfiles = defaultJsTestGenfiles;
-    ImmutableList<JsOptions> jsOptions = OptionsUtils.prepare(
-        new Supplier<JsOptions>() {
-          @Override
-          public JsOptions get() {
-            return new JsOptions();
-          }
-        },
-        js != null
-        ? ImmutableList.copyOf(js)
-        : ImmutableList.<JsOptions>of());
-    {
-      for (JsOptions jsOpt : jsOptions) {
-        if (jsOpt.jsGenfiles != null) {
-          jsGenfiles = jsOpt.jsGenfiles;
-          break;
-        }
-      }
-      for (JsOptions jsOpt : jsOptions) {
-        if (jsOpt.jsTestGenfiles != null) {
-          jsTestGenfiles = jsOpt.jsTestGenfiles;
-          break;
-        }
-      }
-    }
-
-    planner.genfiles.setStoredObject(new GenfilesDirs(
-        outputDir,
-        javaGenfiles, javaTestGenfiles,
-        jsGenfiles, jsTestGenfiles));
-    try {
-      planner.genfiles.write();
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to write genfile dir list", ex);
-    }
-
     try {
       new ExtractPlanner(planner, project, pluginDescriptor)
           .plan(extracts != null ? extracts : new Extracts());
@@ -164,12 +123,18 @@ public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
       new JsPlanner(planner)
           .defaultJsSource(defaultJsSource)
           .defaultJsTestSource(defaultJsTestSource)
-          .plan(jsOptions);
+          .plan(
+              js != null
+              ? ImmutableList.copyOf(js)
+              : ImmutableList.<JsOptions>of());
     } catch (IOException ex) {
-      throw new MojoExecutionException("Faile to plan js compile", ex);
+      throw new MojoExecutionException("Failed to plan js compile", ex);
     }
+
+    new GenSymbolsPlanner(planner)
+        .genJavaPackageName(genJavaPackageName)
+        .plan();
+
     // TODO: figure out how to thread externs through.
-    // TODO: figure out how to make the rename map available.
-    // TODO: figure out how to package compiled CSS and JS.
   }
 }

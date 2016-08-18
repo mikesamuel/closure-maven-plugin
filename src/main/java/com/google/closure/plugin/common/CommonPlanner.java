@@ -1,11 +1,11 @@
 package com.google.closure.plugin.common;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
+import com.google.closure.plugin.common.Ingredients.HashedInMemory;
 import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.plan.HashStore;
 import com.google.closure.plugin.plan.Plan;
@@ -27,7 +27,7 @@ public class CommonPlanner {
   /** Factory for all ingredients for plan steps. */
   public final Ingredients ingredients;
   /** Where to put generated files. */
-  public final Ingredients.SerializedObjectIngredient<GenfilesDirs> genfiles;
+  public final HashedInMemory<GenfilesDirs> genfiles;
   /** The {@code target/classes} directory. */
   public final PathValue projectBuildOutputDirectory;
   /** The {@code target/classses/closure}. */
@@ -46,8 +46,7 @@ public class CommonPlanner {
       Log log, File baseDir, File outputDir, File projectBuildOutputDirectory,
       File closureOutputDirectory,
       StableCssSubstitutionMapProvider substitutionMapProvider,
-      HashStore hashStore, Ingredients ingredients)
-  throws IOException {
+      HashStore hashStore, Ingredients ingredients, GenfilesDirs genfiles) {
     this.ingredients = ingredients;
     this.log = log;
     this.baseDir = baseDir;
@@ -56,8 +55,7 @@ public class CommonPlanner {
         projectBuildOutputDirectory);
     this.closureOutputDirectory = ingredients.pathValue(closureOutputDirectory);
     this.substitutionMapProvider = substitutionMapProvider;
-    this.genfiles = ingredients.serializedObject(
-        "closure-genfiles.ser", GenfilesDirs.class);
+    this.genfiles = ingredients.hashedInMemory(GenfilesDirs.class, genfiles);
 
     this.hashStore = hashStore;
     this.steps = ImmutableList.builder();

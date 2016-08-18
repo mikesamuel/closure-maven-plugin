@@ -1,6 +1,7 @@
 package com.google.closure.plugin.plan;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 /**
  * An abstract representation of a group of hashable items used to order
@@ -13,12 +14,12 @@ public enum StepSource {
    * Generated CSS source files for the current project
    * including those extracted from dependencies.
    */
-  CSS_GENERATED("target/genfiles/src/main/css/**/*.css"),
+  CSS_GENERATED("target/src/main/css/**/*.css"),
   /**
    * Compiled (minified) CSS files that are suitable for a browser but which may
    * lack the annotations needed by the toolchain to use as inputs.
    */
-  CSS_COMPILED("target/src/main/css/**/*.css"),
+  CSS_COMPILED("target/classes/closure/src/main/css/**/*.css"),
   /** Maps lines in compiled CSS outputs to lines in CSS source files. */
   CSS_SOURCE_MAP("target/css/**/*-source-map.json"),
   /**
@@ -27,19 +28,22 @@ public enum StepSource {
    */
   CSS_RENAME_MAP("target/css/rename-map.json"),
 
+  /** Generated Java source files. */
+  JAVA_GENERATED("src/main/java/**/*.java"),
+
   /** JavaScript source files for the current project. */
   JS_SRC("src/main/js/**/*.js"),
   /**
    * Generated JavaScript source files including those extracted from
    * dependencies.
    */
-  JS_GENERATED("target/genfiles/src/main/css/**/*.js"),
+  JS_GENERATED("target/src/main/js/**/*.js"),
   /**
    * Compiled (minified) JavaScript files that are suitable for a browser but
    * which may lack types and other annotations needed by the toolchain to
    * use as inputs.
    */
-  JS_COMPILED("target/src/main/js/**/*.js"),
+  JS_COMPILED("target/classes/closure/src/main/js/**/*.js"),
   /**
    * Maps lines in compiled JavaScript outputs to lines in JavaScript source
    * files.
@@ -86,8 +90,15 @@ public enum StepSource {
   public final String displayString;
 
   /** All the {@code *_GENERATED} step sources. */
-  public static final ImmutableSet<StepSource> ALL_GENERATED = ImmutableSet.of(
-      CSS_GENERATED, JS_GENERATED, PROTO_GENERATED, SOY_GENERATED);
+  public static final ImmutableSet<StepSource> ALL_GENERATED =
+      Sets.immutableEnumSet(
+          CSS_GENERATED, JAVA_GENERATED, JS_GENERATED, PROTO_GENERATED,
+          SOY_GENERATED);
+
+  /** All the {@code *_COMPILED} step sources. */
+  public static final ImmutableSet<StepSource> ALL_COMPILED =
+      Sets.immutableEnumSet(
+      CSS_COMPILED, JS_COMPILED);
 
   StepSource(String displayString) {
     this.displayString = displayString;

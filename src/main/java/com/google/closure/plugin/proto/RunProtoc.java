@@ -65,7 +65,8 @@ final class RunProtoc extends Step {
             StepSource.PROTOC, StepSource.PROTO_PACKAGE_MAP),
         Sets.immutableEnumSet(
             StepSource.PROTO_DESCRIPTOR_SET,
-            // Compiles .proto to .js
+            // Compiles .proto to .js and .java
+            StepSource.JAVA_GENERATED,
             StepSource.JS_GENERATED));
     this.processRunner = processRunner;
     this.rootSet = Preconditions.checkNotNull(rootSet);

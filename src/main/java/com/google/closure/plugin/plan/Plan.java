@@ -189,7 +189,19 @@ public class Plan {
 
     // Add steps before updating satisfaction counts, so that we don't declare
     // something ready that will then have new inputs.
-    addSteps(step.extraSteps(log));
+    Iterable<Step> extraSteps = step.extraSteps(log);
+    for (Step extraStep : extraSteps) {
+      if (!step.writes.containsAll(extraStep.writes)) {
+        EnumSet<StepSource> extraWrites = EnumSet.copyOf(extraStep.writes);
+        extraWrites.removeAll(step.writes);
+        throw new MojoExecutionException(
+            "Extra step " + extraStep.getClass().getSimpleName() + " writes "
+            + extraWrites + " which are not written by "
+            + step.getClass().getSimpleName() + " possibly allowing the extra"
+            + " step to be scheduled after something that reads its writes.");
+      }
+    }
+    addSteps(extraSteps);
     hashStore.setHash(step.key, stepHash);
 
     // Update dependency satisfaction counts and enqueue newly ready.

@@ -52,7 +52,12 @@ final class FindEntryPoints extends Step {
             defaultCssSourceMapTemplate,
             cssOutputDirectory),
         Sets.immutableEnumSet(StepSource.CSS_SRC, StepSource.CSS_GENERATED),
-        ImmutableSet.<StepSource>of());
+        Sets.immutableEnumSet(
+            // Implicitly by the extra steps it schedules.
+            StepSource.CSS_COMPILED,
+            StepSource.CSS_SOURCE_MAP,
+            StepSource.CSS_RENAME_MAP,
+            StepSource.JS_GENERATED));
     this.substMap = substMap;
     this.ingredients = ingredients;
     this.bundleList = bundleList;

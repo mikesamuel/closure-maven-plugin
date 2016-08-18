@@ -1,6 +1,5 @@
 package com.google.closure.plugin.js;
 
-import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -24,16 +23,6 @@ import com.google.javascript.jscomp.WarningLevel;
 public final class JsOptions extends SourceOptions {
 
   private static final long serialVersionUID = -5477807829203040714L;
-
-  /**
-   * Directory for generated production JS source files.
-   */
-  public File jsGenfiles;
-
-  /**
-   * Directory for generated test-only JS source files.
-   */
-  public File jsTestGenfiles;
 
   /** Check source validity but do not enforce Closure style rules and conventions */
   public Boolean thirdParty;

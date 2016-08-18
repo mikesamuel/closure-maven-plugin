@@ -42,7 +42,7 @@ final class BuildSoyFileSet extends Step {
 
   public BuildSoyFileSet(
       Ingredients ingredients,
-      SerializedObjectIngredient<GenfilesDirs> genfiles,
+      HashedInMemory<GenfilesDirs> genfiles,
       HashedInMemory<SoyOptions> options,
       DirScanFileSetIngredient soySources,
       SerializedObjectIngredient<ProtoIO> protoIO,
@@ -78,8 +78,8 @@ final class BuildSoyFileSet extends Step {
   @Override
   public ImmutableList<Step> extraSteps(final Log log)
   throws MojoExecutionException {
-    SerializedObjectIngredient<GenfilesDirs> genfilesHolder =
-        ((SerializedObjectIngredient<?>) inputs.get(0))
+    HashedInMemory<GenfilesDirs> genfilesHolder =
+        ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(GenfilesDirs.class);
     HashedInMemory<SoyOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(1)).asSuperType(SoyOptions.class);
@@ -90,7 +90,7 @@ final class BuildSoyFileSet extends Step {
     PathValue projectBuildOutputDirectory = (PathValue) inputs.get(4);
 
     final SoyOptions opts = optionsIng.getValue();
-    GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
+    GenfilesDirs genfiles = genfilesHolder.getValue();
 
     try {
       soySources.resolve(log);

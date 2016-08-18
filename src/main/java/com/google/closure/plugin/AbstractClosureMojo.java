@@ -34,6 +34,7 @@ import com.google.common.css.OutputRenamingMapFormat;
 import com.google.closure.plugin.common.Cheats;
 import com.google.closure.plugin.common.StableCssSubstitutionMapProvider;
 import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.Ingredients;
 import com.google.closure.plugin.common.Ingredients
     .SettableFileSetIngredient;
@@ -106,12 +107,12 @@ abstract class AbstractClosureMojo extends AbstractMojo {
   @Parameter(
       defaultValue="${project.build.directory}/src/main/js",
       readonly=true, required=true)
-  protected File defaultJsGenfiles;
+  protected File jsGenfiles;
 
   @Parameter(
       defaultValue="${project.build.directory}/src/test/js",
       readonly=true, required=true)
-  protected File defaultJsTestGenfiles;
+  protected File jsTestGenfiles;
 
   @Parameter(
       defaultValue="${project.basedir}/src/main/proto",
@@ -174,6 +175,12 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       required=true)
   protected File defaultTestDescriptorFile;
 
+  /** The package name for generated Java classes. */
+  @Parameter(
+      defaultValue="${project.groupId}",
+      required=true)
+  protected String genJavaPackageName;
+
 
   @Override
   public void execute() throws MojoExecutionException {
@@ -220,15 +227,14 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           "Failed to read CSS rename map " + cssRenameMapFile, ex);
     }
 
-    CommonPlanner planner;
-    try {
-      planner = new CommonPlanner(
-          log, baseDir, outputDir, outputClassesDir, closureOutputDirectory,
-          substitutionMapProvider, hashStore, ingredients);
-    } catch (IOException ex) {
-      throw new MojoExecutionException("failed to initialize planner", ex);
-    }
+    GenfilesDirs genfilesDirs = new GenfilesDirs(
+        outputDir,
+        javaGenfiles, javaTestGenfiles,
+        jsGenfiles, jsTestGenfiles);
 
+    CommonPlanner planner = new CommonPlanner(
+        log, baseDir, outputDir, outputClassesDir, closureOutputDirectory,
+        substitutionMapProvider, hashStore, ingredients, genfilesDirs);
 
     formulatePlan(planner);
 

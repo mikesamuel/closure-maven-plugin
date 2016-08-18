@@ -47,3 +47,10 @@ File mainJsModule = new File(jsOutDir, "main.js");
 File helloWorldJsModule = new File(jsOutDir, "hello.world.js");
 assert mainJsModule.isFile();
 assert helloWorldJsModule.isFile();
+
+// Check that the generated symbols include entries for both compiled CSS & JS.
+File webFilesJava = file_of(targetDir, "src", "main", "java",
+                            "com", "google", "closure", "it", "WebFiles.java");
+String webFilesJavaCode = webFilesJava.getText("UTF-8");
+assert webFilesJavaCode.contains('String CSS_BAR_MAIN_CSS = "css/bar-main.css";');
+assert webFilesJavaCode.contains('String JS_HELLO_WORLD_JS = "js/hello.world.js";');

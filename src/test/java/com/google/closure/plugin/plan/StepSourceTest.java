@@ -20,4 +20,15 @@ public class StepSourceTest extends TestCase {
     assertEquals(allGenerated.build(), StepSource.ALL_GENERATED);
   }
 
+  @Test
+  public static final void testAllCompiled() {
+    ImmutableSet.Builder<StepSource> allGenerated = ImmutableSet.builder();
+    for (StepSource ss : StepSource.values()) {
+      if (ss.name().endsWith("_COMPILED")) {
+        allGenerated.add(ss);
+      }
+    }
+    assertEquals(allGenerated.build(), StepSource.ALL_COMPILED);
+  }
+
 }

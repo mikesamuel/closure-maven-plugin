@@ -66,7 +66,8 @@ final class ComputeJsDepGraph extends Step {
         ImmutableList.<Ingredient>of(optionsIng, depInfo, sources),
         Sets.immutableEnumSet(
             StepSource.JS_GENERATED, StepSource.JS_SRC, StepSource.JS_DEP_INFO),
-        Sets.immutableEnumSet(StepSource.JS_COMPILED));
+        Sets.immutableEnumSet(
+            StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP));
     this.planner = planner;
     this.modulesIng = modulesIng;
   }

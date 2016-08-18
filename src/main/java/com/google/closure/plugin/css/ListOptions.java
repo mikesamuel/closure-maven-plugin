@@ -7,6 +7,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.Ingredients;
@@ -28,7 +29,7 @@ final class ListOptions extends Step {
   ListOptions(
       CssPlanner planner,
       ImmutableList<HashedInMemory<CssOptions>> options,
-      SerializedObjectIngredient<GenfilesDirs> genfiles,
+      HashedInMemory<GenfilesDirs> genfiles,
       SerializedObjectIngredient<CssOptionsById> optionsListFile) {
     super(
         PlanKey.builder("list-options").build(),
@@ -36,7 +37,12 @@ final class ListOptions extends Step {
             .build(),
 
         ImmutableSet.<StepSource>of(),
-        ImmutableSet.<StepSource>of());
+        Sets.immutableEnumSet(
+            // Implicitly by the extra steps it schedules transitively.
+            StepSource.CSS_COMPILED,
+            StepSource.CSS_SOURCE_MAP,
+            StepSource.CSS_RENAME_MAP,
+            StepSource.JS_GENERATED));
     this.planner = planner;
     this.optionsListFile = optionsListFile;
   }
@@ -71,10 +77,9 @@ final class ListOptions extends Step {
   @Override
   public ImmutableList<Step> extraSteps(Log log)
   throws MojoExecutionException {
-    SerializedObjectIngredient<GenfilesDirs> genfiles =
-        ((SerializedObjectIngredient<?>) inputs.get(0))
+    HashedInMemory<GenfilesDirs> genfiles = ((HashedInMemory<?>) inputs.get(0))
        .asSuperType(GenfilesDirs.class);
-    GenfilesDirs gf = genfiles.getStoredObject().get();
+    GenfilesDirs gf = genfiles.getValue();
 
     ImmutableList.Builder<Step> extraSteps = ImmutableList.builder();
 

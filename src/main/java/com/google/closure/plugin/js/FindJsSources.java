@@ -6,7 +6,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.GenfilesDirs;
@@ -26,7 +25,7 @@ final class FindJsSources extends Step {
 
   protected FindJsSources(
       JsPlanner planner, HashedInMemory<JsOptions> options,
-      SerializedObjectIngredient<GenfilesDirs> genfilesHolder,
+      HashedInMemory<GenfilesDirs> genfilesHolder,
       SerializedObjectIngredient<JsDepInfo> depInfoIng,
       SerializedObjectIngredient<Modules> modulesIng,
       PathValue defaultJsSource, PathValue defaultJsTestSource) {
@@ -40,7 +39,9 @@ final class FindJsSources extends Step {
         ImmutableList.<Ingredient>of(
             options, genfilesHolder, defaultJsSource, defaultJsTestSource),
         Sets.immutableEnumSet(StepSource.JS_GENERATED, StepSource.JS_SRC),
-        ImmutableSet.<StepSource>of());
+        Sets.immutableEnumSet(
+            StepSource.JS_DEP_INFO, StepSource.JS_COMPILED,
+            StepSource.JS_SOURCE_MAP));
     this.planner = planner;
     this.depInfoIng = depInfoIng;
     this.modulesIng = modulesIng;
@@ -60,14 +61,14 @@ final class FindJsSources extends Step {
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
     HashedInMemory<JsOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    SerializedObjectIngredient<GenfilesDirs> genfilesHolder =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
+    HashedInMemory<GenfilesDirs> genfilesHolder =
+        ((HashedInMemory<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
     PathValue defaultJsSource = (PathValue) inputs.get(2);
     PathValue defaultJsTestSource = (PathValue) inputs.get(3);
 
     JsOptions options = optionsIng.getValue();
-    GenfilesDirs genfiles = genfilesHolder.getStoredObject().get();
+    GenfilesDirs genfiles = genfilesHolder.getValue();
 
     DirectoryScannerSpec sourcesSpec = options.toDirectoryScannerSpec(
         defaultJsSource.value, defaultJsTestSource.value, genfiles);

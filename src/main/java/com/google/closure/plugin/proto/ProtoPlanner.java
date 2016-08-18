@@ -83,7 +83,7 @@ public final class ProtoPlanner {
 
     ProtoFinalOptions protoOptions = OptionsUtils.prepareOne(opts).freeze(
         defaultProtoSource, defaultProtoTestSource,
-        planner.genfiles.getStoredObject().get(),
+        planner.genfiles.getValue(),
         defaultMainDescriptorFile, defaultTestDescriptorFile);
 
     HashedInMemory<ProtoFinalOptions> protoOptionsIng =

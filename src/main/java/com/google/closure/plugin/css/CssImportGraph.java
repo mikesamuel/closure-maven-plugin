@@ -132,9 +132,7 @@ final class CssImportGraph {
 
       String suffixLessName = source.relativePath.getName()
           .replaceFirst("[.](?:css|gss)\\z", "");
-      System.err.println("suffixLessName=" + suffixLessName);
       if (Words.endsWithWordOrIs(suffixLessName, "main")) {
-        System.err.println("Found entry point");
         entryPointsBuilder.add(source);
       }
     }
@@ -158,7 +156,6 @@ final class CssImportGraph {
             .initCause(ex));
       }
       parsedBuilder.put(input.getKey(), parseResult);
-      System.err.println("looking for imports in " + input.getKey());
 
       final Source src = input.getKey();
       // TODO: also take into account @require & @provide
@@ -176,7 +173,6 @@ final class CssImportGraph {
     }
     parsed = parsedBuilder.build();
     deps = depsBuilder.build();
-    System.err.println("CSS DEPS\n" + deps + "\n");
   }
 
   static final class Dependencies {
@@ -219,8 +215,6 @@ final class CssImportGraph {
         if (this.parsed.containsKey(target)) {
           transitiveClosureDepsOnto(log, target, srcs);
         } else {
-          System.err.println("target=" + target);
-          System.err.println("keys=" + this.deps.keySet());
           log.warn(
               "Could not resolve import of " + imp.target + " at "
               + str(imp.loc) + " to a source file");

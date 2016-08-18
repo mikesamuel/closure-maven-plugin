@@ -50,7 +50,7 @@ final class FindProtoFilesAndProtoc extends Step {
       Ingredients ingredients,
 
       HashedInMemory<ProtoFinalOptions> options,
-      SerializedObjectIngredient<GenfilesDirs> genfiles,
+      HashedInMemory<GenfilesDirs> genfiles,
       SerializedObjectIngredient<ProtoPackageMap> packageMap,
 
       SerializedObjectIngredient<ProtoIO> protoSpec,
@@ -66,7 +66,10 @@ final class FindProtoFilesAndProtoc extends Step {
             StepSource.PROTOC,
             // This needs to run before things that depend on the descriptor set
             // since it schedules tasks that run on the proto descriptor set.
-            StepSource.PROTO_DESCRIPTOR_SET));
+            StepSource.PROTO_DESCRIPTOR_SET,
+            // Since this schedules RunProtoc to write JS.
+            StepSource.JAVA_GENERATED,
+            StepSource.JS_GENERATED));
     this.processRunner = processRunner;
     this.protocFinder = protocFinder;
     this.ingredients = ingredients;
@@ -124,8 +127,7 @@ final class FindProtoFilesAndProtoc extends Step {
     HashedInMemory<ProtoFinalOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0))
         .asSuperType(ProtoFinalOptions.class);
-    SerializedObjectIngredient<GenfilesDirs> genfiles =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
+    HashedInMemory<GenfilesDirs> genfiles = ((HashedInMemory<?>) inputs.get(1))
         .asSuperType(GenfilesDirs.class);
     SerializedObjectIngredient<ProtoPackageMap> packageMapIng =
         ((SerializedObjectIngredient<?>) inputs.get(2))
@@ -140,7 +142,7 @@ final class FindProtoFilesAndProtoc extends Step {
     PathValue testDescriptorSet = ingredients.pathValue(
         protocSpecValue.testDescriptorSetFile);
 
-    GenfilesDirs gf = genfiles.getStoredObject().get();
+    GenfilesDirs gf = genfiles.getValue();
 
     Predicate<FileIngredient> isTestOnly = new Predicate<FileIngredient>() {
       @Override

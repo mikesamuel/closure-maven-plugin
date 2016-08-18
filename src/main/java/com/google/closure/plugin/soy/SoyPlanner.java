@@ -46,14 +46,14 @@ public final class SoyPlanner {
 
     HashedInMemory<SoyOptions> soyOptions = ingredients.hashedInMemory(
         SoyOptions.class, opts);
-    SerializedObjectIngredient<GenfilesDirs> genfiles = planner.genfiles;
+    HashedInMemory<GenfilesDirs> genfiles = planner.genfiles;
 
     File defaultSoyTestSource = new File(
         new File(new File(planner.baseDir, "src"), "test"), "soy");
 
     DirectoryScannerSpec dsSpec = opts.toDirectoryScannerSpec(
         defaultSoySource.get(), defaultSoyTestSource,
-        planner.genfiles.getStoredObject().get());
+        genfiles.getValue());
 
     DirScanFileSetIngredient soySources = ingredients.fileset(dsSpec);
 
