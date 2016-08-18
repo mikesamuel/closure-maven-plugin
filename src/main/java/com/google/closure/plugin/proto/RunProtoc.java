@@ -109,8 +109,8 @@ final class RunProtoc extends Step {
     ImmutableList.Builder<String> argv = ImmutableList.builder();
     argv.add(protoc.canonicalPath.getPath());
 
-    argv.add("--include_imports");
     if (langSet == LangSet.ALL) {
+      argv.add("--include_imports");
       argv.add("--descriptor_set_out")
           .add(descriptorSetFile.value.getPath());
       File descriptorSetDir = descriptorSetFile.value.getParentFile();
