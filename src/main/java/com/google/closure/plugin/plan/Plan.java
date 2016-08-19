@@ -183,6 +183,7 @@ public class Plan {
     // Maybe rebuild.
     if (reuse) {
       log.debug("Reusing output of " + step.key);
+      step.skip(log);
     } else {
       log.debug("Executing " + step.key);
       long t0 = System.nanoTime();
