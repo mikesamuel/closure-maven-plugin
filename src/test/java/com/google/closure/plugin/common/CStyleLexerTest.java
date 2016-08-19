@@ -25,7 +25,9 @@ public class CStyleLexerTest extends TestCase {
         + "TODO(foo)\n"
         + "* /\n"
         + "*/\n"
-        + "service s"
+        + "service s",
+
+        false
         );
 
     ImmutableList.Builder<String> tokens = ImmutableList.builder();
@@ -53,6 +55,43 @@ public class CStyleLexerTest extends TestCase {
         "PUNCTUATION:}",
         "WORD:service",
         "WORD:s");
+
+    if (!got.equals(want)) {
+      assertEquals(
+          Joiner.on("\n\n").join(want),
+          Joiner.on("\n\n").join(got));
+      assertEquals(want, got);
+    }
+  }
+
+  @Test
+  public static final void testDocComments() {
+    CStyleLexer lexer = new CStyleLexer(
+        ""
+        + "// Copyright\n"
+        + "\n"
+        + "/** File comment */\n"
+        + "\n"
+        + "/**\n"
+        + " * Foo\n"
+        + " */\n"
+        + "foo();",
+
+        true);
+
+    ImmutableList.Builder<String> tokens = ImmutableList.builder();
+    for (Token t : lexer) {
+      tokens.add(t.type + ":" + t.toString());
+    }
+
+    ImmutableList<String> got = tokens.build();
+    ImmutableList<String> want = ImmutableList.of(
+        "DOC_COMMENT:/** File comment */",
+        "DOC_COMMENT:/**\n * Foo\n */",
+        "WORD:foo",
+        "PUNCTUATION:(",
+        "PUNCTUATION:)",
+        "PUNCTUATION:;");
 
     if (!got.equals(want)) {
       assertEquals(

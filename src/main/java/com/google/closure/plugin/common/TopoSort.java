@@ -37,14 +37,11 @@ public final class TopoSort<I extends Comparable<? super I>,
    *
    * @param getRequires relates an item to the symbols it requires.
    * @param getProvides relates an item to the symbols it provides.
-   * @param ambientlyAvailable symbols that need not be provided by any
-   *     item.
    */
   public TopoSort(
       Function<? super I, ? extends Iterable<? extends D>> getRequires,
       Function<? super I, ? extends Iterable<? extends D>> getProvides,
-      Iterable<? extends I> itemsToSort,
-      Set<? super D> ambientlyAvailable)
+      Iterable<? extends I> itemsToSort)
   throws MissingRequirementException, CyclicRequirementException {
     Map<I, DepNode<I, D>> nodesMap = Maps.newTreeMap();
     Multimap<D, DepNode<I, D>> byProvides = Multimaps.newListMultimap(
@@ -87,7 +84,18 @@ public final class TopoSort<I extends Comparable<? super I>,
       I item = node.key;
 
       for (D req : getRequires.apply(item)) {
-        if (ambientlyAvailable.contains(req)) { continue; }
+        if (node.provides.contains(req)) {
+          // closure/goog/base.js provides basic definitions for things like
+          // goog.require and goog.provide.
+          // Anything that calls a goog.* method implicitly requires goog.
+
+          // closure/goog/base.js gets around this by using the special
+          // "@provideGoog" annotation.
+
+          // This basically works around chicken-egg problems in test code where
+          // a compilation unit satisfies its own requirements.
+          continue;
+        }
 
         byRequires.put(req, node);
 

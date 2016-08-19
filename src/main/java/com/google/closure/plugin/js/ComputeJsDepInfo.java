@@ -3,6 +3,7 @@ package com.google.closure.plugin.js;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -13,9 +14,11 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.closure.plugin.common.CStyleLexer;
 import com.google.closure.plugin.common.Ingredients
     .DirScanFileSetIngredient;
 import com.google.closure.plugin.common.Ingredients.FileIngredient;
@@ -130,11 +133,38 @@ final class ComputeJsDepInfo extends Step {
             CompilerInput inp = new CompilerInput(sourceFile);
             inp.setCompiler(parsingCompiler);
 
+            Collection<String> provides = inp.getProvides();
+            Collection<String> requires = inp.getRequires();
+
+            if (provides.isEmpty() && requires.isEmpty()) {
+              // closure/goog/base.js provides basic definitions for things like
+              // goog.require and goog.provide.
+              // Anything that calls a goog.* method implicitly requires goog.
+
+              // closure/goog/base.js gets around this by using the special
+              // "@provideGoog" annotation.
+
+              // That seems to be specially handled by JSCompiler but not via
+              // the CompilerInput API.
+              CStyleLexer lexer = new CStyleLexer(
+                  sourceFile.getCode(),
+                  true /* Need doc comments. */);
+              for (CStyleLexer.Token headerToken : lexer) {
+                if (headerToken.type != CStyleLexer.TokenType.DOC_COMMENT) {
+                  break;
+                }
+                if (headerToken.containsText("@provideGoog")) {
+                  provides = ImmutableSet.of("goog");
+                  break;
+                }
+              }
+            }
+
             return new DepInfo(
                 inp.isModule(),
                 inp.getName(),
-                googNamespaces(inp.getProvides()),
-                googNamespaces(inp.getRequires()));
+                googNamespaces(provides),
+                googNamespaces(requires));
           }
         },
         sources);

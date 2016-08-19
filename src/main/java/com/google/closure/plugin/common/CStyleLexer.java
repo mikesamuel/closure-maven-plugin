@@ -12,6 +12,7 @@ import com.google.common.base.Preconditions;
  */
 public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
   final String content;
+  final boolean preserveDocComments;
 
   static final Pattern TOKEN = Pattern.compile(
       ""
@@ -27,9 +28,19 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
       Pattern.DOTALL
       );
 
-  /** @param content the content to lex. */
-  public CStyleLexer(String content) {
+  /**
+   * @param content the content to lex.
+   * @param preserveDocComments true to preserve {@code /**...*}{@code /} style
+   *     comments.
+   */
+  public CStyleLexer(String content, boolean preserveDocComments) {
     this.content = content;
+    this.preserveDocComments = preserveDocComments;
+  }
+
+  /** A lexer that drops comments. */
+  public CStyleLexer(String content) {
+    this(content, false);
   }
 
   /**
@@ -81,8 +92,17 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
             case '\t': case '\n': case '\r': case ' ':
               break;
             case '/':
-              type = right - left == 1
-                  ? TokenType.PUNCTUATION : null;
+              if (right - left == 1) {
+                type = TokenType.PUNCTUATION;
+              } else {
+                type = null;
+                if (preserveDocComments && left + 2 < right) {
+                  if (content.charAt(left + 1) == '*'
+                      && content.charAt(left + 2) == '*') {
+                    type = TokenType.DOC_COMMENT;
+                  }
+                }
+              }
               break;
             case '"': case '\'':
               type = TokenType.STRING;
@@ -146,6 +166,11 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
     public String toString() {
       return content.substring(left, right);
     }
+
+    /** True iff s is a substring of the token text. */
+    public boolean containsText(CharSequence s) {
+      return content.toString().contains(s);
+    }
   }
 
   /**
@@ -160,6 +185,8 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
     PUNCTUATION,
     /** A double or single quoted string. */
     STRING,
+    /** A <code>/**...*</code><code>/</code>-style documentation comment. */
+    DOC_COMMENT,
     ;
   }
 

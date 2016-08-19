@@ -23,20 +23,20 @@ public final class TopoSortTest extends TestCase {
 
     TopoSort<String, String> ts = new TopoSort<>(
         failHard, failHard,
-        ImmutableList.<String>of(), ImmutableSet.<String>of());
+        ImmutableList.<String>of());
 
     assertEquals(ImmutableList.of(), ts.getSortedItems());
   }
 
   @Test
   public static void testSort() throws Exception {
-    // For the counting numbers [1, 1000],
+    // For the counting numbers [0, 1000],
     // each number depends on x / 2 and x / 4, and provides its integer factors.
 
-    ImmutableList.Builder<Integer> oneToOneThousandInclusive =
+    ImmutableList.Builder<Integer> zeroToOneThousandInclusive =
         ImmutableList.builder();
-    for (int i = 1; i <= 1000; ++i) {
-      oneToOneThousandInclusive.add(i);
+    for (int i = 0; i <= 1000; ++i) {
+      zeroToOneThousandInclusive.add(i);
     }
 
     TopoSort<Integer, String> ts = new TopoSort<>(
@@ -50,19 +50,22 @@ public final class TopoSortTest extends TestCase {
           @Override
           public ImmutableList<String> apply(Integer i) {
             ImmutableList.Builder<String> provides = ImmutableList.builder();
-            for (int k = i; k <= 1000; k += i) {
-              provides.add("" + k);
+            if (i > 0) {
+              for (int k = i; k <= 1000; k += i) {
+                provides.add("" + k);
+              }
+            } else {
+              provides.add("0");
             }
             return provides.build();
           }
         },
-        oneToOneThousandInclusive.build(),
-        ImmutableSet.of("0"));
+        zeroToOneThousandInclusive.build());
 
     // Since each number requires only smaller numbers, and the sort is mostly
-    // stable, the sorted output is [1..1000].
+    // stable, the sorted output is [0..1000].
     assertEquals(
-        oneToOneThousandInclusive.build(),
+        zeroToOneThousandInclusive.build(),
         ts.getSortedItems());
   }
 }

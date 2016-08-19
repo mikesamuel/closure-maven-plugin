@@ -54,6 +54,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
         + "goog.provide('b.test');\n"
         + "goog.require('b.baz');\n"
         + "goog.require('b.boo');")
+
     .mainSource("/src/main/js", "a/foo.js")
     .mainSource("/src/main/js", "a/bar.js")
     .mainSource("/src/main/js", "b/baz.js")
@@ -61,25 +62,30 @@ public final class ComputeJsDepGraphTest extends TestCase {
     .testSource("/src/test/js", "a/test.js")
     .testSource("/src/test/js", "b/test.js")
     .expectArgv(
+            // We get a main module first that just includes the basic closure
+            // primitives like goog.require & goog.provide.
+            "--module", "main:1",
+            "--js", "/dep/closure/goog/base.js",
+
             // main.b has no external dependencies and contains 2 files
-            "--module", "b:2",
+            "--module", "b:2:main",
             // Stable file order.
             "--js", "/src/main/js/b/baz.js",
             "--js", "/src/main/js/b/boo.js",
 
             // main.a depends upon main.b and contains 2 files
-            "--module", "a:2:b",
+            "--module", "a:2:main,b",
             // bar.js depends upon foo.js
             "--js", "/src/main/js/a/foo.js",
             "--js", "/src/main/js/a/bar.js",
 
             // test.b depends upon main.b
-            "--module", "b.test:1:b",
+            "--module", "b.test:1:main,b",
             "--js", "/src/test/js/b/test.js",
 
             // test.a depends upon main.a and transitively upon main.b
             // Since main.a depends upon main.b, main.b comes first.
-            "--module", "a.test:1:b,a",
+            "--module", "a.test:1:main,b,a",
             "--js", "/src/test/js/a/test.js"
             )
     .run();
@@ -199,8 +205,9 @@ public final class ComputeJsDepGraphTest extends TestCase {
            + "goog.provide('a.boo');\n"
            + "goog.require('a.bar');")
        .expectArgv(
-           "--module", "main:3",
-           "--js", "/src/dep/js/a/bar.js",  // No deps
+           "--module", "main:4",
+           "--js", "/dep/closure/goog/base.js",  // No deps
+           "--js", "/src/dep/js/a/bar.js",  // Depends on base.js implicitly
            "--js", "/src/dep/js/a/baz.js",  // Depends on a/bar.js
            "--js", "/src/main/js/a/foo.js"  // Depends on a/baz.js
            )
@@ -232,9 +239,11 @@ public final class ComputeJsDepGraphTest extends TestCase {
             + "goog.module('d');\n"
             + "goog.require('b');")
         .expectArgv(
-            "--module", "c:1",
+            "--module", "main:1",
+            "--js", "/dep/closure/goog/base.js",
+            "--module", "c:1:main",
             "--js", "/src/dep/js/c/baz.js",
-            "--module", "a:1:c",
+            "--module", "a:1:main,c",
             "--js", "/src/main/js/a/foo.js"  // Depends on c/baz.js
             )
         .log(new TestLog().verbose(false))
@@ -247,6 +256,11 @@ public final class ComputeJsDepGraphTest extends TestCase {
 
     TestBuilder() {
       super(TestBuilder.class);
+
+      fileContent(
+          "/dep/closure/goog/base.js",
+          "/** @fileoverview @provideGoog */");
+      source("/dep/closure/goog", "base.js", SourceFileProperty.LOAD_AS_NEEDED);
     }
 
     TestBuilder expectArgv(String... args) {

@@ -21,7 +21,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -174,10 +173,6 @@ final class ComputeJsDepGraph extends Step {
         new MavenLogJSErrorManager(log));
     parsingCompiler.initOptions(options.toCompilerOptions());
 
-    // goog.provide and goog.require are ambiently available.
-    final ImmutableSet<GoogNamespace> ambientlyAvailable =
-        ImmutableSortedSet.of(new GoogNamespace("goog"));
-
     TopoSort<ModuleName, GoogNamespace> moduleTopoSort;
     {
       Map<ModuleName, Set<GoogNamespace>> allRequires = Maps.newLinkedHashMap();
@@ -204,8 +199,7 @@ final class ComputeJsDepGraph extends Step {
         moduleTopoSort = new TopoSort<>(
             Functions.forMap(allRequires),
             Functions.forMap(allProvides),
-            sourcesPerModule.keySet(),
-            ambientlyAvailable);
+            sourcesPerModule.keySet());
       } catch (TopoSort.CyclicRequirementException ex) {
         throw new MojoExecutionException("Mismatched require/provides", ex);
       } catch (TopoSort.MissingRequirementException ex) {
@@ -256,8 +250,7 @@ final class ComputeJsDepGraph extends Step {
                 return sdi.di.provides;
               }
             },
-            inputsByCiName.values(),
-            ambientlyAvailable);
+            inputsByCiName.values());
       } catch (TopoSort.CyclicRequirementException ex) {
         throw new MojoExecutionException(
             "Mismatched require/provides in module " + moduleName, ex);
