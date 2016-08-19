@@ -1,0 +1,38 @@
+{namespace com.example.demo}
+
+{template .Wall}
+  /*{@param nonce : string}*/
+  {@param wall : com.example.demo.WallItems}
+  {@param styles : list<uri>}
+  {@param scripts : list<uri>}
+
+  <!doctype html>
+  <html>
+    <head>
+      <title>Wall</title>
+      {foreach $style in $styles}
+        <link rel="stylesheet" href="{$style}" />
+      {/foreach}
+      {foreach $script in $scripts}
+        <script scr="{$script}"></script>
+      {/foreach}
+    </head>
+    <body>
+      <ul>  /* In no particular order */
+        {foreach $item in $wall.itemList}
+          {call .WallItem}{param item : $item /}{/call}
+        {/foreach}
+      </ul>
+    </body>
+  </html>
+{/template}
+
+{template .WallItem private="true"}
+  {@param item : com.example.demo.WallItem}
+
+  <div class="wall-item"
+   style="left: {$item.topLeft.xPercent}%;
+          top:  {$item.topLeft.yPercent}%">
+    {$item.html ?: $item.htmlUnsafe}
+  </div>
+{/template}

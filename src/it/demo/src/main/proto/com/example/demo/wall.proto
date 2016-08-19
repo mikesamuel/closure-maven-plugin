@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package com.example.demo;
+
+import "webutil/html/types/html.proto";
+
+option java_package = "com.example.demo";
+
+
+message WallItems {
+  repeated WallItem item = 1;
+}
+
+message WallItem {
+  optional string html_unsafe = 1;
+  optional webutil.html.types.SafeHtmlProto html = 2;
+  required Point top_left = 3;
+}
+
+message Point {
+  required int32 x_percent = 1;
+  required int32 y_percent = 2;
+}
