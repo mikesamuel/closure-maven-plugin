@@ -11,7 +11,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.json.simple.JSONArray;
 
-import com.google.common.base.Functions;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
@@ -41,7 +43,7 @@ final class CompileJs extends Step {
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
+  public void execute(final Log log) throws MojoExecutionException {
     HashedInMemory<JsOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
     SerializedObjectIngredient<Modules> modulesIng =
@@ -87,9 +89,34 @@ final class CompileJs extends Step {
                   stdin, stdout, stderr) {
                 // Subclass to get access to the constructor.
               };
-              runner.setExitCodeReceiver(Functions.constant(null));
+
+              final long t0 = System.nanoTime();
+
+              final class ExitCodeReceiver implements Function<Integer, Void> {
+                Optional<Integer> exitCodeOpt = Optional.absent();
+
+                @Override
+                public Void apply(Integer exitCode) {
+                  long t1 = System.nanoTime();
+                  long dtMillis = (t1 - t0) / 1000000 /* ns / ms */;
+                  Preconditions.checkState(!exitCodeOpt.isPresent());
+                  exitCodeOpt = Optional.of(exitCode);
+                  String message = "jscomp exited with exit code " + exitCode
+                      + " after " + dtMillis + " ms";
+                  if (exitCode != 0) {
+                    log.error(message);
+                  } else {
+                    log.info(message);
+                  }
+                  return null;
+                }
+              }
+              final ExitCodeReceiver ecr = new ExitCodeReceiver();
+              runner.setExitCodeReceiver(ecr);
               runner.run();
-              if (runner.hasErrors()) {
+              if (runner.hasErrors()
+                  || !ecr.exitCodeOpt.isPresent()
+                  || ecr.exitCodeOpt.get() != 0) {
                 throw new MojoExecutionException("JS compilation failed");
               }
             }
@@ -123,15 +150,45 @@ final class CompileJs extends Step {
 
     @Override
     public void flush() throws IOException {
+      doFlush(false);
+    }
+
+    @Override
+    public void close() throws IOException {
+      doFlush(true);
+
+    }
+
+    private void doFlush(boolean hard) throws IOException {
       ByteArrayOutputStream bytes = (ByteArrayOutputStream) this.out;
 
       byte[] byteArray = bytes.toByteArray();
       bytes.reset();
 
-      onLine(
-          new StringBuilder()
-          .append(prefix)
-          .append(new String(byteArray, "UTF-8")));
+      int wrote = 0;
+      int n = byteArray.length;
+      for (int i = 0; i < n; ++i) {
+        byte b = byteArray[i];
+        if (b == '\n') {  // Assumes UTF-8 or ASCII
+          onLine(
+              new StringBuilder()
+              .append(prefix)
+              .append(new String(byteArray, wrote, i + 1, "UTF-8")));
+          wrote = i + 1;
+        }
+      }
+
+      if (wrote < n) {
+        if (hard) {
+          // Assumes stream not closed in the middle of a UTF-8 sequence.
+          onLine(
+              new StringBuilder().append(prefix)
+              .append(new String(byteArray, wrote, n, "UTF-8")));
+        } else {
+          // Save prefix of next line.
+          bytes.write(byteArray, wrote, n);
+        }
+      }
     }
   }
 

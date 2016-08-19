@@ -87,6 +87,7 @@ abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
           public ByteSource apply(Source s) {
             String contentKey = s.canonicalPath.getPath();
             String charContent = fileContent.get(contentKey);
+            Preconditions.checkNotNull(charContent, s.canonicalPath);
             return ByteSource.wrap(charContent.getBytes(Charsets.UTF_8));
           }
         },
