@@ -18,11 +18,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <csscomp.version>21060712-SNAPSHOT</csscomp.version>
     <jscomp.version>1.0-SNAPSHOT</jscomp.version>
-    <protoc-plugin.version>1.4.55</protoc-plugin.version>
+    <protoc-plugin.version>1.4-SNAPSHOT</protoc-plugin.version>
     <soy.version>2016-07-23-SNAPSHOT</soy.version>
     <java.version>1.7</java.version>
     <!-- Used in a resource filter -->
-    <protobuf-java.version>3.0.0-beta-2</protobuf-java.version>
+    <protobuf-java.version>3.0.0</protobuf-java.version>
   </properties>
 
   <dependencies>
