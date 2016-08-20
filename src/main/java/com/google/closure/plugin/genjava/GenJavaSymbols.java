@@ -64,6 +64,11 @@ final class GenJavaSymbols extends Step {
         if (File.separatorChar != '/') {
           path = path.replace(File.separatorChar, '/');
         }
+        // rel-paths are relative, but we want something
+        // that can be appended to a base directory to give an absolute URI
+        // path, so start with a "/".
+        Preconditions.checkState(!path.startsWith("/"));
+        path = "/" + path;
         String identUniq;
         do {
           identUniq = index == -1 ? identUnuniq : identUnuniq + "$" + index;
