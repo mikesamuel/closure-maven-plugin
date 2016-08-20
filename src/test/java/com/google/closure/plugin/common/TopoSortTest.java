@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 import junit.framework.TestCase;
 
