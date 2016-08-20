@@ -1,1 +1,21 @@
 body { font-family: Arial;  /* NOOOOOO */ }
+
+.wall { list-style: none }
+
+.wall > li.wall-item {
+    position: absolute; display: inline-block; list-style: none; border: 1px dotted black
+}
+
+#scribble {
+    position: absolute;
+    bottom: -1px;
+}
+
+input[type=range][orient=vertical]
+{
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 8px;
+    height: 175px;
+    padding: 0 5px;
+}

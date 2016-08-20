@@ -14,15 +14,35 @@
         <link rel="stylesheet" href="{$style}" />
       {/foreach}
       {foreach $script in $scripts}
-        <script scr="{$script}"></script>
+        <script src="{$script}"></script>
       {/foreach}
     </head>
     <body>
-      <ul>  /* In no particular order */
-        {foreach $item in $wall.itemList}
-          {call .WallItem}{param item : $item /}{/call}
-        {/foreach}
+      <ul class="wall">  /* In no particular order */
+        {if $wall.itemList}
+          {foreach $item in $wall.itemList}
+            {call .WallItem}{param item : $item /}{/call}
+          {/foreach}
+        {/if}
       </ul>
+
+        <form id="scribble">
+          <table align=center>
+            <tr>
+               <th colspan=2>Enter some HTML
+            <tr>
+              <td>
+                <textarea name="html" rows=6 cols=40>...</textarea>
+              <td rowspan=2>
+                <input type=range min=0 max=100 value=50 id=y orient=vertical>
+            <tr>
+              <td>
+                <input type=range min=0 max=100 value=50 id=x>
+                <br>
+                <button type="button">Scribble</button>
+          </table>
+        </form>
+      </center>
     </body>
   </html>
 {/template}
@@ -30,9 +50,9 @@
 {template .WallItem private="true"}
   {@param item : com.example.demo.WallItem}
 
-  <div class="wall-item"
+  <li class="wall-item"
    style="left: {$item.topLeft.xPercent}%;
           top:  {$item.topLeft.yPercent}%">
     {$item.html ?: $item.htmlUnsafe}
-  </div>
+  </li>
 {/template}

@@ -33,7 +33,7 @@ final class Target {
         nonceOpt,
 
         (nonceOpt.isPresent()
-         ? absUriPath.substring(nonceOpt.get().text.length() + 2)
+         ? absUriPath.substring(nonceOpt.get().text.length() + 1)
          : absUriPath));
   }
 }

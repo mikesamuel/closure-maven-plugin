@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
@@ -20,13 +21,10 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.example.demo.Wall.WallItem;
 import com.example.demo.Wall.WallItems;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.html.types.TrustedResourceUrl;
@@ -35,8 +33,18 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+import com.google.template.soy.data.SoyValueHelper;
+import com.google.template.soy.jbcsrc.api.AdvisingAppendable;
+import com.google.template.soy.jbcsrc.api.Precompiled;
+import com.google.template.soy.jbcsrc.api.SoySauce;
+import com.google.template.soy.jbcsrc.api.SoySauce.WriteContinuation;
+import com.google.template.soy.types.SoyTypeProvider;
+import com.google.template.soy.types.SoyTypeRegistry;
 
 /**
  * A Jetty server handler that serves /closure/... resources as static files
@@ -71,6 +79,23 @@ public class Demo extends AbstractHandler {
       .maximumSize(1000)
       .expireAfterAccess(10, TimeUnit.MINUTES)
       .<Nonce, WallItems>build();
+
+  private final Injector injector;
+
+  @Inject
+  SoyTypeRegistry soyTypeRegistry;
+
+  @Inject
+  SoyValueHelper valueHelper;
+
+  @Inject
+  @Precompiled
+  SoySauce soySauce;
+
+  {
+    injector = Guice.createInjector(new DemoModule());
+    injector.injectMembers(this);
+  }
 
   @Override
   public void handle(
@@ -117,7 +142,7 @@ public class Demo extends AbstractHandler {
           URL resourceUrl = getClass().getResource("/closure" + target.suffix);
           if (resourceUrl != null) {
             ByteSource bytes = Resources.asByteSource(resourceUrl);
-            response.setContentType("text/html; charset=utf-8");
+            response.setContentType(contentType);
             response.setStatus(HttpServletResponse.SC_OK);
             try (InputStream staticFileIn = bytes.openStream()) {
               ByteStreams.copy(staticFileIn, response.getOutputStream());
@@ -128,7 +153,8 @@ public class Demo extends AbstractHandler {
       }
       if (!handled) {
         Nonce newNonce = Nonce.create(nonceGenerator);
-        walls.put(newNonce, WallItems.newBuilder().build());
+        WallItems newWall = WallItems.newBuilder().build();
+        walls.put(newNonce, newWall);
         response.sendRedirect("/" + newNonce.text + "/wall#");
         handled = true;
       }
@@ -204,14 +230,60 @@ public class Demo extends AbstractHandler {
     wallItems.writeTo(out);
   }
 
-  private static void renderWall(
-      Target target, WallItems items, Writer out) throws IOException {
+  private void renderWall(Target target, WallItems items, final Writer out)
+  throws IOException {
+    Nonce oneTimeCspNonce = Nonce.create(nonceGenerator);
+
     ImmutableMap<String, Object> data = ImmutableMap.<String, Object>of(
         "nonce", target.nonce.get().text,
         "wall", items,
         "styles", ImmutableList.<TrustedResourceUrl>of(
-            TrustedResourceUrls.fromConstant(WebFiles.CSS_WALL_MAIN_CSS))
+            TrustedResourceUrls.fromConstant(WebFiles.CSS_WALL_MAIN_CSS)),
+        "scripts", ImmutableList.<TrustedResourceUrl>of(
+            TrustedResourceUrls.fromConstant(WebFiles.JS_MAIN_JS),
+            TrustedResourceUrls.fromConstant(WebFiles.JS_COM_EXAMPLE_WALL_JS))
         );
+    ImmutableMap<String, Object> ijData = ImmutableMap.<String, Object>of(
+        "csp_nonce", oneTimeCspNonce.text);
+
+    SoySauce.Renderer renderer = soySauce
+        .renderTemplate("com.example.demo.Wall")
+        .setData(data)
+        .setIj(ijData)
+//      .setMsgBundle(msgBundle)
+//      .setXidRenamingMap(idRenamingMap)
+//      .setCssRenamingMap(cssRenamingMap)
+        ;
+
+    WriteContinuation wc = renderer.render(new AdvisingAppendable() {
+
+      @Override
+      public AdvisingAppendable append(CharSequence s) throws IOException {
+        out.write(s.toString());
+        return this;
+      }
+
+      @Override
+      public AdvisingAppendable append(char ch) throws IOException {
+        out.write(ch);
+        return this;
+      }
+
+      @Override
+      public AdvisingAppendable append(CharSequence s, int lt, int rt)
+      throws IOException {
+        out.write(s.subSequence(lt, rt).toString());
+        return this;
+      }
+
+      @Override
+      public boolean softLimitReached() {
+        return false;
+      }
+    });
+    while (!wc.result().isDone()) {
+      wc = wc.continueRender();
+    }
   }
 
   /** Takes optional httpd port number. */

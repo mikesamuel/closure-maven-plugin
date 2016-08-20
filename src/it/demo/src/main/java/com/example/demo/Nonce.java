@@ -17,7 +17,13 @@ final class Nonce {
   }
 
   static Nonce create(SecureRandom rnd) {
-    byte[] bytes = new byte[32];
+    // We use a number of bytes that is a factor of 6b so that when we b64
+    // encode, there is no need for a padding '=' sign.
+    int numBytes = 33;
+    byte[] bytes = new byte[numBytes];
+    // No synchronization necessary here since stock Random implementations are
+    // thread-safe per the Javadoc:
+    // "Instances of java.util.Random are threadsafe"
     rnd.nextBytes(bytes);
     return new Nonce(BaseEncoding.base64Url().encode(bytes));
   }
@@ -40,6 +46,11 @@ final class Nonce {
       }
     }
     return ok;
+  }
+
+  @Override
+  public String toString() {
+    return "{Nonce " + this.text + "}";
   }
 
 
