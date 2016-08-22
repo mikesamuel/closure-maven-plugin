@@ -36,7 +36,7 @@ import java.io.IOException;
     // so it can figure out which protobufVersion to use.
     requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME
 )
-public class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
+public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
 
   /**
    * The dependencies from which to extract supplementary source files.
