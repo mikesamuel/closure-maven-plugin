@@ -20,6 +20,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.google.closure</groupId>
+      <artifactId>soy-juice</artifactId>
+      <version>${project.version}</version>  <!-- sibling module -->
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
     </dependency>

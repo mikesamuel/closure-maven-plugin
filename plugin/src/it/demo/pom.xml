@@ -112,12 +112,17 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>com.google.closure</groupId>
+      <artifactId>soy-juice</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
     <!-- The protoc plugin needs protobuf-java so it can figure out which
          version of protoc to invoke. -->
     <dependency>
       <groupId>com.google.template</groupId>
       <artifactId>soy</artifactId>
-      <version>2016-07-23-SNAPSHOT</version>
+      <version>2016-08-19</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>

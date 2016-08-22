@@ -21,6 +21,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.example.demo.Wall.WallItem;
 import com.example.demo.Wall.WallItems;
 
+import com.google.closure.module.ClosureModule;
+
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
@@ -93,7 +95,7 @@ public class Demo extends AbstractHandler {
   SoySauce soySauce;
 
   {
-    injector = Guice.createInjector(new DemoModule());
+    injector = Guice.createInjector(new ClosureModule());
     injector.injectMembers(this);
   }
 

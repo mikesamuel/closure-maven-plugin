@@ -1,37 +1,26 @@
 package com.example;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.io.File;
-import java.util.List;
 import java.util.Map;
+
+import com.google.closure.module.ClosureModule;
 
 // Protos
 import com.example.Proto1.Name;
 
 // Soy uses Guice to inject stuff.  Sigh.
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 
 // Template-support
 import com.google.common.html.types.SafeHtmls;
-import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.template.soy.data.SanitizedContent;
 import com.google.template.soy.data.SanitizedContent.ContentKind;
-import com.google.template.soy.data.SoyCustomValueConverter;
 import com.google.template.soy.data.SoyValueHelper;
 import com.google.template.soy.jbcsrc.api.RenderResult;
 import com.google.template.soy.jbcsrc.api.Precompiled;
-import com.google.template.soy.jbcsrc.api.PrecompiledSoyModule;
 import com.google.template.soy.jbcsrc.api.SoySauce;
-import com.google.template.soy.types.proto.SoyProtoTypeProvider;
-import com.google.template.soy.types.proto.SoyProtoValueConverter;
 
 // Testbed imports
 import org.junit.Test;
@@ -51,7 +40,7 @@ public final class HelloWorldTest extends TestCase {
   SoySauce soySauce;
 
   {
-    injector = Guice.createInjector(new TestModule());
+    injector = Guice.createInjector(new ClosureModule());
     injector.injectMembers(this);
   }
 
@@ -117,36 +106,5 @@ public final class HelloWorldTest extends TestCase {
     SanitizedContent output = renderHelloWorld(data, ijData);
     assertEquals(ContentKind.HTML, output.getContentKind());
     assertEquals("Hello, <b>Cincinatti &lt;:-}&gt;</b>!", output.getContent());
-  }
-
-  @SuppressWarnings("static-method")
-  public static final class TestModule extends AbstractModule {
-    @Override
-    protected void configure() {
-      // This installs all the core plugins and the apicallscope dependencies.
-      install(new PrecompiledSoyModule());
-    }
-
-    @Provides
-    @Singleton
-    public List<SoyCustomValueConverter> provideSoyValueConverters(
-        SoyProtoValueConverter protoConverter) {
-      // Note: The order of data converters matters. Converters that only accept
-      // specific input types should come before converters that will convert
-      // anything.
-      return ImmutableList.<SoyCustomValueConverter>of(protoConverter);
-    }
-
-    @Provides
-    @Singleton
-    public SoyProtoTypeProvider provideProtoTypeProvider()
-    throws IOException, DescriptorValidationException {
-      File descriptorFile = new File(
-          Joiner.on(File.separator).join(
-              "target", "src", "main", "proto", "descriptors.pd"));
-      return (new SoyProtoTypeProvider.Builder())
-          .addFileDescriptorSetFromFile(descriptorFile)
-          .build();
-    }
   }
 }

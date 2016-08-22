@@ -112,6 +112,10 @@ public final class ProtoPlanner {
         planner.processRunner, protocFinder, planner.ingredients,
         protoOptionsIng, planner.genfiles, protoPackageMap,
         protoIO, protoSources, protocExec));
+
+    planner.addStep(new CopyProtosToJar(
+        planner.closureOutputDirectory,
+        protoIO));
   }
 
 }
