@@ -30,7 +30,7 @@ public class CommonPlanner {
   public final HashedInMemory<GenfilesDirs> genfiles;
   /** The {@code target/classes} directory. */
   public final PathValue projectBuildOutputDirectory;
-  /** The {@code target/classses/closure}. */
+  /** The {@code target/classes/closure}. */
   public final PathValue closureOutputDirectory;
 
 
