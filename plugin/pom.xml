@@ -15,7 +15,8 @@
   <name>Closure Maven Plugin</name>
   <description>
     A plugin that eases web application building by integrating
-    Closure Compiler (JS), Closure Templates, Closure StyleSheets, and Protocol Buffers.
+    Closure Compiler (JS), Closure Templates, Closure StyleSheets,
+    and Protocol Buffers.
   </description>
 
   <dependencies>
