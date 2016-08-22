@@ -7,5 +7,7 @@
 {template .HelloWorld}
   /** The name of the world. */
   {@param world : com.example.Name}
-  Hello, <b>{if $world}{$world.html ?: $world.text}{else}World{/if}</b>!
+  <div id="greeting">  /* TODO: {xid ...} */
+    Hello, <b class="{css world}">{if $world}{$world.html ?: $world.text}{else}World{/if}</b>!
+  </div>
 {/template}

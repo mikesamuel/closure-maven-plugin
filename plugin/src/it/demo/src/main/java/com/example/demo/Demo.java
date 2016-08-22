@@ -45,8 +45,8 @@ import com.google.template.soy.jbcsrc.api.AdvisingAppendable;
 import com.google.template.soy.jbcsrc.api.Precompiled;
 import com.google.template.soy.jbcsrc.api.SoySauce;
 import com.google.template.soy.jbcsrc.api.SoySauce.WriteContinuation;
+import com.google.template.soy.shared.SoyCssRenamingMap;
 import com.google.template.soy.types.SoyTypeProvider;
-import com.google.template.soy.types.SoyTypeRegistry;
 
 /**
  * A Jetty server handler that serves /closure/... resources as static files
@@ -85,10 +85,10 @@ public class Demo extends AbstractHandler {
   private final Injector injector;
 
   @Inject
-  SoyTypeRegistry soyTypeRegistry;
+  SoyValueHelper valueHelper;
 
   @Inject
-  SoyValueHelper valueHelper;
+  SoyCssRenamingMap cssRenamingMap;
 
   @Inject
   @Precompiled
@@ -254,7 +254,7 @@ public class Demo extends AbstractHandler {
         .setIj(ijData)
 //      .setMsgBundle(msgBundle)
 //      .setXidRenamingMap(idRenamingMap)
-//      .setCssRenamingMap(cssRenamingMap)
+        .setCssRenamingMap(cssRenamingMap)
         ;
 
     WriteContinuation wc = renderer.render(new AdvisingAppendable() {

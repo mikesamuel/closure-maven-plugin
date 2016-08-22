@@ -25,7 +25,8 @@ assert renameMap.getText("UTF-8").trim().equals(
     ""  // Symbols from one should not clobber those from another.
     + "{\n"
     + "  \"bar\": \"a\",\n"
-    + "  \"yellow\": \"b\"\n"
+    + "  \"yellow\": \"b\",\n"
+    + "  \"world\": \"c\"\n"
     + "}");
 
 

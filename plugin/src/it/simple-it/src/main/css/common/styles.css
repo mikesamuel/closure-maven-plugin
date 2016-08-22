@@ -1,1 +1,5 @@
 .yellow { background-color: yellow }
+
+/* Used in HelloWorld.soy.  Let the CSS check renaming so we can . */
+#greeting { display: inline-block }
+.world { background-color: /*pale-blue*/ #ADD8E6 }

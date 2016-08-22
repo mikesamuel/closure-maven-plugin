@@ -85,6 +85,13 @@ public final class JsPlanner {
 
       DirScanFileSetIngredient fs = ingredients.fileset(sourcesSpec);
 
+      PathValue jsRenameMap = ingredients.pathValue(
+          new File(
+              planner.genfiles.getValue().jsGenfiles,
+              "css-rename-map.js"));
+      planner.addStep(new LinkCssNameMap(
+          jsRenameMap, planner.substitutionMapProvider));
+
       planner.addStep(new ComputeJsDepInfo(optionsIng, depInfoIng, fs));
       planner.addStep(new ComputeJsDepGraph(
           this, optionsIng, depInfoIng, modulesIng, fs));

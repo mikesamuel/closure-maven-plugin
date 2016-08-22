@@ -18,7 +18,7 @@
       {/foreach}
     </head>
     <body>
-      <ul class="wall">  /* In no particular order */
+      <ul class="{css wall}">  /* In no particular order */
         {if $wall.itemList}
           {foreach $item in $wall.itemList}
             {call .WallItem}{param item : $item /}{/call}
@@ -26,20 +26,21 @@
         {/if}
       </ul>
 
+      <center>
         <form id="scribble">
           <table align=center>
             <tr>
-               <th colspan=2>Enter some HTML
-            <tr>
-              <td>
-                <textarea name="html" rows=6 cols=40>...</textarea>
-              <td rowspan=2>
-                <input type=range min=0 max=100 value=50 id=y orient=vertical>
-            <tr>
-              <td>
-                <input type=range min=0 max=100 value=50 id=x>
-                <br>
-                <button type="button">Scribble</button>
+              <th colspan=2>Enter some HTML
+                <tr>
+                  <td>
+                    <textarea name="html" rows=6 cols=40>...</textarea>
+                  <td rowspan=2>
+                    <input type=range min=0 max=100 value=50 id=y orient=vertical>
+                    <tr>
+                      <td>
+                        <input type=range min=0 max=100 value=50 id=x>
+                        <br>
+                        <button type="button">Scribble</button>
           </table>
         </form>
       </center>
@@ -50,7 +51,7 @@
 {template .WallItem private="true"}
   {@param item : com.example.demo.WallItem}
 
-  <li class="wall-item"
+  <li class="{css wall-item}"
    style="left: {$item.topLeft.xPercent}%;
           top:  {$item.topLeft.yPercent}%">
     {$item.html ?: $item.htmlUnsafe}

@@ -21,6 +21,7 @@ import com.google.template.soy.data.SoyValueHelper;
 import com.google.template.soy.jbcsrc.api.RenderResult;
 import com.google.template.soy.jbcsrc.api.Precompiled;
 import com.google.template.soy.jbcsrc.api.SoySauce;
+import com.google.template.soy.shared.SoyCssRenamingMap;
 
 // Testbed imports
 import org.junit.Test;
@@ -39,6 +40,9 @@ public final class HelloWorldTest extends TestCase {
   @Precompiled
   SoySauce soySauce;
 
+  @Inject
+  SoyCssRenamingMap cssRenamingMap;
+
   {
     injector = Guice.createInjector(new ClosureModule());
     injector.injectMembers(this);
@@ -53,7 +57,7 @@ public final class HelloWorldTest extends TestCase {
             .setIj(ijData)
 //          .setMsgBundle(msgBundle)
 //          .setXidRenamingMap(idRenamingMap)
-//          .setCssRenamingMap(cssRenamingMap)
+            .setCssRenamingMap(cssRenamingMap)
             ;
 
     SoySauce.Continuation<SanitizedContent> c = renderer.renderStrict();
@@ -75,7 +79,9 @@ public final class HelloWorldTest extends TestCase {
 
     SanitizedContent output = renderHelloWorld(data, ijData);
     assertEquals(ContentKind.HTML, output.getContentKind());
-    assertEquals("Hello, <b>World</b>!", output.getContent());
+    assertEquals(
+        "<div id=\"greeting\">Hello, <b class=\"c\">World</b>!</div>",
+        output.getContent());
   }
 
 
@@ -90,7 +96,10 @@ public final class HelloWorldTest extends TestCase {
 
     SanitizedContent output = renderHelloWorld(data, ijData);
     assertEquals(ContentKind.HTML, output.getContentKind());
-    assertEquals("Hello, <b>Cincinatti &lt;:)&gt;</b>!", output.getContent());
+    assertEquals(
+        "<div id=\"greeting\">"
+        + "Hello, <b class=\"c\">Cincinatti &lt;:)&gt;</b>!</div>",
+        output.getContent());
   }
 
   @Test
@@ -105,6 +114,9 @@ public final class HelloWorldTest extends TestCase {
 
     SanitizedContent output = renderHelloWorld(data, ijData);
     assertEquals(ContentKind.HTML, output.getContentKind());
-    assertEquals("Hello, <b>Cincinatti &lt;:-}&gt;</b>!", output.getContent());
+    assertEquals(
+        "<div id=\"greeting\">"
+        + "Hello, <b class=\"c\">Cincinatti &lt;:-}&gt;</b>!</div>",
+        output.getContent());
   }
 }
