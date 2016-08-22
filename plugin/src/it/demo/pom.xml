@@ -9,6 +9,29 @@
 
   <description>Whole Application Contract Types Demo</description>
 
+  <!-- allow building to run as a demo without
+       introducing a directory into plugin/src/it/demo
+       which gets copied when running the plugin integration tests.
+
+       The demo server can be kicked off via
+
+       $ mvn -PalternateBuildDir -Dalt.build.dir=$TMP/demo-target verify \
+         && java -jar $TMP/demo-target/demo-*.jar
+  -->
+  <profiles>
+    <profile>
+      <id>alternateBuildDir</id>
+      <activation>
+        <property>
+          <name>alt.build.dir</name>
+      </property>
+      </activation>
+      <build>
+        <directory>${alt.build.dir}</directory>
+      </build>
+    </profile>
+  </profiles>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
