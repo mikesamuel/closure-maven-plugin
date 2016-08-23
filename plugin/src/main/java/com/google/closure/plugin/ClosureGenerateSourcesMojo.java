@@ -6,7 +6,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.CommonPlanner;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
@@ -22,6 +21,7 @@ import com.google.closure.plugin.proto.ProtoOptions;
 import com.google.closure.plugin.proto.ProtoPlanner;
 import com.google.closure.plugin.soy.SoyOptions;
 import com.google.closure.plugin.soy.SoyPlanner;
+import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
 
@@ -51,7 +51,7 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
    * right-to-left languages like Arabic.
    */
   @Parameter
-  public CssOptions[] css;
+  private final ImmutableList.Builder<CssOptions> css = ImmutableList.builder();
 
   /**
    * Options for the closure-compiler.
@@ -60,14 +60,16 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
    * with different
    * <a href="https://developers.google.com/closure/compiler/docs/js-for-compiler#tag-define">{@code --define}s</a>.
    */
-  @Parameter
-  public JsOptions[] js;
+  @Parameter(property="js")
+  private final ImmutableList.Builder<JsOptions> js =
+      ImmutableList.builder();
 
   /**
    * Options for the protocol buffer compiler.
    */
   @Parameter
   public ProtoOptions proto;
+
 
   @Override
   public void execute() throws MojoExecutionException {
@@ -95,7 +97,7 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
           .defaultCssSource(defaultCssSource)
           .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
           .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
-          .plan(css);
+          .plan(css.build());
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan CSS compile", ex);
     }
@@ -123,10 +125,7 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
       new JsPlanner(planner)
           .defaultJsSource(defaultJsSource)
           .defaultJsTestSource(defaultJsTestSource)
-          .plan(
-              js != null
-              ? ImmutableList.copyOf(js)
-              : ImmutableList.<JsOptions>of());
+          .plan(js.build());
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to plan js compile", ex);
     }
@@ -136,5 +135,15 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
         .plan();
 
     // TODO: figure out how to thread externs through.
+  }
+
+  /** Additive setter called by plexus configurator. */
+  public void setJs(JsOptions options) {
+    this.js.add(options);
+  }
+
+  /** Additive setter called by plexus configurator. */
+  public void setCss(CssOptions options) {
+    this.css.add(options);
   }
 }

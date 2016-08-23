@@ -3,19 +3,20 @@ package com.google.closure.plugin.css;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Parameter;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.css.CustomPass;
 import com.google.common.css.GssFunctionMapProvider;
 import com.google.common.css.JobDescription;
@@ -31,7 +32,6 @@ import com.google.closure.plugin.common.SourceOptions;
 import com.google.closure.plugin.common.Sources;
 import com.google.common.io.Files;
 
-//@Mojo(name="css")
 /**
  * Options for processing
  * <a href="https://github.com/google/closure-stylesheets">Closure Stylesheets</a>.
@@ -41,47 +41,43 @@ public final class CssOptions extends SourceOptions {
   private static final long serialVersionUID = 8205371531045169081L;
 
   /** Allows @defs and @mixins from one file to propagate to other files. */
-  @Parameter
   public Boolean allowDefPropagation;
   /** Specify a non-standard function to whitelist, like alpha() */
-  @Parameter
-  public String[] allowedNonStandardFunctions;
-  @Parameter
-  public String[] allowedUnrecognizedProperties;
-  @Parameter
+  public void setAllowedNonStandardFunctions(String x) {
+    allowedNonStandardFunctions.add(x);
+  }
+  private final List<String> allowedNonStandardFunctions = Lists.newArrayList();
+  /** Specify a non-standard property to whitelist, like -ms-foo */
+  public void setAllowedUnrecognizedProperties(String x) {
+    allowedUnrecognizedProperties.add(x);
+  }
+  private final List<String> allowedUnrecognizedProperties =
+    Lists.newArrayList();
   public Boolean allowKeyframes;
-  @Parameter
   public Boolean allowMozDocument;
-  @Parameter
   public Boolean allowUndefinedConstants;
-  @Parameter
   public Boolean allowUnrecognizedFunctions;
-  @Parameter
   public Boolean allowUnrecognizedProperties;
-  @Parameter
   public Boolean allowWebkitKeyframes;
   /**
    * JSON map from strings to integers that specify integer constants
    * to be used in for loops.
    */
-  @Parameter
   public String compileConstants;
   /** Copyright notice to prepend to the output. */
-  @Parameter
   public String copyrightNotice;
   /** Add a prefix to all renamed css class names. */
-  @Parameter
   public String cssRenamingPrefix;
-  @Parameter
   public Boolean eliminateDeadStyles;
   /** A list of CSS class names that shoudn't be renamed. */
-  @Parameter
-  public String[] excludedClassesFromRenaming;
+  public void setExcludedClassesFromRenaming(String x) {
+    excludedClassesFromRenaming.add(x);
+  }
+  private final List<String> excludedClassesFromRenaming = Lists.newArrayList();
   /**
    * The fully qualified class name of a map provider of custom
    * GSS functions to resolve.
    */
-  @Parameter
   public Class<? extends GssFunctionMapProvider> gssFunctionMapProvider;
   /**
    * This specifies the display orientation the input files were
@@ -92,16 +88,13 @@ public final class CssOptions extends SourceOptions {
    * the same orientation, as there is no way to specify the
    * orientation on a per-file or per-library basis.
    */
-  @Parameter
   public JobDescription.InputOrientation inputOrientation;
   /** The kind of optimizations to perform. */
-  @Parameter
   public JobDescription.OptimizeStrategy optimize;
   /**
    * Whether to format the output with newlines and indents so that
    * it is more readable.
    */
-  @Parameter
   public JobDescription.OutputFormat outputFormat;
   /**
    * Specify this option to perform automatic right to left conversion
@@ -121,18 +114,17 @@ public final class CssOptions extends SourceOptions {
    * the {orient} can be used in the output path template to put output
    * compiled with different orientations in different output files.
    */
-  @Parameter
+  public void setOutputOrientation(JobDescription.OutputOrientation x) {
+    outputOrientation.add(x);
+  }
   @Asplodable
-  public JobDescription.OutputOrientation[] outputOrientation;
+  private final List<JobDescription.OutputOrientation> outputOrientation
+    = Lists.newArrayList();
   /** How to format the output from the CSS class renaming. */
-  @Parameter
   public OutputRenamingMapFormat outputRenamingMapFormat;
   /** Preserve comments from sources into pretty printed output css. */
-  @Parameter
   public Boolean preserveComments;
-  @Parameter
   public Boolean processDependencies;
-  @Parameter
   public Boolean simplifyCss;
   /**
    * The level to generate source maps. You could choose between
@@ -140,43 +132,44 @@ public final class CssOptions extends SourceOptions {
    * blocks, rules, variables and symbol mappings, and ALL, which
    * outputs mappings for all elements.
    */
-  @Parameter
   public JobDescription.SourceMapDetailLevel sourceMapLevel;
-  @Parameter
   public Boolean suppressDependencyCheck;
-  @Parameter
   public Boolean swapLeftRightInUrl;
-  @Parameter
   public Boolean swapLtrRtlInUrl;
   /**
    * Specifies the name of a true condition.
    * The condition name can be used in @if boolean expressions.  The
    * conditions are ignored if GSS extensions are not enabled.
    */
-  @Parameter
-  public String[] trueConditionNames;
-  @Parameter
+  public void setTrueConditionNames(String x) {
+    trueConditionNames.add(x);
+  }
+  private final List<String> trueConditionNames = Lists.newArrayList();
   public Boolean useInternalBidiFlipper;
   /**
    * Creates browser-vendor-specific output by stripping all
    * proprietary browser-vendor properties from the output except for
    * those associated with this vendor.
    */
-  @Parameter
+  public void setVendor(Vendor x) {
+    vendor.add(x);
+  }
   @Asplodable
-  public Vendor[] vendor;
+  private final List<Vendor> vendor = Lists.newArrayList();
   /**
    * Allows extra processing of the AST.
    */
-  @Parameter
-  public Class<? extends CustomPass>[] customPasses;
+  public void setCustomPass(Class<? extends CustomPass> customPass) {
+    customPasses.add(customPass.asSubclass(CustomPass.class));
+  }
+  private final List<Class<? extends CustomPass>> customPasses
+    = Lists.newArrayList();
 
   /**
    * The output CSS filename. If empty, standard output will be
    * used. The output is always UTF-8 encoded.
    * Defaults to target/css/{reldir}/compiled{-basename}{-orient}.css
    */
-  @Parameter
   public String output;
   /**
    * The source map output.
@@ -184,7 +177,6 @@ public final class CssOptions extends SourceOptions {
    * source code location.
    * Defaults to target/css/{reldir}/source-map{-basename}{-orient}.json
    */
-  @Parameter
   public String sourceMapFile;
 
   JobDescription getJobDescription(
@@ -282,8 +274,8 @@ public final class CssOptions extends SourceOptions {
     if (wasSet(outputFormat)) {
       jobDescriptionBuilder.setOutputFormat(outputFormat);
     }
-    if (outputOrientation != null && outputOrientation.length == 1) {
-      jobDescriptionBuilder.setOutputOrientation(outputOrientation[0]);
+    if (wasSet(outputOrientation)) {
+      jobDescriptionBuilder.setOutputOrientation(outputOrientation.get(0));
     }
     jobDescriptionBuilder.setOutputRenamingMapFormat(
         OutputRenamingMapFormat.JSON);
@@ -315,8 +307,8 @@ public final class CssOptions extends SourceOptions {
     if (wasSet(useInternalBidiFlipper)) {
       jobDescriptionBuilder.setUseInternalBidiFlipper(useInternalBidiFlipper);
     }
-    if (vendor != null && vendor.length == 1) {
-      jobDescriptionBuilder.setVendor(vendor[0]);
+    if (wasSet(vendor)) {
+      jobDescriptionBuilder.setVendor(vendor.get(0));
     }
     ImmutableList.Builder<CustomPass> customPassesList
         = ImmutableList.builder();
@@ -387,12 +379,14 @@ public final class CssOptions extends SourceOptions {
       String basename = FilenameUtils.removeExtension(
           source.relativePath.getName());
       String reldir = source.relativePath.getParent();
+      @SuppressWarnings("synthetic-access")
       String orientation =
-          opts.outputOrientation != null && opts.outputOrientation.length == 1
-          ? Ascii.toLowerCase(opts.outputOrientation[0].name()) : null;
+          opts.outputOrientation.size() == 1
+          ? Ascii.toLowerCase(opts.outputOrientation.get(0).name()) : null;
+          @SuppressWarnings("synthetic-access")
       String vendor =
-          opts.vendor != null && opts.vendor.length == 1
-          ? Ascii.toLowerCase(opts.vendor[0].name()) : null;
+          opts.vendor.size() == 1
+          ? Ascii.toLowerCase(opts.vendor.get(0).name()) : null;
       PathTemplateSubstitutor ts;
       {
         ImmutableMap.Builder<String, String> b = ImmutableMap.builder();
@@ -438,8 +432,8 @@ public final class CssOptions extends SourceOptions {
     return parameterValue != null;
   }
 
-  private static boolean wasSet(String[] parameterValues) {
-    return parameterValues != null && parameterValues.length != 0;
+  private static boolean wasSet(List<?> parameterValues) {
+    return !parameterValues.isEmpty();
   }
 
   private static boolean wasSet(Boolean parameterValue) {

@@ -47,8 +47,8 @@ public final class JsPlanner {
    * Adds steps to a common planner to find JS sources, extract a set of module
    * definitions, and invoke the closure compiler to build them.
    */
-  public void plan(ImmutableList<JsOptions> unpreparedJs)
-  throws IOException, MojoExecutionException {
+  public void plan(Iterable<? extends JsOptions> unpreparedJs)
+      throws IOException, MojoExecutionException {
     Preconditions.checkNotNull(defaultJsSource);
     Preconditions.checkNotNull(defaultJsTestSource);
 

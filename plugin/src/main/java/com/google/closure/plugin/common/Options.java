@@ -1,7 +1,15 @@
 package com.google.closure.plugin.common;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+
 import org.apache.maven.plugins.annotations.Parameter;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.plan.KeyedSerializable;
@@ -80,6 +88,55 @@ public abstract class Options implements Cloneable, KeyedSerializable {
    */
   @Override
   public Options clone() throws CloneNotSupportedException {
-    return (Options) super.clone();
+    try {
+      Class<? extends Options> cl = getClass();
+      Constructor<? extends Options> ctor = cl.getConstructor();
+      Options clone = cl.cast(ctor.newInstance());
+      for (Field f : cl.getDeclaredFields()) {
+        if (Modifier.isStatic(f.getModifiers())) { continue; }
+        Type ft = f.getType();
+        Class<?> ct = (Class<?>) (
+            (ft instanceof ParameterizedType)
+            ? ((ParameterizedType) ft).getRawType()
+            : ft);
+        if (Collection.class.isAssignableFrom(ct)) {
+          copyAllInto(f, clone, this);
+        } else {
+          f.set(clone, f.get(this));
+        }
+      }
+      return clone;
+    } catch (ReflectiveOperationException ex) {
+      throw (CloneNotSupportedException)
+          new CloneNotSupportedException().initCause(ex);
+    }
+  }
+
+  private static <T> void copyAllInto(
+      final Field f, Object destObj, Object srcObj) {
+    Preconditions.checkState(
+        destObj.getClass() == srcObj.getClass()
+        && destObj.getClass().getTypeParameters().length == 0);
+    Function<Object, Collection<T>> getFieldValue =
+        new Function<Object, Collection<T>>() {
+          // This is actually type-safe because the same field is used for both
+          // and the objects have exactly the same unparameterized concrete
+          // class.
+          @SuppressWarnings("unchecked")
+          @Override
+          public Collection<T> apply(Object o) {
+            try {
+              f.setAccessible(true);
+              return (Collection<T>) f.get(o);
+            } catch (IllegalAccessException ex) {
+              throw (AssertionError) new AssertionError("setAccessible")
+                  .initCause(ex);
+            }
+          }
+        };
+    Collection<T> dest = getFieldValue.apply(destObj);
+    Collection<T> src = getFieldValue.apply(srcObj);
+    dest.clear();
+    dest.addAll(src);
   }
 }

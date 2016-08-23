@@ -1,9 +1,10 @@
 package com.google.closure.plugin.common;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -240,9 +241,13 @@ public final class OptionsUtils {
     ImmutableList<Field> asplodableFields;
     {
       ImmutableList.Builder<Field> b = ImmutableList.builder();
-      for (Field f : cl.getFields()) {
+      for (Field f : cl.getDeclaredFields()) {
         if (f.isAnnotationPresent(Asplodable.class)) {
-          Preconditions.checkState(f.getType().isArray(), f.getName());
+          Type ft = f.getType();
+          if (ft instanceof ParameterizedType) {
+            ft = ((ParameterizedType) ft).getRawType();
+          }
+          Preconditions.checkState(List.class.equals(ft), f.getName());
           b.add(f);
           f.setAccessible(true);
         }
@@ -256,40 +261,30 @@ public final class OptionsUtils {
     } else {
       int nAxes = asplodableFields.size();
       ImmutableList.Builder<OPTIONS> asploded = ImmutableList.builder();
-      Object[] asplodedFieldArrays = new Object[nAxes];
+      List<?>[] asplodedFieldArrays = new List<?>[nAxes];
       // Asplode each individually.
       for (OPTIONS o : optionSetList) {
         ImmutableList.Builder<Set<Object>> elementSetsBuilder =
             ImmutableList.builder();
         for (int i = 0; i < nAxes; ++i) {
           Field f = asplodableFields.get(i);
-          Object arrayOfValues;
+          List<?> listOfValues;
           try {
-            arrayOfValues = f.get(o);
+            listOfValues = (List<?>) f.get(o);
           } catch (IllegalAccessException ex) {
             throw (AssertionError)
                 new AssertionError("setAccessible").initCause(ex);
           }
-          asplodedFieldArrays[i] = arrayOfValues;
+          asplodedFieldArrays[i] = ImmutableList.copyOf(listOfValues);
 
           ImmutableSet<Object> elementSet;
-          if (arrayOfValues == null) {
+          if (listOfValues == null) {
             elementSet = DEFAULT_VALUE_SET;
           } else {
-            int nValues = Array.getLength(arrayOfValues);
-            if (nValues == 0) {
+            if (listOfValues.isEmpty()) {
               elementSet = DEFAULT_VALUE_SET;
             } else {
-              ImmutableSet.Builder<Object> elementSetBuilder =
-                  ImmutableSet.builder();
-              for (int j = 0; j < nValues; ++j) {
-                // NULLs should not be inserted by the plexus configurator, and
-                // should not be assigned defaults.
-                Object value = Preconditions.checkNotNull(
-                    Array.get(arrayOfValues, j));
-                elementSetBuilder.add(value);
-              }
-              elementSet = elementSetBuilder.build();
+              elementSet = ImmutableSet.copyOf(listOfValues);
             }
           }
           elementSetsBuilder.add(elementSet);
@@ -307,16 +302,21 @@ public final class OptionsUtils {
           for (int j = 0; j < nAxes; ++j) {
             Field f = asplodableFields.get(j);
             Object value = asplodedFieldValues.get(j);
-            if (value != DEFAULT_VALUE_PLACEHOLDER) {
-              Object singletonArray = Array.newInstance(
-                  f.getType().getComponentType(), 1);
-              Array.set(singletonArray, 0, value);
-              try {
-                f.set(clone, singletonArray);
-              } catch (IllegalAccessException ex) {
-                throw (AssertionError)
-                    new AssertionError("setAccessible").initCause(ex);
+            try {
+              Collection<?> cloneCollection = (Collection<?>) f.get(clone);
+              // Check that the collection was actually copied by the clone
+              // method.
+              Preconditions.checkState(cloneCollection != f.get(o));
+              cloneCollection.clear();
+              if (value != DEFAULT_VALUE_PLACEHOLDER) {
+                // This is safe since the same Field was used to extract the
+                // values from the original, and the objects passed have the
+                // same unparameterized concrete type.
+                addOneValueUNSAFE(cloneCollection, value);
               }
+            } catch (IllegalAccessException ex) {
+              throw (AssertionError)
+              new AssertionError("setAccessible").initCause(ex);
             }
           }
           asploded.add(clone);
@@ -325,6 +325,11 @@ public final class OptionsUtils {
       asplodedOptions = asploded.build();
     }
     return asplodedOptions;
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private static void addOneValueUNSAFE(Collection cloneCollection, Object v) {
+    cloneCollection.add(v);
   }
 
   static void disambiguateIds(ImmutableList<? extends Options> optionSetList) {

@@ -68,7 +68,8 @@ public final class JsOptionsTest extends TestCase {
 
   public static void testListToArgv() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.define = new String[] { "X=0", "Y=1" };
+    opts.setDefine("X=0");
+    opts.setDefine("Y=1");
 
     assertEquals(
         ImmutableList.of("--define", "X=0", "--define", "Y=1"),
@@ -114,7 +115,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testModuleWrapper() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.moduleWrapper = sampleValueFor("moduleWrapper", String[].class);
+    for (String x : sampleValueFor("moduleWrapper", String[].class)) {
+      opts.setModuleWrapper(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -143,8 +146,10 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testSourceMapLocationMapping() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.sourceMapLocationMapping = sampleValueFor(
-        "sourceMapLocationMapping", String[].class);
+    for (String x : sampleValueFor(
+        "sourceMapLocationMapping", String[].class)) {
+      opts.setSourceMapLocationMapping(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -153,7 +158,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testSourceMapInputs() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.sourceMapInputs = sampleValueFor("sourceMapInputs", String[].class);
+    for (String x : sampleValueFor("sourceMapInputs", String[].class)) {
+      opts.setSourceMapInputs(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -162,7 +169,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testJscompError() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.jscompError = sampleValueFor("jscompError", String[].class);
+    for (String x : sampleValueFor("jscompError", String[].class)) {
+      opts.setJscompError(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -171,7 +180,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testJscompWarning() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.jscompWarning = sampleValueFor("jscompWarning", String[].class);
+    for (String x : sampleValueFor("jscompWarning", String[].class)) {
+      opts.setJscompWarning(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -180,7 +191,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testJscompOff() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.jscompOff = sampleValueFor("jscompOff", String[].class);
+    for (String x : sampleValueFor("jscompOff", String[].class)) {
+      opts.setJscompOff(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -189,7 +202,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testDefine() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.define = sampleValueFor("define", String[].class);
+    for (String x : sampleValueFor("define", String[].class)) {
+      opts.setDefine(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -284,7 +299,10 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testFormatting() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.formatting = sampleValueFor("formatting", FormattingOption[].class);
+    for (FormattingOption x :
+         sampleValueFor("formatting", FormattingOption[].class)) {
+      opts.setFormatting(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -303,7 +321,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testModuleRoot() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.moduleRoot = sampleValueFor("moduleRoot", String[].class);
+    for (String x : sampleValueFor("moduleRoot", String[].class)) {
+      opts.setModuleRoot(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -463,7 +483,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testHideWarningsFor() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.hideWarningsFor = sampleValueFor("hideWarningsFor", String[].class);
+    for (String x : sampleValueFor("hideWarningsFor", String[].class)) {
+      opts.setHideWarningsFor(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -472,8 +494,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testExtraAnnotationName() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.extraAnnotationName = sampleValueFor(
-        "extraAnnotationName", String[].class);
+    for (String x : sampleValueFor("extraAnnotationName", String[].class)) {
+      opts.setExtraAnnotationName(x);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -512,8 +535,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testConformanceConfigs() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.conformanceConfigs = sampleValueFor(
-        "conformanceConfigs", String[].class);
+    for (String cc : sampleValueFor("conformanceConfigs", String[].class)) {
+      opts.setConformanceConfigs(cc);
+    }
 
     sanityCheckArgv(opts);
   }
@@ -571,7 +595,9 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testEntryPoints() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.entryPoints = sampleValueFor("entryPoints", String[].class);
+    for (String x : sampleValueFor("entryPoints", String[].class)) {
+      opts.setEntryPoints(x);
+    }
 
     sanityCheckArgv(opts);
   }

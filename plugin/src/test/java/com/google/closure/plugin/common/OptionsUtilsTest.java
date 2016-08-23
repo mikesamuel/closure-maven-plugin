@@ -1,12 +1,13 @@
 package com.google.closure.plugin.common;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.Options;
 import com.google.closure.plugin.common.OptionsUtils;
 
@@ -20,26 +21,50 @@ public final class OptionsUtilsTest extends TestCase {
     private static final long serialVersionUID = 1664053510188753781L;
 
     @Asplodable
-    public E[] e;
+    private final List<E> e = Lists.newArrayList();
+
+    public void setE(E x) {
+      e.add(x);
+    }
 
     public String s;
 
     @Asplodable
-    public F[] f;
+    private final List<F> f = Lists.newArrayList();
 
-    public G[] g;
+    public void setF(F x) {
+      f.add(x);
+    }
 
-    TestOptions() {
+    private final List<G> g = Lists.newArrayList();
+
+    public void setG(G x) {
+      g.add(x);
+    }
+
+    public TestOptions() {
       // null id
     }
 
-    TestOptions(String id) {
+    public TestOptions(String id) {
       this.id = id;
     }
 
     @Override
     protected void createLazyDefaults() {
       s = "default";
+    }
+
+    public ImmutableList<E> getE() {
+      return ImmutableList.copyOf(e);
+    }
+
+    public ImmutableList<F> getF() {
+      return ImmutableList.copyOf(f);
+    }
+
+    public ImmutableList<G> getG() {
+      return ImmutableList.copyOf(g);
     }
   }
 
@@ -89,15 +114,20 @@ public final class OptionsUtilsTest extends TestCase {
   @Test
   public static void testPrepare() throws Exception {
     TestOptions t0 = new TestOptions();
-    t0.e = new E[] { E.X, E.Y };
-    t0.f = new F[] { F.A, F.B };
+    t0.setE(E.X);
+    t0.setE(E.Y);
+    t0.setF(F.A);
+    t0.setF(F.B);
 
     TestOptions t1 = new TestOptions();
-    t1.e = new E[] { E.Y, E.Z };
-    t1.g = new G[] { G.M, G.N };
+    t1.setE(E.Y);
+    t1.setE(E.Z);
+    t1.setG(G.M);
+    t1.setG(G.N);
 
     TestOptions t2 = new TestOptions();
-    t2.g = new G[] { G.M, G.N };
+    t2.setG(G.M);
+    t2.setG(G.N);
 
     ImmutableList<TestOptions> prepared = OptionsUtils.prepare(
         new Supplier<TestOptions>() {
@@ -111,14 +141,14 @@ public final class OptionsUtilsTest extends TestCase {
     StringBuilder sb = new StringBuilder();
     for (TestOptions t : prepared) {
       sb.append(t.getId());
-      if (t.e != null) {
-        sb.append(" e=").append(Arrays.toString(t.e));
+      if (!t.getE().isEmpty()) {
+        sb.append(" e=").append(t.getE());
       }
-      if (t.f != null) {
-        sb.append(" f=").append(Arrays.toString(t.f));
+      if (!t.getF().isEmpty()) {
+        sb.append(" f=").append(t.getF());
       }
-      if (t.g != null) {
-        sb.append(" g=").append(Arrays.toString(t.g));
+      if (!t.getG().isEmpty()) {
+        sb.append(" g=").append(t.getG());
       }
       sb.append('\n');
     }

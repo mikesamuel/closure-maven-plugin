@@ -57,7 +57,7 @@ final class SoyToJs extends Step {
 
     SoyOptions options = optionsIng.getValue();
 
-    ImmutableList<Js> allJsSrc = ImmutableList.copyOf(options.js);
+    ImmutableList<Js> allJsSrc = ImmutableList.copyOf(options.getJs());
 
     ImmutableList<Source> sources;
     {

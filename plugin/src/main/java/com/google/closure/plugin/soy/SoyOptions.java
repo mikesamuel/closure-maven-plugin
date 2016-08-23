@@ -1,5 +1,6 @@
 package com.google.closure.plugin.soy;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.maven.plugin.logging.Log;
@@ -7,6 +8,7 @@ import org.apache.maven.plugin.logging.Log;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.Options;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions;
@@ -29,8 +31,16 @@ public final class SoyOptions extends SourceOptions {
    */
   public Boolean strictAutoescapingRequired;
 
+  /** Add JS backend-specific options to the soy compiler. */
+  public void setJs(Js js) {
+    this.js.add(js);
+  }
+  private final List<Js> js = Lists.newArrayList();
+
   /** JS backend-specific options to the soy compiler. */
-  public Js[] js;
+  public ImmutableList<Js> getJs() {
+    return ImmutableList.copyOf(js);
+  }
 
 
   @Override
@@ -69,25 +79,22 @@ public final class SoyOptions extends SourceOptions {
 
   @Override
   protected void createLazyDefaults() {
-    if (this.js == null || js.length == 0) {
-      this.js = new Js[] { new Js() };
+    if (this.js.isEmpty()) {
+      this.js.add(new Js());
     }
   }
 
   @Override
   protected ImmutableList<Js> getSubOptions() {
-    return this.js != null
-        ? ImmutableList.copyOf(this.js)
-        : ImmutableList.<Js>of();
+    return getJs();
   }
 
   @Override
   protected void setSubOptions(ImmutableList<? extends Options> newOptions) {
-    ImmutableList.Builder<Js> newJs = ImmutableList.builder();
+    this.js.clear();
     for (Options o : newOptions) {
-      newJs.add((Js) o);
+      this.js.add((Js) o);
     }
-    this.js = newJs.build().toArray(new Js[newOptions.size()]);
   }
 
 

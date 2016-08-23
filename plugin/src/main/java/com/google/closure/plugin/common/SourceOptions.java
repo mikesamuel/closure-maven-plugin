@@ -5,10 +5,12 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * Options that specify how to find sources.
@@ -26,16 +28,37 @@ public abstract class SourceOptions extends Options {
   public SourceRootBuilder[] testSource;
 
   /**
+   * Add a path patterns to include specified as ANT-directory-scanner-style
+   * patterns like <code>**<nobr></nobr>/*.ext</code>.
+   */
+  public void setInclude(String filePattern) {
+    this.include.add(filePattern);
+  }
+  private final List<String> include = Lists.newArrayList();
+
+  /**
    * Path patterns to include specified as ANT-directory-scanner-style patterns
    * like <code>**<nobr></nobr>/*.ext</code>.
    */
-  public String[] include;
+  public ImmutableList<String> getIncludes() {
+    return ImmutableList.copyOf(include);
+  }
 
+  /**
+   * Add a path patterns to exclude specified as ANT-directory-scanner-style
+   * patterns like <code>**<nobr></nobr>/*.ext</code>.
+   */
+  public void setExclude(String filePattern) {
+    this.exclude.add(filePattern);
+  }
+  private final List<String> exclude = Lists.newArrayList();
   /**
    * Path patterns to exclude specified as ANT-directory-scanner-style patterns
    * like <code>**<nobr></nobr>/*.ext</code>.
    */
-  public String[] exclude;
+  public ImmutableList<String> getExcludes() {
+    return ImmutableList.copyOf(exclude);
+  }
 
 
   /** Snapshots. */
@@ -73,18 +96,16 @@ public abstract class SourceOptions extends Options {
     }
 
     ImmutableList.Builder<String> allIncludes = ImmutableList.builder();
-    if (include != null && include.length != 0) {
-      allIncludes.add(include);
+    if (!include.isEmpty()) {
+      allIncludes.addAll(include);
     } else {
       for (String ext : sourceExtensions) {
         allIncludes.add("**/*." + ext);
       }
     }
 
-    ImmutableList<String> allExcludes =  // ANT defaults added later.
-        exclude != null
-        ? ImmutableList.copyOf(exclude)
-            : ImmutableList.<String>of();
+    // ANT defaults added later.
+    ImmutableList<String> allExcludes = getExcludes();
 
     return new DirectoryScannerSpec(
         allRoots.build(), allIncludes.build(), allExcludes);

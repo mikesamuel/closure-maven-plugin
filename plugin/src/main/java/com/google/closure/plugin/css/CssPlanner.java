@@ -89,9 +89,8 @@ public final class CssPlanner {
    }
 
 
-  private
-  ImmutableList<HashedInMemory<CssOptions>> optionsIngredients(
-      CssOptions[] options)
+  private ImmutableList<HashedInMemory<CssOptions>> optionsIngredients(
+      Iterable<? extends CssOptions> options)
   throws MojoExecutionException {
     // Multiple the options out so that there is at most one output
     // orientation and vendor per option.
@@ -102,9 +101,7 @@ public final class CssPlanner {
             return new CssOptions();
           }
         },
-        options != null
-        ? ImmutableList.copyOf(options)
-        : ImmutableList.<CssOptions>of());
+        options);
     ImmutableList.Builder<HashedInMemory<CssOptions>> b =
         ImmutableList.builder();
     for (CssOptions o : cssOptionSets) {
@@ -113,11 +110,10 @@ public final class CssPlanner {
     return b.build();
   }
 
-
   /**
    * Adds steps related to CSS compilation to the master plan.
    */
-  public void plan(CssOptions[] css)
+  public void plan(Iterable<? extends CssOptions> css)
   throws IOException, MojoExecutionException {
     Preconditions.checkNotNull(cssRenameMap);
     Preconditions.checkNotNull(defaultCssSource);

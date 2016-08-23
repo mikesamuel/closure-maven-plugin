@@ -3,18 +3,18 @@ package com.google.closure.plugin.js;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.List;
 
 import org.apache.maven.plugin.logging.Log;
 import org.kohsuke.args4j.Option;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.SourceOptions;
 import com.google.javascript.jscomp.CommandLineRunner;
-import com.google.javascript.jscomp.CompilationLevel;
 import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.SourceMap;
-import com.google.javascript.jscomp.WarningLevel;
 
 /**
  * A plexus-configurable set of options compatible with
@@ -24,63 +24,163 @@ public final class JsOptions extends SourceOptions {
 
   private static final long serialVersionUID = -5477807829203040714L;
 
-  /** Check source validity but do not enforce Closure style rules and conventions */
+  /**
+   * Check source validity but do not enforce Closure style rules and
+   * conventions
+   */
   public Boolean thirdParty;
-  /** Controls how detailed the compilation summary is. Values: 0 (never print summary), 1 (print summary only if there are errors or warnings), 2 (print summary if the 'checkTypes' diagnostic  group is enabled, see --jscomp_warning), 3 (always print summary). The default level is 1 */
+  /** Controls how detailed the compilation summary is. Values: 0
+   * (never print summary), 1 (print summary only if there are errors
+   * or warnings), 2 (print summary if the 'checkTypes' diagnostic
+   * group is enabled, see --jscomp_warning), 3 (always print
+   * summary). The default level is 1 */
   public Integer summaryDetailLevel;
-  /** Interpolate output into this string at the place denoted by the marker token %output%. Use marker token %output|jsstring% to do js string escaping on the output. */
+  /**
+   * Interpolate output into this string at the place denoted by the
+   * marker token %output%. Use marker token %output|jsstring% to do
+   * js string escaping on the output.
+   */
   public String outputWrapper;
-  /** Loads the specified file and passes the file contents to the --output_wrapper flag, replacing the value if it exists. This is useful if you want special characters like newline in the wrapper. */
+  /**
+   * Loads the specified file and passes the file contents to the
+   * --output_wrapper flag, replacing the value if it exists. This is
+   * useful if you want special characters like newline in the
+   * wrapper.
+   */
   public String outputWrapperFile;
-  /** An output wrapper for a JavaScript module (optional). The format is {@code <name>:<wrapper>.} The module name must correspond with a module specified using --module. The wrapper must contain %s as the code placeholder. The %basename% placeholder can also be used to substitute the base name of the module output file. */
-  public String[] moduleWrapper;
-  /** Prefix for filenames of compiled JS modules. {@code <module-name>.js} will be appended to this prefix. Directories will be created as needed. Use with --module */
+  /**
+   * An output wrapper for a JavaScript module (optional). The format
+   * is {@code <name>:<wrapper>.} The module name must correspond with
+   * a module specified using --module. The wrapper must contain %s as
+   * the code placeholder. The %basename% placeholder can also be used
+   * to substitute the base name of the module output file.
+   */
+  public void setModuleWrapper(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.moduleWrapper.add(x);
+  }
+  private final List<String> moduleWrapper = Lists.newArrayList();
+  /**
+   * Prefix for filenames of compiled JS modules.
+   * {@code <module-name>.js} will be appended to this prefix.
+   * Directories will be created as needed. Use with --module
+   */
   public String moduleOutputPathPrefix;
-  /** The source map format to produce. Options are V3 and DEFAULT, which are equivalent. */
+  /**
+   * The source map format to produce. Options are V3 and DEFAULT,
+   * which are equivalent.
+   */
   public SourceMap.Format sourceMapFormat;
-  /** Source map location mapping separated by a '|' (i.e. filesystem-path|webserver-path) */
-  public String[] sourceMapLocationMapping;
-  /** Source map locations for input files, separated by a '|', (i.e. input-file-path|input-source-map) */
-  public String[] sourceMapInputs;
-  /** Make the named class of warnings an error. Must be one of the error group items. '*' adds all supported. */
-  public String[] jscompError;
-  /** Make the named class of warnings a normal warning. Must be one of the error group items. '*' adds all supported. */
-  public String[] jscompWarning;
-  /** Turn off the named class of warnings. Must be one of the error group items. '*' adds all supported. */
-  public String[] jscompOff;
-  /** Override the value of a variable annotated @define. The format is {@code <name>[=<val>],} where {@code <name>} is the name of a @define variable and {@code <val>} is a boolean, number, or a single-quoted string that contains no single quotes. If [={@code <val>]} is omitted, the variable is marked true */
-  public String[] define;
-  /** Input and output charset for all files. By default, we accept UTF-8 as input and output US_ASCII */
+  /**
+   * Source map location mapping separated by a '|'
+   * (i.e. filesystem-path|webserver-path)
+   */
+  public void setSourceMapLocationMapping(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.sourceMapLocationMapping.add(x);
+  }
+  private final List<String> sourceMapLocationMapping = Lists.newArrayList();
+  /** Source map locations for input files, separated by a '|',
+   * (i.e. input-file-path|input-source-map) */
+  public void setSourceMapInputs(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.sourceMapInputs.add(x);
+  }
+  private final List<String> sourceMapInputs = Lists.newArrayList();
+  /** Make the named class of warnings an error. Must be one of the
+   * error group items. '*' adds all supported. */
+  public void setJscompError(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.jscompError.add(x);
+  }
+  private final List<String> jscompError = Lists.newArrayList();
+  /** Make the named class of warnings a normal warning. Must be one
+   * of the error group items. '*' adds all supported. */
+  public void setJscompWarning(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.jscompWarning.add(x);
+  }
+  private final List<String> jscompWarning = Lists.newArrayList();
+  /** Turn off the named class of warnings. Must be one of the error
+   * group items. '*' adds all supported. */
+  public void setJscompOff(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.jscompOff.add(x);
+  }
+  private final List<String> jscompOff = Lists.newArrayList();
+  /**
+   * Override the value of a variable annotated @define. The format is
+   * {@code <name>[=<val>],} where {@code <name>} is the name of
+   * a @define variable and {@code <val>} is a boolean, number, or a
+   * single-quoted string that contains no single quotes.
+   * If [={@code <val>]} is omitted, the variable is marked true
+   */
+  public void setDefine(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.define.add(x);
+  }
+  private final List<String> define = Lists.newArrayList();
+  /**
+   * Input and output charset for all files. By default, we accept
+   * UTF-8 as input and output US_ASCII
+   */
   public String charset;
-  /** Specifies the compilation level to use. Options: WHITESPACE_ONLY, SIMPLE, ADVANCED */
-  public CompilationLevel compilationLevel;
+  /**
+   * Specifies the compilation level to use.
+   * Options: WHITESPACE_ONLY, SIMPLE_OPTIMIZATIONS, ADVANCED_OPTIMIZATIONS
+   */
+  public com.google.javascript.jscomp.CompilationLevel compilationLevel;
   /** Don't generate output. Run checks, but no optimization passes. */
   public Boolean checksOnly;
-  /** Enable or disable the optimizations based on available type information. Inaccurate type annotations may result in incorrect results. */
+  /** Enable or disable the optimizations based on available type
+   * information. Inaccurate type annotations may result in incorrect
+   * results. */
   public Boolean useTypesForOptimization;
-  /** Enable additional optimizations based on the assumption that the output will be wrapped with a function wrapper.  This flag is used to indicate that "global" declarations will not actually be global but instead isolated to the compilation unit. This enables additional optimizations. */
+  /**
+   * Enable additional optimizations based on the assumption that the
+   * output will be wrapped with a function wrapper.  This flag is
+   * used to indicate that "global" declarations will not actually be
+   * global but instead isolated to the compilation unit. This enables
+   * additional optimizations.
+   */
   public Boolean assumeFunctionWrapper;
   /** Specifies the warning level to use. Options: QUIET, DEFAULT, VERBOSE */
-  public WarningLevel warningLevel;
+  public com.google.javascript.jscomp.WarningLevel warningLevel;
   /** Enable debugging options */
   public Boolean debug;
   /** Generates export code for those marked with @export */
   public Boolean generateExports;
   /** Generates export code for local properties marked with @export */
   public Boolean exportLocalPropertyDefinitions;
-  /** Specifies which formatting options, if any, should be applied to the output JS. Options: PRETTY_PRINT, PRINT_INPUT_DELIMITER, SINGLE_QUOTES */
-  public FormattingOption[] formatting;
+  /**
+   * Specifies which formatting options, if any, should be applied to
+   * the output JS.
+   * Options: PRETTY_PRINT, PRINT_INPUT_DELIMITER, SINGLE_QUOTES
+   */
+  public void setFormatting(FormattingOption x) {
+    // Plexus configurator compatible setter that adds.
+    this.formatting.add(x);
+  }
+  private final List<FormattingOption> formatting = Lists.newArrayList();
   /** Process CommonJS modules to a concatenable form. */
   public Boolean processCommonJsModules;
   /** Path prefixes to be removed from ES6 & CommonJS modules. */
-  public String[] moduleRoot;
+  public void setModuleRoot(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.moduleRoot.add(x);
+  }
+  private final List<String> moduleRoot = Lists.newArrayList();
   /** Transform AMD to CommonJS modules. */
   public Boolean transformAmdModules;
-  /** Processes built-ins from the Closure library, such as goog.require(), goog.provide(), and goog.exportSymbol(). True by default. */
+  /** Processes built-ins from the Closure library, such as
+   * goog.require(), goog.provide(), and goog.exportSymbol(). True by
+   * default. */
   public Boolean processClosurePrimitives;
-  /** Processes built-ins from the Jquery library, such as jQuery.fn and jQuery.extend() */
+  /** Processes built-ins from the Jquery library, such as jQuery.fn
+   * and jQuery.extend() */
   public Boolean processJqueryPrimitives;
-  /** Generate $inject properties for AngularJS for functions annotated with @ngInject */
+  /** Generate $inject properties for AngularJS for functions
+   * annotated with @ngInject */
   public Boolean angularPass;
   /** Rewrite Polymer classes to be compiler-friendly. */
   public Boolean polymerPass;
@@ -88,38 +188,73 @@ public final class JsOptions extends SourceOptions {
   public Boolean dartPass;
   /** Rewrite J2CL output to be compiler-friendly. */
   public Boolean j2clPass;
-  /** Prints out a list of all the files in the compilation. If --dependency_mode=STRICT or LOOSE is specified, this will not include files that got dropped because they were not required. The %outname% placeholder expands to the JS output file. If you're using modularization, using %outname% will create a manifest for each module. */
+  /** Prints out a list of all the files in the compilation. If
+   * --dependency_mode=STRICT or LOOSE is specified, this will not
+   * include files that got dropped because they were not
+   * required. The %outname% placeholder expands to the JS output
+   * file. If you're using modularization, using %outname% will create
+   * a manifest for each module. */
   public String outputManifest;
   /** Prints out a JSON file of dependencies between modules. */
   public String outputModuleDependencies;
-  /** Sets what language spec that input sources conform. Options: ECMASCRIPT3, ECMASCRIPT5, ECMASCRIPT5_STRICT, ECMASCRIPT6 (default), ECMASCRIPT6_STRICT, ECMASCRIPT6_TYPED (experimental) */
+  /** Sets what language spec that input sources conform. Options:
+   * ECMASCRIPT3, ECMASCRIPT5, ECMASCRIPT5_STRICT, ECMASCRIPT6
+   * (default), ECMASCRIPT6_STRICT, ECMASCRIPT6_TYPED
+   * (experimental) */
   public CompilerOptions.LanguageMode languageIn;
-  /** Sets what language spec the output should conform to. Options: ECMASCRIPT3 (default), ECMASCRIPT5, ECMASCRIPT5_STRICT, ECMASCRIPT6_TYPED (experimental) */
+  /** Sets what language spec the output should conform to. Options:
+   * ECMASCRIPT3 (default), ECMASCRIPT5, ECMASCRIPT5_STRICT,
+   * ECMASCRIPT6_TYPED (experimental) */
   public CompilerOptions.LanguageMode languageOut;
   /** Prints the compiler version to stdout and exit. */
   public Boolean version;
   /** Source of translated messages. Currently only supports XTB. */
   public String translationsFile;
-  /** Scopes all translations to the specified project.When specified, we will use different message ids so that messages in different projects can have different translations. */
+  /** Scopes all translations to the specified project.When specified,
+   * we will use different message ids so that messages in different
+   * projects can have different translations. */
   public String translationsProject;
   /** A file containing additional command-line options. */
   public String flagFile;
   /** A file containing warnings to suppress. Each line should be of the form
 {@code <file-name>:<line-number>?}  {@code <warning-description>} */
   public String warningsWhitelistFile;
-  /** If specified, files whose path contains this string will have their warnings hidden. You may specify multiple. */
-  public String[] hideWarningsFor;
+  /** If specified, files whose path contains this string will have
+   * their warnings hidden. You may specify multiple. */
+  public void setHideWarningsFor(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.hideWarningsFor.add(x);
+  }
+  private final List<String> hideWarningsFor = Lists.newArrayList();
   /** A whitelist of tag names in JSDoc. You may specify multiple */
-  public String[] extraAnnotationName;
-  /** Shows the duration of each compiler pass and the impact to the compiled output size. Options: ALL, RAW_SIZE, TIMING_ONLY, OFF */
-  public CompilerOptions.TracerMode tracerMode;
+  public void setExtraAnnotationName(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.extraAnnotationName.add(x);
+  }
+  private final List<String> extraAnnotationName = Lists.newArrayList();
+  /**
+   * Shows the duration of each compiler pass and the impact to the
+   * compiled output size.
+   * Options: ALL, RAW_SIZE, TIMING_ONLY, OFF
+   */
+  public com.google.javascript.jscomp.CompilerOptions.TracerMode tracerMode;
   /** Checks for type errors using the new type inference algorithm. */
   public Boolean useNewTypeInference;
-  /** Specifies the name of an object that will be used to store all non-extern globals */
+  /**
+   * Specifies the name of an object that will be used to store all
+   * non-extern globals
+   */
   public String renamePrefixNamespace;
   /** A list of JS Conformance configurations in text protocol buffer format. */
-  public String[] conformanceConfigs;
-  /** Determines the set of builtin externs to load. Options: BROWSER, CUSTOM. Defaults to BROWSER. */
+  public void setConformanceConfigs(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.conformanceConfigs.add(x);
+  }
+  private final List<String> conformanceConfigs = Lists.newArrayList();
+  /**
+   * Determines the set of builtin externs to load. Options: BROWSER,
+   * CUSTOM. Defaults to BROWSER.
+   */
   public CompilerOptions.Environment environment;
   /** A file containing an instrumentation template. */
   public String instrumentationFile;
@@ -127,11 +262,36 @@ public final class JsOptions extends SourceOptions {
   public Boolean preserveTypeAnnotations;
   /** Allow injecting runtime libraries. */
   public Boolean injectLibraries;
-  /** Specifies how the compiler should determine the set and order of files for a compilation. Options: NONE the compiler will include all src files in the order listed, STRICT files will be included and sorted by starting from namespaces or files listed by the --entry_point flag - files will only be included if they are referenced by a goog.require or CommonJS require or ES6 import, LOOSE same as with STRICT but files which do not goog.provide a namespace and are not modules will be automatically added as --entry_point entries. Defaults to NONE. */
+  /**
+   * Specifies how the compiler should determine the set and order of
+   * files for a compilation.
+   * <p>
+   * Options: NONE the compiler will include
+   * all src files in the order listed, STRICT files will be included
+   * and sorted by starting from namespaces or files listed by the
+   * --entry_point flag - files will only be included if they are
+   * referenced by a goog.require or CommonJS require or ES6 import,
+   * LOOSE same as with STRICT but files which do not goog.provide a
+   * namespace and are not modules will be automatically added as
+   * --entry_point entries. Defaults to NONE.
+   */
   public DependencyMode dependencyMode;
-  /** A file or namespace to use as the starting point for determining which src files to include in the compilation. ES6 and CommonJS modules are specified as file paths (without the extension). Closure-library namespaces are specified with a "goog:" prefix. Example: --entry_point=goog:goog.Promise */
-  public String[] entryPoints;
-  /** Rewrite ES6 library calls to use polyfills provided by the compiler's runtime. */
+  /**
+   * A file or namespace to use as the starting point for determining
+   * which src files to include in the compilation. ES6 and CommonJS
+   * modules are specified as file paths (without the
+   * extension). Closure-library namespaces are specified with a
+   * "goog:" prefix. Example: --entry_point=goog:goog.Promise
+   */
+  public void setEntryPoints(String x) {
+    // Plexus configurator compatible setter that adds.
+    this.entryPoints.add(x);
+  }
+  private final List<String> entryPoints = Lists.newArrayList();
+  /**
+   * Rewrite ES6 library calls to use polyfills provided by the
+   * compiler's runtime.
+   */
   public Boolean rewritePolyfills;
   /** Whether to iteratively print resulting JS source per pass. */
   public Boolean printSourceAfterEachPass;
@@ -201,7 +361,7 @@ public final class JsOptions extends SourceOptions {
   public void addArgv(
       @SuppressWarnings("unused") Log log,
       ImmutableList.Builder<String> argv) {
-    for (Field f : JsOptions.class.getFields()) {
+    for (Field f : JsOptions.class.getDeclaredFields()) {
       if (Modifier.isStatic(f.getModifiers())) { continue; }
       String flagName = FieldToFlagMap.FIELD_TO_FLAG.get(f.getName());
       if (flagName == null) { continue; }

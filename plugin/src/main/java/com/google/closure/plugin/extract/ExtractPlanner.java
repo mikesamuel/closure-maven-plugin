@@ -2,7 +2,6 @@ package com.google.closure.plugin.extract;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -59,7 +58,7 @@ public final class ExtractPlanner {
       builtinExtract.setLoadAsNeeded(true);
       allExtracts.add(builtinExtract);
     }
-    allExtracts.addAll(Arrays.asList(extracts.extract));
+    allExtracts.addAll(extracts.getExtracts());
 
     // First, hash the relevant configuration parts.
     SerializedObjectIngredient<ExtractsList> extractsList =

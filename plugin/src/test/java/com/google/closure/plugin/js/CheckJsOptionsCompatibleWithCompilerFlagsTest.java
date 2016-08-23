@@ -1,10 +1,12 @@
 package com.google.closure.plugin.js;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +15,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeParameter;
+import com.google.common.reflect.TypeToken;
 import com.google.javascript.jscomp.CommandLineRunner;
 import com.google.javascript.jscomp.CompilationLevel;
 import com.google.javascript.jscomp.CompilerOptions;
@@ -74,32 +78,80 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
       if (option == null) { continue; }
       if (flagBlackList.contains(option.name())) { continue; }
       if (option.usage().contains("Deprecated")) { continue; }
-      Class<?> plexusCompatibleType = getPlexusCompatibleType(
+      Type plexusCompatibleType = getPlexusCompatibleType(
           option, flagsField);
       String fieldName = flagsField.getName();
 
       String usage = option.usage();
       if (usage != null) {
         generatedCode.append(
-            "    /** "
+            "  /** "
             + usage.replace("*/", "*\u2005/").replace("\\", "\\\\")
                 .replaceAll("<[^\\s{}]+", "{@code $0}")
             + " */\n");
       }
+      String modifiers = "public";
+      String typeName = typeName(plexusCompatibleType);
+      String initializer = "";
+      Type setterInputType = null;
+
+      if (isListType(plexusCompatibleType)) {
+        modifiers = "private final";
+        initializer = " = Lists.newArrayList()";
+        setterInputType = ((ParameterizedType) plexusCompatibleType)
+            .getActualTypeArguments()[0];
+      }
+
+      if (setterInputType != null) {
+        String setterName = "set"
+            + Character.toUpperCase(fieldName.charAt(0))
+            + fieldName.substring(1);
+
+        generatedCode.append(
+            ""
+            + "  public void " + setterName
+            + "(" + typeName(setterInputType) + " x) {\n"
+            + "    // Plexus configurator compatible setter that adds.\n"
+            + "    this." + fieldName + ".add(x);\n"
+            + "  }\n");
+
+        Class<?> setterInputRawType;
+        if (setterInputType instanceof Class<?>) {
+          setterInputRawType = (Class<?>) setterInputType;
+        } else {
+          // Unsound.
+          setterInputRawType = (Class<?>)
+              ((ParameterizedType) setterInputType).getRawType();
+        }
+
+        try {
+          JsOptions.class.getMethod(setterName, setterInputRawType);
+        } catch (@SuppressWarnings("unused") NoSuchMethodException ex) {
+          problems.add(
+              flagsField + ":" + option.name()
+              + " missing setter " + setterName);
+        }
+      }
+
       generatedCode.append(
-          "    public " + typeName(plexusCompatibleType) + " "
-          + fieldName + ";\n");
+          "  " + modifiers + " " + typeName + " "
+          + fieldName + initializer + ";\n");
+
 
       Field correspondingField = null;
       try {
-        correspondingField = JsOptions.class.getField(fieldName);
+        correspondingField = JsOptions.class.getDeclaredField(fieldName);
       } catch (@SuppressWarnings("unused") NoSuchFieldException ex) {
-        problems.add(flagsField + ":" + option.name());
+        problems.add(
+            flagsField + ":" + option.name() + " missing field " + fieldName);
       }
 
       if (correspondingField != null) {
-        if (!plexusCompatibleType.equals(correspondingField.getType())) {
-          problems.add(flagsField + ":" + option.name());
+        if (!roughlyEquivalent(
+                plexusCompatibleType, correspondingField.getType())) {
+          problems.add(
+              flagsField + ":" + option.name() + " type mismatch "
+              + plexusCompatibleType + " != " + correspondingField.getType());
         }
       }
       namesSeen.add(fieldName);
@@ -127,7 +179,23 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
     }
   }
 
-  static Class<?> getPlexusCompatibleType(Option option, Field f) {
+  private static boolean roughlyEquivalent(Type a, Type b) {
+    if (a.equals(b)) {
+      return true;
+    }
+    boolean aIsPt = a instanceof ParameterizedType;
+    boolean bIsPt = b instanceof ParameterizedType;
+    if (aIsPt != bIsPt) {
+      if (aIsPt) {
+        return ((ParameterizedType) a).getRawType().equals(b);
+      } else {
+        return a.equals(((ParameterizedType) b).getRawType());
+      }
+    }
+    return false;
+  }
+
+  static Type getPlexusCompatibleType(Option option, Field f) {
     Type fieldType = f.getGenericType();
 
     Class<?> specialCase = TYPE_SPECIAL_CASES.get(option.name());
@@ -150,7 +218,7 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
         if (params.length == 1 && params[0] instanceof Class<?>) {
           Class<?> elementType = getTypeFromClass((Class<?>) params[0]);
           if (elementType != null) {
-            return Array.newInstance(elementType, 0).getClass();
+            return listOfElements(elementType).getType();
           }
         }
       }
@@ -158,6 +226,18 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
     fail("Does not know how to convert " + fieldType
          + ":" + fieldType.getClass());
     return null;
+  }
+
+  private static <T>
+  TypeToken<List<T>> listOfElements(Class<T> elementType) {
+    @SuppressWarnings("serial")
+    TypeToken<List<T>> genericList = new TypeToken<List<T>>() {
+      // Reifies T
+    };
+    return genericList.where(
+        new TypeParameter<T>() {
+          // Reifires T
+        }, elementType);
   }
 
   private static Class<?> getTypeFromClass(Class<?> type) {
@@ -178,18 +258,49 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
     return null;
   }
 
-  private static String typeName(Class<?> cl) {
-    if (cl.isPrimitive()) { return cl.getName(); }
-    if (cl.isArray()) {
-      return typeName(cl.getComponentType()) + "[]";
-    }
-    String name = cl.getName();
-    if (name.startsWith("java.lang.")) {
-      String suffix = name.substring("java.lang.".length());
-      if (!suffix.contains(".")) {
-        return suffix;
+  private static String typeName(Type t) {
+    if (t instanceof Class<?>) {
+      Class<?> cl = (Class<?>) t;
+      if (cl.isPrimitive()) { return cl.getName(); }
+      if (cl.isArray()) {
+        return typeName(cl.getComponentType()) + "[]";
       }
+      String name = cl.getName();
+      if (name.startsWith("java.lang.")) {
+        String suffix = name.substring("java.lang.".length());
+        if (!suffix.contains(".")) {
+          return suffix;
+        }
+      }
+      return name;
+    } else if (t instanceof ParameterizedType) {
+      ParameterizedType pt = (ParameterizedType) t;
+      StringBuilder rawTypeName = new StringBuilder(typeName(pt.getRawType()));
+
+      rawTypeName.append('<');
+
+      Type[] params = pt.getActualTypeArguments();
+      for (int i = 0, n = params.length; i < n; ++i) {
+        if (i != 0) { rawTypeName.append(", "); }
+        rawTypeName.append(typeName(params[i]));
+      }
+      return rawTypeName.append('>').toString();
+    } else if (t instanceof WildcardType) {
+      throw new AssertionError(t.toString());
+    } else if (t instanceof TypeVariable) {
+      throw new AssertionError(t.toString());
+    } else if (t instanceof GenericArrayType) {
+      throw new AssertionError(t.toString());
+    } else {
+      throw new AssertionError(t.toString() + " : " + t.getClass());
     }
-    return name;
+  }
+
+  private static boolean isListType(Type t) {
+    Type typ = t;
+    if (typ instanceof ParameterizedType) {
+      typ = ((ParameterizedType) typ).getRawType();
+    }
+    return List.class.equals(typ);
   }
 }
