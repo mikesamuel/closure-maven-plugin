@@ -173,7 +173,7 @@ final class CompileJs extends Step {
           onLine(
               new StringBuilder()
               .append(prefix)
-              .append(new String(byteArray, wrote, i + 1, "UTF-8")));
+              .append(new String(byteArray, wrote, i - wrote, "UTF-8")));
           wrote = i + 1;
         }
       }
@@ -183,10 +183,10 @@ final class CompileJs extends Step {
           // Assumes stream not closed in the middle of a UTF-8 sequence.
           onLine(
               new StringBuilder().append(prefix)
-              .append(new String(byteArray, wrote, n, "UTF-8")));
+              .append(new String(byteArray, wrote, n - wrote, "UTF-8")));
         } else {
           // Save prefix of next line.
-          bytes.write(byteArray, wrote, n);
+          bytes.write(byteArray, wrote, n - wrote);
         }
       }
     }
