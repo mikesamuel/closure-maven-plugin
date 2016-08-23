@@ -1,14 +1,37 @@
 body { font-family: Arial;  /* NOOOOOO */ }
 
-.wall { list-style: none }
+.wall { list-style: none; margin: 0; padding: 0 }
+
+.wall > li.wall-item, #chip {
+    position: absolute;
+    display: inline-block;
+    list-style: none;
+    border: 1px dotted black;
+    transform: translate(-50%, -50%);
+    margin: 4px;
+    padding: 0;
+}
 
 .wall > li.wall-item {
-    position: absolute; display: inline-block; list-style: none; border: 1px dotted black
+    border: 1px dotted black;
+    background: white;
+}
+
+#chip {
+    border: 1px dotted #666699;
+    background: rgba(40%, 40%, 60%, 50%);
+    display: none !important;
 }
 
 #scribble {
     position: absolute;
     bottom: -1px;
+    width: 100%;
+}
+
+#scribble > table {
+    margin-left: auto;
+    margin-right: auto;
 }
 
 input[type=range][orient=vertical]

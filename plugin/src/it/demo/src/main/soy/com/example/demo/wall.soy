@@ -24,26 +24,27 @@
             {call .WallItem}{param item : $item /}{/call}
           {/foreach}
         {/if}
+        <li id="chip"></li>
       </ul>
 
-      <center>
-        <form id="scribble">
-          <table align=center>
-            <tr>
-              <th colspan=2>Enter some HTML
-                <tr>
-                  <td>
-                    <textarea name="html" rows=6 cols=40>...</textarea>
-                  <td rowspan=2>
-                    <input type=range min=0 max=100 value=50 id=y orient=vertical>
-                    <tr>
-                      <td>
-                        <input type=range min=0 max=100 value=50 id=x>
-                        <br>
-                        <button type="button">Scribble</button>
-          </table>
-        </form>
-      </center>
+      <form id="scribble" action="#" onsubmit="return false">
+        <table align=center>
+          <tr>
+            <th colspan=2>Enter some HTML
+              <tr>
+                <td>
+                  <textarea id="html" rows=6 cols=60>&#9786;</textarea>
+                <td rowspan=2>
+                  <input type=range min=0 max=100 value=50 id=y orient=vertical>
+                  <tr>
+                    <td>
+                      <input type=range min=0 max=100 value=50 id=x>
+                      <br>
+                      <button id="scribble-submit" type="button">
+                        Scribble
+                      </button>
+        </table>
+      </form>
     </body>
   </html>
 {/template}

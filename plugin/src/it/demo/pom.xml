@@ -48,6 +48,21 @@
         <version>0.0.1-SNAPSHOT</version>
         <configuration>
           <genJavaPackageName>com.example.demo</genJavaPackageName>
+          <js>
+            <compilationLevel>ADVANCED_OPTIMIZATIONS</compilationLevel>
+            <!--jscompWarn>*</jscompWarn-->
+            <jscompError>undefinedVars</jscompError>
+            <jscompError>visibility</jscompError>
+            <jscompError>nonStandardJsDocs</jscompError>
+            <jscompError>invalidCasts</jscompError>
+            <jscompWarning>checkTypes</jscompWarning>
+            <jscompError>typeInvalidation</jscompError>
+            <jscompError>checkVars</jscompError>
+            <jscompError>deprecatedAnnotations</jscompError>
+            <jscompError>missingProvide</jscompError>
+            <jscompError>missingRequire</jscompError>
+            <useNewTypeInference>true</useNewTypeInference>
+          </js>
         </configuration>
         <executions>
           <execution>
