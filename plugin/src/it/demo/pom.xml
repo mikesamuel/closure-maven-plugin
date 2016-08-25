@@ -162,7 +162,7 @@
     <dependency>
       <groupId>com.google.template</groupId>
       <artifactId>soy</artifactId>
-      <version>2016-08-19</version>
+      <version>2016-08-25</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>

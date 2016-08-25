@@ -26,7 +26,7 @@
     <csscomp.version>21060712-SNAPSHOT</csscomp.version>
     <jscomp.version>1.0-SNAPSHOT</jscomp.version>
     <protoc-plugin.version>1.4.56</protoc-plugin.version>
-    <soy.version>2016-08-19</soy.version>
+    <soy.version>2016-08-25</soy.version>
     <java.version>1.7</java.version>
     <!-- Used in a resource filter -->
     <protobuf-java.version>3.0.0</protobuf-java.version>
