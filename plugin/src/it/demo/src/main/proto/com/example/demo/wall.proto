@@ -6,18 +6,27 @@ import "webutil/html/types/html.proto";
 
 option java_package = "com.example.demo";
 
-
+/** A bundle of wall items that should be displayed together. */
 message WallItems {
   repeated WallItem item = 1;
 }
 
+/** A self-contained bundle of content. */
 message WallItem {
-  optional string html_unsafe = 1;
+  optional string html_untrusted = 1;
   optional webutil.html.types.SafeHtmlProto html = 2;
-  required Point top_left = 3;
+  required Point centroid = 3;
 }
 
+/** 2-D */
 message Point {
   required int32 x_percent = 1;
   required int32 y_percent = 2;
+}
+
+/** A version of a wall. */
+message Update {
+  required WallItems items = 1;
+  /** Monotonically increasing version stamp. */
+  required int32 version = 2;
 }

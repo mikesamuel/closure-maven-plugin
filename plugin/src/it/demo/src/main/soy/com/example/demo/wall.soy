@@ -1,10 +1,11 @@
 {namespace com.example.demo}
 
 {template .Wall}
-  /*{@param nonce : string}*/
+/*{@param nonce : string}*/
   {@param wall : com.example.demo.WallItems}
   {@param styles : list<uri>}
   {@param scripts : list<uri>}
+  {@param version : int}
 
   <!doctype html>
   <html>
@@ -17,14 +18,11 @@
         <script src="{$script}"></script>
       {/foreach}
     </head>
-    <body>
-      <ul class="{css wall}">  /* In no particular order */
-        {if $wall.itemList}
-          {foreach $item in $wall.itemList}
-            {call .WallItem}{param item : $item /}{/call}
-          {/foreach}
-        {/if}
-        <li id="chip"></li>
+    <body data-wall-version="{$version}">
+      <ul class="{css wall}">
+        /* In no particular order */
+        {call .WallItems}{param wall : $wall /}{/call}
+        <li id="chip" class="{css blank}"></li>
       </ul>
 
       <form id="scribble" action="#" onsubmit="return false">
@@ -33,12 +31,21 @@
             <th colspan=2>Enter some HTML
               <tr>
                 <td>
-                  <textarea id="html" rows=6 cols=60>&#9786;</textarea>
+                  <textarea id="html" rows=6 cols=60>
+                    Hello, &lt;b
+                    &gt;&lt;span style=color:blue  &gt;W&lt;/span
+                    &gt;&lt;span style=color:green &gt;o&lt;/span
+                    &gt;&lt;span style=color:yellow&gt;r&lt;/span
+                    &gt;&lt;span style=color:orange&gt;l&lt;/span
+                    &gt;&lt;span style=color:red    &gt;d&lt;/span&gt;&lt;/b
+                    &gt;&lt;span style=color:purple &gt;!&lt;/span&gt; &#9786;
+                  </textarea>
                 <td rowspan=2>
-                  <input type=range min=0 max=100 value=50 id=y orient=vertical>
+                  <input type=range min=0 max=100 value=50 step=0.5 id=y
+                         orient=vertical>
                   <tr>
                     <td>
-                      <input type=range min=0 max=100 value=50 id=x>
+                      <input type=range min=0 max=100 value=50 step=0.5 id=x>
                       <br>
                       <button id="scribble-submit" type="button">
                         Scribble
@@ -49,12 +56,25 @@
   </html>
 {/template}
 
+
+{template .WallItems}
+  {@param wall : com.example.demo.WallItems}
+
+  {if $wall.itemList}
+    {foreach $item in $wall.itemList}
+      {call .WallItem}{param item : $item /}{/call}
+    {/foreach}
+  {/if}
+{/template}
+
+
 {template .WallItem private="true"}
   {@param item : com.example.demo.WallItem}
 
   <li class="{css wall-item}"
-   style="left: {$item.topLeft.xPercent}%;
-          top:  {$item.topLeft.yPercent}%">
-    {$item.html ?: $item.htmlUnsafe}
+   style="left: {$item.centroid.xPercent}%;
+          top:  {$item.centroid.yPercent}%">
+          /* The difference between centroid and top/left is fixed in CSS */
+    {$item.html ?: $item.htmlUntrusted}
   </li>
 {/template}

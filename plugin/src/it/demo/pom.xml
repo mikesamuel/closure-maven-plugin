@@ -49,7 +49,9 @@
         <configuration>
           <genJavaPackageName>com.example.demo</genJavaPackageName>
           <js>
-            <compilationLevel>ADVANCED_OPTIMIZATIONS</compilationLevel>
+            <!-- advanced optimizations renames the field names in the
+                 generated JSON. -->
+            <compilationLevel>SIMPLE_OPTIMIZATIONS</compilationLevel>
             <!--jscompWarn>*</jscompWarn-->
             <jscompError>undefinedVars</jscompError>
             <jscompError>visibility</jscompError>
@@ -194,6 +196,17 @@
         <exclusion>
           <groupId>com.google.code.gson</groupId>
           <artifactId>gson</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+      <artifactId>html-types</artifactId>
+      <version>20160628.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.common.html.types</groupId>
+          <artifactId>types</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
