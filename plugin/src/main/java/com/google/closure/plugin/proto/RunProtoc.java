@@ -127,7 +127,17 @@ final class RunProtoc extends Step {
       argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
     }
     if (langSet.emitJs) {
-      argv.add("--js_out").add(ensureDirExists(jsGenfilesPath.value));
+      String jsOutFlagPrefix = null;
+      switch (rootSet) {
+        case MAIN:
+          jsOutFlagPrefix = "--js_out=";
+          break;
+        case TEST:
+          // github.com/google/protobuf/blob/master/js/README.md#the---js_out-flag
+          jsOutFlagPrefix += "--js_out=testonly:";
+          break;
+      }
+      argv.add(jsOutFlagPrefix + ensureDirExists(jsGenfilesPath.value));
     }
 
     // Build a proto search path.
