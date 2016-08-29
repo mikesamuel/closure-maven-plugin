@@ -183,6 +183,17 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
     if (a.equals(b)) {
       return true;
     }
+
+    // We can map enums to strings by name.
+    if (a instanceof Class && b instanceof Class) {
+      if (String.class.isAssignableFrom((Class<?>) a)) {
+        return Enum.class.isAssignableFrom((Class<?>) b);
+      }
+      if (String.class.isAssignableFrom((Class<?>) b)) {
+        return Enum.class.isAssignableFrom((Class<?>) a);
+      }
+    }
+
     boolean aIsPt = a instanceof ParameterizedType;
     boolean bIsPt = b instanceof ParameterizedType;
     if (aIsPt != bIsPt) {

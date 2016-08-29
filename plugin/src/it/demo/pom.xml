@@ -202,7 +202,7 @@
     <dependency>
       <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
       <artifactId>html-types</artifactId>
-      <version>20160628.1</version>
+      <version>20160827.1</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.common.html.types</groupId>

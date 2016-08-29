@@ -24,7 +24,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <csscomp.version>21060712-SNAPSHOT</csscomp.version>
-    <jscomp.version>1.0-SNAPSHOT</jscomp.version>
+    <jscomp.version>v20160822</jscomp.version>
     <protoc-plugin.version>1.4.56</protoc-plugin.version>
     <soy.version>2016-08-25</soy.version>
     <java.version>1.7</java.version>
@@ -93,6 +93,10 @@
           <exclusion>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

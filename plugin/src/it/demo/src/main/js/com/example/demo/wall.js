@@ -342,6 +342,8 @@ goog.events.listen(
       };
     }
 
+    // TODO Move the unpack code to a separate file.
+
     // JSPB fromObject is not available in open-source version.
     // Inline it.
     function unpackUpdate(o) {

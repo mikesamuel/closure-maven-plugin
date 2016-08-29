@@ -186,8 +186,11 @@ public final class JsOptions extends SourceOptions {
   public Boolean polymerPass;
   /** Rewrite Dart Dev Compiler output to be compiler-friendly. */
   public Boolean dartPass;
-  /** Rewrite J2CL output to be compiler-friendly. */
-  public Boolean j2clPass;
+  /**
+   * Rewrite J2CL output to be compiler-friendly if enabled (ON or AUTO).
+   * Options:OFF, ON, AUTO(default)
+   */
+  public CompilerOptions.J2clPassMode j2clPassMode;
   /** Prints out a list of all the files in the compilation. If
    * --dependency_mode=STRICT or LOOSE is specified, this will not
    * include files that got dropped because they were not

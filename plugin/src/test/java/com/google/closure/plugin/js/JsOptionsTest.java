@@ -389,7 +389,8 @@ public final class JsOptionsTest extends TestCase {
   @Test
   public static void testJ2clPass() throws Exception {
     JsOptions opts = new JsOptions();
-    opts.j2clPass = sampleValueFor("j2clPass", Boolean.class);
+    opts.j2clPassMode = sampleValueFor(
+        "j2clPassMode", CompilerOptions.J2clPassMode.class);
 
     sanityCheckArgv(opts);
   }
