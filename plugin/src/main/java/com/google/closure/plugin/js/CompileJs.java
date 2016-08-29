@@ -37,7 +37,8 @@ final class CompileJs extends Step {
             .addInp(optionsIng, modulesIng, jsOutputDir)
             .build(),
         ImmutableList.<Ingredient>of(optionsIng, modulesIng, jsOutputDir),
-        Sets.immutableEnumSet(StepSource.JS_SRC, StepSource.JS_GENERATED),
+        Sets.immutableEnumSet(
+            StepSource.JS_SRC, StepSource.JS_GENERATED, StepSource.JS_MODULES),
         Sets.immutableEnumSet(StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP)
         );
   }

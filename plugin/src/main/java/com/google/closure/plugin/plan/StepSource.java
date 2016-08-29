@@ -60,6 +60,11 @@ public enum StepSource {
    * lists of provides/requires.
    */
   JS_DEP_INFO("target/.closure-cache/dep-info.ser"),
+  /**
+   * An intermediate file that records a relationships between modules and
+   * which sources within those modules are needed.
+   */
+  JS_MODULES("target/.closure-cache/modules.ser"),
 
   /** Protobuf source files for the current project. */
   PROTO_SRC("src/main/js/**/*.proto"),

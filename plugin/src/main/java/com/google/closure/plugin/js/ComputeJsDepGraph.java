@@ -66,7 +66,8 @@ final class ComputeJsDepGraph extends Step {
         Sets.immutableEnumSet(
             StepSource.JS_GENERATED, StepSource.JS_SRC, StepSource.JS_DEP_INFO),
         Sets.immutableEnumSet(
-            StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP));
+            StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP,
+            StepSource.JS_MODULES));
     this.planner = planner;
     this.modulesIng = modulesIng;
   }
@@ -217,6 +218,9 @@ final class ComputeJsDepGraph extends Step {
 
     ImmutableList.Builder<Modules.Module> moduleList = ImmutableList.builder();
     for (ModuleName moduleName : moduleOrder) {
+      ImmutableList<ModuleName> orderedDeps =
+          moduleTopoSort.getDependenciesTransitive(moduleName);
+
       final Map<String, SourceAndDepInfo> inputsByCiName =
           Maps.newLinkedHashMap();
       ImmutableList<SourceAndDepInfo> moduleSources =
@@ -258,8 +262,6 @@ final class ComputeJsDepGraph extends Step {
         throw new MojoExecutionException(
             "Mismatched require/provides in module " + moduleName, ex);
       }
-      ImmutableList<ModuleName> orderedDeps =
-          moduleTopoSort.getDependenciesTransitive(moduleName);
 
       ImmutableList.Builder<Source> orderedSources = ImmutableList.builder();
       for (SourceAndDepInfo sdi : sourcesTopoSort.getSortedItems()) {
