@@ -46,7 +46,7 @@ final class CopyProtosToJar extends Step {
     if (descriptorSetFile.exists()) {
       // Not generated if protoc is not run.
       try {
-        closureOutputDirectory.value.mkdir();
+        closureOutputDirectory.value.mkdirs();
         Files.copy(
             descriptorSetFile,
             new File(closureOutputDirectory.value, DESCRIPTORS_FILE_BASENAME));
