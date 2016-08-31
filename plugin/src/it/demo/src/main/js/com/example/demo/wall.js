@@ -21,11 +21,9 @@ goog.require('goog.soy.Renderer');
 goog.require('com.example.demo');
 
 // We manipulate protobufs programatically.
+goog.require('com.example.unpack');
 goog.require('proto.com.example.demo.Point');
-goog.require('proto.com.example.demo.Update');
 goog.require('proto.com.example.demo.WallItem');
-goog.require('proto.com.example.demo.WallItems');
-goog.require('proto.webutil.html.types.SafeHtmlProto');
 goog.require('security.html.jspbconversions');
 
 
@@ -83,10 +81,8 @@ goog.events.listen(
     goog.events.listen(chipDragger, 'end',
                        function () {
                          goog.style.setOpacity(this.target, 1.0);
-                         var x = (chip.offsetLeft + chip.offsetWidth / 2) /
-                               chip.offsetParent.offsetWidth;
-                         var y = (chip.offsetTop + chip.offsetHeight / 2) /
-                               chip.offsetParent.offsetHeight;
+                         var x = chip.offsetLeft / chip.offsetParent.offsetWidth;
+                         var y = chip.offsetTop / chip.offsetParent.offsetHeight;
                          var xPerMille = ((x * 1000) | 0);
                          var yPerMille = ((y * 1000) | 0);
                          setChipPosition({
@@ -108,7 +104,6 @@ goog.events.listen(
           'wall.json?have=' + encodeURIComponent('' + version),
           maybeUpdateWallFromJson,
           'GET');
-
       },
       5000 /* ms */);
 
@@ -258,7 +253,7 @@ goog.events.listen(
         return;
       }
 
-      var update = unpackUpdate(xhr.getResponseJson());
+      var update = com.example.unpack.unpackUpdate(xhr.getResponseJson());
       var updateVersion = update.getVersion();
 
       if (updateVersion > version) {
@@ -340,87 +335,5 @@ goog.events.listen(
             rate_ms);
         }
       };
-    }
-
-    // TODO Move the unpack code to a separate file.
-
-    // JSPB fromObject is not available in open-source version.
-    // Inline it.
-    function unpackUpdate(o) {
-      var result = new proto.com.example.demo.Update();
-      for (var k in o) {
-        if (!Object.hasOwnProperty.call(o, k)) { continue; }
-        var v = o[k];
-        switch (k) {
-        case 'items':
-          result.setItems(unpackWallItems(v));
-          break;
-        case 'version':
-          result.setVersion(v);
-          break;
-        default:
-          throw new Error(k);
-        }
-      }
-      return result;
-    }
-    function unpackWallItems(o) {
-      var result = new proto.com.example.demo.WallItems();
-      for (var k in o) {
-        if (!Object.hasOwnProperty.call(o, k)) { continue; }
-        var v = o[k];
-        switch (k) {
-        case 'item':
-          result.setItemList(
-            v.map(unpackWallItem));
-          break;
-        default:
-          throw new Error(k);
-        }
-      }
-      return result;
-    }
-    function unpackWallItem(o) {
-      var result = new proto.com.example.demo.WallItem();
-      for (var k in o) {
-        if (!Object.hasOwnProperty.call(o, k)) { continue; }
-        var v = o[k];
-        switch (k) {
-        case 'html':
-          result.setHtml(unpackSafeHtml(v));
-          break;
-        case 'htmlUntrusted':
-          result.setHtmlUntrusted(v);
-          break;
-        case 'centroid':
-          result.setCentroid(unpackPoint(v));
-          break;
-        default:
-          throw new Error(k);
-        }
-      }
-      return result;
-    }
-    function unpackSafeHtml(o) {
-      var result = new proto.webutil.html.types.SafeHtmlProto();
-      result.setPrivateDoNotAccessOrElseSafeHtmlWrappedValue(
-        o['privateDoNotAccessOrElseSafeHtmlWrappedValue']);
-      return result;
-    }
-    function unpackPoint(o) {
-      var result = new proto.com.example.demo.Point();
-      for (var k in o) {
-        if (!Object.hasOwnProperty.call(o, k)) { continue; }
-        var v = o[k];
-        switch (k) {
-        case 'xPercent':
-          result.setXPercent(v);
-          break;
-        case 'yPercent':
-          result.setYPercent(v);
-          break;
-        }
-      }
-      return result;
     }
   });
