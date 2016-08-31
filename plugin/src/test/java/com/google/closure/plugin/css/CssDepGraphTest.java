@@ -18,11 +18,11 @@ import junit.framework.TestCase;
 public final class CssDepGraphTest extends TestCase {
 
   static final ImmutableMap<String, String> CONTENT = ImmutableMap.of(
-      "foo.css", "@provide 'foo'; @require 'bar';",
-      "bar.css", "@provide 'bar';",
-      "boo-main.css", "@require 'foo';",
+      "foo.css",      "@provide 'foo'; @require 'bar';",
+      "bar.css",      "@provide 'bar';",
+      "boo-main.css", "/* leaf file */ @require 'foo';",
       "baz-main.css", "@provide 'baz';",
-      "faz.css", "@require 'baz';");
+      "faz.css",      "/* leaf file */ @require 'baz';");
 
   private static Source src(String relPath) {
     return new Source(
