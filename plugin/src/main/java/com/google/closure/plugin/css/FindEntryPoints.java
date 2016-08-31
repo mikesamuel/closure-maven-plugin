@@ -21,7 +21,7 @@ import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
 import com.google.closure.plugin.common.Ingredients.StringValue;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.css.CssImportGraph.Dependencies;
+import com.google.closure.plugin.css.CssDepGraph.Dependencies;
 import com.google.closure.plugin.plan.Ingredient;
 import com.google.closure.plugin.plan.PlanKey;
 import com.google.closure.plugin.plan.Step;
@@ -76,21 +76,20 @@ final class FindEntryPoints extends Step {
     StringValue defaultCssSourceMapPathTemplate = (StringValue) inputs.get(3);
     PathValue cssOutputDirectory = (PathValue) inputs.get(4);
 
-    CssImportGraph importGraph;
+    CssDepGraph importGraph;
     try {
       ImmutableList.Builder<Source> sources = ImmutableList.builder();
       for (FileIngredient sourceFile : cssSources.sources()) {
         sources.add(sourceFile.source);
       }
-      importGraph = new CssImportGraph(log, sources.build());
+      importGraph = new CssDepGraph(log, sources.build());
     } catch (IOException ex) {
       throw new MojoExecutionException(
           "Failed to parse imports in CSS source files", ex);
     }
 
     for (Sources.Source entryPoint : importGraph.entryPoints) {
-      Dependencies deps = importGraph.transitiveClosureDeps(
-          log, entryPoint);
+      Dependencies deps = importGraph.transitiveClosureDeps(entryPoint);
       if (!deps.foundAllStatic) {
         throw new MojoExecutionException(
             "Failed to resolve all dependencies of "
