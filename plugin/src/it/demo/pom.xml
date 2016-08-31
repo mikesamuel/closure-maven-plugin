@@ -92,6 +92,10 @@
           <forceJavacCompilerUse>true</forceJavacCompilerUse>
           <source>${java.version}</source>
           <target>${java.version}</target>
+          <showWarnings>true</showWarnings>
+          <compilerArgs>
+            <arg>-Xep:CheckReturnValue:WARN</arg>
+          </compilerArgs>
         </configuration>
         <dependencies>
           <dependency>
