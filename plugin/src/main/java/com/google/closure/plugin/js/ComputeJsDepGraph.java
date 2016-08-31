@@ -294,6 +294,7 @@ final class ComputeJsDepGraph extends Step {
   public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
     HashedInMemory<JsOptions> optionsIng =
         ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
+    FileSetIngredient fs = (FileSetIngredient) inputs.get(2);
 
     CommonPlanner commonPlanner = planner.planner;
 
@@ -301,7 +302,7 @@ final class ComputeJsDepGraph extends Step {
         new File(commonPlanner.closureOutputDirectory.value, "js"));
 
     return ImmutableList.<Step>of(
-        new CompileJs(optionsIng, modulesIng, jsOutputDir));
+        new CompileJs(optionsIng, modulesIng, fs, jsOutputDir));
   }
 
   private static

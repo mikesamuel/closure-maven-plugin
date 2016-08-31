@@ -16,6 +16,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
 import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.common.Ingredients
@@ -31,12 +32,14 @@ final class CompileJs extends Step {
   public CompileJs(
       HashedInMemory<JsOptions> optionsIng,
       SerializedObjectIngredient<Modules> modulesIng,
+      FileSetIngredient inputs,
       PathValue jsOutputDir) {
     super(
         PlanKey.builder("compile-js")
             .addInp(optionsIng, modulesIng, jsOutputDir)
             .build(),
-        ImmutableList.<Ingredient>of(optionsIng, modulesIng, jsOutputDir),
+        ImmutableList.<Ingredient>of(
+            optionsIng, modulesIng, jsOutputDir, inputs),
         Sets.immutableEnumSet(
             StepSource.JS_SRC, StepSource.JS_GENERATED, StepSource.JS_MODULES),
         Sets.immutableEnumSet(StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP)
