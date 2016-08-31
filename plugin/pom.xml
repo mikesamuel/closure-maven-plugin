@@ -68,6 +68,10 @@
       <groupId>com.comoyo.maven.plugins</groupId>
       <artifactId>protoc-bundled-plugin</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.common.html.types</groupId>
+      <artifactId>types</artifactId>
+    </dependency>
   </dependencies>
 
   <reporting>
@@ -114,7 +118,7 @@
                 <artifactItem>
                   <groupId>com.google.common.html.types</groupId>
                   <artifactId>proto</artifactId>
-                  <version>1.0.4-SNAPSHOT</version>
+                  <version>1.0.5</version>
                   <type>jar</type>
                   <!-- This is heavy handed, but avoids problems with Eclipse m2e wiping out
                        target/classes directory but not the markersDirectory where this plugin
@@ -129,7 +133,7 @@
                   <version>${soy.version}</version>
                   <type>jar</type>
                   <classifier>jssrc_js</classifier>
-                  <overWrite>false</overWrite>
+                  <overWrite>true</overWrite>
                   <outputDirectory>${project.build.outputDirectory}/src/main/js/soy</outputDirectory>
                   <includes>**/*.js</includes>
                   <excludes>examples/**/*.js</excludes>

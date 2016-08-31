@@ -23,7 +23,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <csscomp.version>21060712-SNAPSHOT</csscomp.version>
+    <csscomp.version>1.3.0</csscomp.version>
     <jscomp.version>v20160822</jscomp.version>
     <protoc-plugin.version>1.4.56</protoc-plugin.version>
     <soy.version>2016-08-25</soy.version>
@@ -143,6 +143,14 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>com.google.common.html.types</groupId>
+            <artifactId>types</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
@@ -192,6 +200,22 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <dependency>
+        <groupId>com.google.common.html.types</groupId>
+        <artifactId>types</artifactId>
+        <version>1.0.5</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf-java.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -231,6 +255,11 @@
                     <ignoreClass>org.codehaus.plexus.*</ignoreClass>
                   </ignoreClasses>
                 </banDuplicateClasses>
+                <enforceBytecodeVersion>
+                  <maxJdkVersion>1.7</maxJdkVersion>
+                  <excludes>
+                  </excludes>
+                </enforceBytecodeVersion>
               </rules>
               <fail>true</fail>
             </configuration>
