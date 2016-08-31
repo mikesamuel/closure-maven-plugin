@@ -1,5 +1,5 @@
 /* A comment */
-@import "common/styles.css";
+@require 'common';
 
 .bar {
     font-family: Arial

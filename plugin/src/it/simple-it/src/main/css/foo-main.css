@@ -1,2 +1,2 @@
 /* A comment */
-@import url("common/styles.css");
+@require 'common';

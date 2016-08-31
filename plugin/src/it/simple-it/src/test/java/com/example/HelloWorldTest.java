@@ -80,7 +80,7 @@ public final class HelloWorldTest extends TestCase {
     SanitizedContent output = renderHelloWorld(data, ijData);
     assertEquals(ContentKind.HTML, output.getContentKind());
     assertEquals(
-        "<div id=\"greeting\">Hello, <b class=\"c\">World</b>!</div>",
+        "<div id=\"greeting\">Hello, <b class=\"b\">World</b>!</div>",
         output.getContent());
   }
 
@@ -98,7 +98,7 @@ public final class HelloWorldTest extends TestCase {
     assertEquals(ContentKind.HTML, output.getContentKind());
     assertEquals(
         "<div id=\"greeting\">"
-        + "Hello, <b class=\"c\">Cincinatti &lt;:)&gt;</b>!</div>",
+        + "Hello, <b class=\"b\">Cincinatti &lt;:)&gt;</b>!</div>",
         output.getContent());
   }
 
@@ -116,7 +116,7 @@ public final class HelloWorldTest extends TestCase {
     assertEquals(ContentKind.HTML, output.getContentKind());
     assertEquals(
         "<div id=\"greeting\">"
-        + "Hello, <b class=\"c\">Cincinatti &lt;:-}&gt;</b>!</div>",
+        + "Hello, <b class=\"b\">Cincinatti &lt;:-}&gt;</b>!</div>",
         output.getContent());
   }
 }

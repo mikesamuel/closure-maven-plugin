@@ -17,7 +17,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.css.CustomPass;
 import com.google.common.css.GssFunctionMapProvider;
 import com.google.common.css.JobDescription;
 import com.google.common.css.JobDescriptionBuilder;
@@ -41,7 +40,7 @@ public final class CssOptions extends SourceOptions {
   private static final long serialVersionUID = 8205371531045169081L;
 
   /** Allows @defs and @mixins from one file to propagate to other files. */
-  public Boolean allowDefPropagation;
+  public Boolean allowDefPropagation = true;
   /** Specify a non-standard function to whitelist, like alpha() */
   public void setAllowedNonStandardFunctions(String x) {
     allowedNonStandardFunctions.add(x);
@@ -124,7 +123,7 @@ public final class CssOptions extends SourceOptions {
   public OutputRenamingMapFormat outputRenamingMapFormat;
   /** Preserve comments from sources into pretty printed output css. */
   public Boolean preserveComments;
-  public Boolean processDependencies;
+  public Boolean processDependencies = true;
   public Boolean simplifyCss;
   /**
    * The level to generate source maps. You could choose between
@@ -156,14 +155,6 @@ public final class CssOptions extends SourceOptions {
   }
   @Asplodable
   private final List<Vendor> vendor = Lists.newArrayList();
-  /**
-   * Allows extra processing of the AST.
-   */
-  public void setCustomPass(Class<? extends CustomPass> customPass) {
-    customPasses.add(customPass.asSubclass(CustomPass.class));
-  }
-  private final List<Class<? extends CustomPass>> customPasses
-    = Lists.newArrayList();
 
   /**
    * The output CSS filename. If empty, standard output will be
@@ -310,22 +301,6 @@ public final class CssOptions extends SourceOptions {
     if (wasSet(vendor)) {
       jobDescriptionBuilder.setVendor(vendor.get(0));
     }
-    ImmutableList.Builder<CustomPass> customPassesList
-        = ImmutableList.builder();
-    if (this.customPasses != null) {
-      for (Class<?> customPassClass : customPasses) {
-        Class<? extends CustomPass> customPassClassTypesafe =
-            customPassClass.asSubclass(CustomPass.class);
-        Optional<CustomPass> customPass =
-            OptionsUtils.createInstanceUsingDefaultConstructor(
-                log, CustomPass.class, customPassClassTypesafe);
-        if (customPass.isPresent()) {
-          customPassesList.add(customPass.get());
-        }
-      }
-    }
-    customPassesList.add(new RemoveInlinedImportRules(log));
-    jobDescriptionBuilder.setCustomPasses(customPassesList.build());
 
     jobDescriptionBuilder.setCreateSourceMap(true);
 

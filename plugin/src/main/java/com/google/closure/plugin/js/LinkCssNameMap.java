@@ -46,7 +46,7 @@ final class LinkCssNameMap extends Step {
         writer.write("\n");
 
         OutputRenamingMapFormat.CLOSURE_COMPILED_BY_WHOLE.writeRenamingMap(
-            substMapProvider.get().getRenamingMap(),
+            substMapProvider.get().getMappings(),
             writer);
         // TODO: freeze the renaming map so no new entries can be added.
       }

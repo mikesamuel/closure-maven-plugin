@@ -7,11 +7,10 @@ import java.io.Reader;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.OutputRenamingMapFormat;
-import com.google.common.css.ReusableSubstitutionMap;
+import com.google.common.css.RecordingSubstitutionMap;
 import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.io.CharSource;
 import com.google.common.io.Files;
@@ -24,7 +23,7 @@ public final class StableCssSubstitutionMapProvider
 implements SubstitutionMapProvider {
 
   /** A minimal map used to do substitutions. */
-  private final ReusableSubstitutionMap substitutionMap;
+  private final RecordingSubstitutionMap substitutionMap;
   /** The file used to persist this substitution map. */
   private final File backingFile;
 
@@ -36,28 +35,24 @@ implements SubstitutionMapProvider {
   public StableCssSubstitutionMapProvider(File backingFile)
   throws IOException {
     CharSource renameMapJson = Files.asCharSource(backingFile, Charsets.UTF_8);
-    ReusableSubstitutionMap newSubstitutionMap = null;
+    RecordingSubstitutionMap.Builder substitutionMapBuilder =
+        new RecordingSubstitutionMap.Builder()
+        .withSubstitutionMap(
+            new MinimalSubstitutionMap());
     try {
       try (Reader reader = renameMapJson.openBufferedStream()) {
-        newSubstitutionMap = ReusableSubstitutionMap.read(
-            OutputRenamingMapFormat.JSON,
-            new MakeMinimalSubstMap(),
-            ImmutableSet.<String>of(),
-            reader);
+        substitutionMapBuilder.withMappings(
+            OutputRenamingMapFormat.JSON.readRenamingMap(reader));
       }
     } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
       // Ok.  Fallthrough to below.
     }
-    if (newSubstitutionMap == null) {
-      newSubstitutionMap = new ReusableSubstitutionMap(new MakeMinimalSubstMap()
-          .apply(ImmutableList.<String>of()));
-    }
-    this.substitutionMap = newSubstitutionMap;
+    this.substitutionMap = substitutionMapBuilder.build();
     this.backingFile = backingFile;
   }
 
   @Override
-  public ReusableSubstitutionMap get() {
+  public RecordingSubstitutionMap get() {
     return substitutionMap;
   }
 

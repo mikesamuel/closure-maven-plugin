@@ -83,7 +83,12 @@ final class CssCompilerWrapper {
     ensureParentDirectoryFor(outputFile);
 
     String compiledCss =
-        new ClosureCommandLineCompiler(job, exitCodeHandler, errorManager)
+        new ClosureCommandLineCompiler(job, exitCodeHandler, errorManager) {
+          @Override
+          public String execute(File renameOutFile, File sourceMapOutFile) {
+            return super.execute(renameOutFile, sourceMapOutFile);
+          }
+        }
         .execute(renameFile.orNull(), sourceMapFile.orNull());
     if (compiledCss == null) {
       return false;

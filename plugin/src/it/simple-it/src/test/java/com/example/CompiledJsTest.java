@@ -58,7 +58,7 @@ public final class CompiledJsTest extends TestCase {
         ScriptableObject.getProperty(scope, "_alerts_");
 
     assertEquals(
-        "<div id=\"greeting\">Hello, <b class=\"c\">Cle&lt;eland</b>!</div>",
+        "<div id=\"greeting\">Hello, <b class=\"b\">Cle&lt;eland</b>!</div>",
         Context.toString(alerts.get(0)));
   }
 }

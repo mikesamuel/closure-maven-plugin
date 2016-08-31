@@ -1,3 +1,5 @@
+@provide 'common';
+
 .yellow { background-color: yellow }
 
 /* Used in HelloWorld.soy.  Let the CSS check renaming so we can . */

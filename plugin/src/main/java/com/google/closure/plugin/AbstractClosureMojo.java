@@ -262,8 +262,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       cssRenameMapFile.getParentFile().mkdirs();
       try (Writer out = Files.asCharSink(cssRenameMapFile, Charsets.UTF_8)
               .openBufferedStream()) {
-        substitutionMapProvider.get()
-             .write(OutputRenamingMapFormat.JSON, out);
+        OutputRenamingMapFormat.JSON.writeRenamingMap(
+            substitutionMapProvider.get().getMappings(), out);
       }
     } catch (IOException ex) {
       log.warn("Problem writing CSS rename map", ex);
