@@ -24,9 +24,9 @@ assert renameMap.exists();
 assert renameMap.getText("UTF-8").trim().equals(
     ""  // Symbols from one should not clobber those from another.
     + "{\n"
-    + "  \"world\": \"a\",\n"
-    + "  \"bar\": \"b\",\n"
-    + "  \"yellow\": \"c\"\n"
+    + "  \"yellow\": \"a\",\n"
+    + "  \"world\": \"b\",\n"
+    + "  \"bar\": \"c\"\n"
     + "}");
 
 
