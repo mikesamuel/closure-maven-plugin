@@ -1,6 +1,8 @@
 goog.module('com.example.wall');
 
 // These abstract away some browser weirdness.
+goog.require('goog.asserts');
+goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.dom.safe');
 goog.require('goog.events');
@@ -80,9 +82,10 @@ goog.events.listen(
                        });
     goog.events.listen(chipDragger, 'end',
                        function () {
+                         var offsetParent = chip.offsetParent;
                          goog.style.setOpacity(this.target, 1.0);
-                         var x = chip.offsetLeft / chip.offsetParent.offsetWidth;
-                         var y = chip.offsetTop / chip.offsetParent.offsetHeight;
+                         var x = chip.offsetLeft / offsetParent.offsetWidth;
+                         var y = chip.offsetTop / offsetParent.offsetHeight;
                          var xPerMille = ((x * 1000) | 0);
                          var yPerMille = ((y * 1000) | 0);
                          setChipPosition({
@@ -92,8 +95,7 @@ goog.events.listen(
                        });
 
     // Initialize chip editor state to that currently in the editor.
-    updateChipContent();
-    updateChipPosition();
+    resetForm();
 
     // Periodically ping the server for changes.
     setInterval(
@@ -133,10 +135,16 @@ goog.events.listen(
         goog.dom.classlist.add(chip, className);
       }
 
-      //goog.dom.safe.setInnerHtml(chip, htmlValue);
       var safeDomElement = newSanitizer().sanitizeToDomNode(htmlValue);
+      //chip.innerHTML = safeDomElement.innerHTML;  // Conformance violation!!!
       goog.dom.removeChildren(chip);
       goog.dom.append(chip, safeDomElement);
+    }
+
+    function resetForm() {
+      scribbleForm.reset();
+      updateChipContent();
+      updateChipPosition();
     }
 
     /**
@@ -230,8 +238,7 @@ goog.events.listen(
         chip, goog.dom.safe.InsertAdjacentHtmlPosition.BEFOREBEGIN,
         newWallItemHtml);
 
-      // TODO: reset properly.
-      scribbleForm.reset();
+      resetForm();
     }
 
     /**
