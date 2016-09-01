@@ -41,19 +41,6 @@
             <jscompWarning>newCheckTypesAllChecks</jscompWarning>
 
             <jscompError>*</jscompError>
-            <!--
-            <jscompError>undefinedVars</jscompError>
-            <jscompError>visibility</jscompError>
-            <jscompError>nonStandardJsDocs</jscompError>
-            <jscompError>invalidCasts</jscompError>
-            <jscompError>typeInvalidation</jscompError>
-            <jscompError>checkVars</jscompError>
-            <jscompError>deprecatedAnnotations</jscompError>
-            <jscompError>missingProvide</jscompError>
-            <jscompError>missingRequire</jscompError>
-            <jscompError>violation</jscompError>
-            <jscompError>conformanceViolations</jscompError>
-            -->
             <useNewTypeInference>true</useNewTypeInference>
 
             <conformanceConfig>src/main/js/jsconf.textproto</conformanceConfig>
@@ -112,6 +99,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>com.example.demo.Demo</mainClass>
@@ -173,7 +161,7 @@
           <dependency>
             <groupId>com.google.security</groupId>
             <artifactId>fences-maven-enforcer-rule</artifactId>
-            <version>1.8-beta-SNAPSHOT</version>  <!-- TODO: fix version -->
+            <version>1.7-beta</version>
           </dependency>
         </dependencies>
       </plugin>
