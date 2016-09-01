@@ -1,10 +1,13 @@
 package com.google.closure.plugin.js;
 
+import java.io.File;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.TopoSort;
 import com.google.closure.plugin.TestLog;
@@ -281,7 +284,7 @@ public final class ComputeJsDepGraphTest extends TestCase {
           di);
 
       ImmutableList.Builder<String> modulesArgv = ImmutableList.builder();
-      modules.addClosureCompilerFlags(modulesArgv);
+      modules.addClosureCompilerFlags(Optional.<File>absent(), modulesArgv);
 
       assertEquals(
           Joiner.on("\n").join(wantedArgv.build()),

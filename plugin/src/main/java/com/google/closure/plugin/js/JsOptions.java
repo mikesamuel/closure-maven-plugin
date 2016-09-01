@@ -80,29 +80,37 @@ public final class JsOptions extends SourceOptions {
     this.sourceMapLocationMapping.add(x);
   }
   private final List<String> sourceMapLocationMapping = Lists.newArrayList();
-  /** Source map locations for input files, separated by a '|',
-   * (i.e. input-file-path|input-source-map) */
-  public void setSourceMapInputs(String x) {
+  /**
+   * Source map locations for input files, separated by a '|',
+   * (i.e. input-file-path|input-source-map)
+   */
+  public void setSourceMapInput(String x) {
     // Plexus configurator compatible setter that adds.
     this.sourceMapInputs.add(x);
   }
   private final List<String> sourceMapInputs = Lists.newArrayList();
-  /** Make the named class of warnings an error. Must be one of the
-   * error group items. '*' adds all supported. */
+  /**
+   * Make the named class of warnings an error. Must be one of the
+   * error group items. '*' adds all supported.
+   */
   public void setJscompError(String x) {
     // Plexus configurator compatible setter that adds.
     this.jscompError.add(x);
   }
   private final List<String> jscompError = Lists.newArrayList();
-  /** Make the named class of warnings a normal warning. Must be one
-   * of the error group items. '*' adds all supported. */
+  /**
+   * Make the named class of warnings a normal warning. Must be one
+   * of the error group items. '*' adds all supported.
+   */
   public void setJscompWarning(String x) {
     // Plexus configurator compatible setter that adds.
     this.jscompWarning.add(x);
   }
   private final List<String> jscompWarning = Lists.newArrayList();
-  /** Turn off the named class of warnings. Must be one of the error
-   * group items. '*' adds all supported. */
+  /**
+   * Turn off the named class of warnings. Must be one of the error
+   * group items. '*' adds all supported.
+   */
   public void setJscompOff(String x) {
     // Plexus configurator compatible setter that adds.
     this.jscompOff.add(x);
@@ -249,7 +257,7 @@ public final class JsOptions extends SourceOptions {
    */
   public String renamePrefixNamespace;
   /** A list of JS Conformance configurations in text protocol buffer format. */
-  public void setConformanceConfigs(String x) {
+  public void setConformanceConfig(String x) {
     // Plexus configurator compatible setter that adds.
     this.conformanceConfigs.add(x);
   }
@@ -286,7 +294,7 @@ public final class JsOptions extends SourceOptions {
    * extension). Closure-library namespaces are specified with a
    * "goog:" prefix. Example: --entry_point=goog:goog.Promise
    */
-  public void setEntryPoints(String x) {
+  public void setEntryPoint(String x) {
     // Plexus configurator compatible setter that adds.
     this.entryPoints.add(x);
   }

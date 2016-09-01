@@ -103,9 +103,10 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
       }
 
       if (setterInputType != null) {
+        String singularFieldName = singularStem(fieldName);
         String setterName = "set"
-            + Character.toUpperCase(fieldName.charAt(0))
-            + fieldName.substring(1);
+            + Character.toUpperCase(singularFieldName.charAt(0))
+            + singularFieldName.substring(1);
 
         generatedCode.append(
             ""
@@ -313,5 +314,23 @@ public class CheckJsOptionsCompatibleWithCompilerFlagsTest extends TestCase {
       typ = ((ParameterizedType) typ).getRawType();
     }
     return List.class.equals(typ);
+  }
+
+
+  /**
+   * Just enough stemming to produce a singular verison of field names so
+   * we can do {@code <entryPoint>...</entryPoint>} to configure
+   * {@code List<String> entryPoints}.
+   */
+  private static String singularStem(String name) {
+    int nameLen = name.length();
+    if (name.endsWith("es") && nameLen > 2) {
+      // TODO: Look for a proper english stemmer.
+      return name.substring(0, nameLen - 2);
+    }
+    if (name.endsWith("s") && nameLen > 1) {
+      return name.substring(0, nameLen - 1);
+    }
+    return name;
   }
 }

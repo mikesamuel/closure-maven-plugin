@@ -159,7 +159,7 @@ public final class JsOptionsTest extends TestCase {
   public static void testSourceMapInputs() throws Exception {
     JsOptions opts = new JsOptions();
     for (String x : sampleValueFor("sourceMapInputs", String[].class)) {
-      opts.setSourceMapInputs(x);
+      opts.setSourceMapInput(x);
     }
 
     sanityCheckArgv(opts);
@@ -537,7 +537,7 @@ public final class JsOptionsTest extends TestCase {
   public static void testConformanceConfigs() throws Exception {
     JsOptions opts = new JsOptions();
     for (String cc : sampleValueFor("conformanceConfigs", String[].class)) {
-      opts.setConformanceConfigs(cc);
+      opts.setConformanceConfig(cc);
     }
 
     sanityCheckArgv(opts);
@@ -597,7 +597,7 @@ public final class JsOptionsTest extends TestCase {
   public static void testEntryPoints() throws Exception {
     JsOptions opts = new JsOptions();
     for (String x : sampleValueFor("entryPoints", String[].class)) {
-      opts.setEntryPoints(x);
+      opts.setEntryPoint(x);
     }
 
     sanityCheckArgv(opts);
