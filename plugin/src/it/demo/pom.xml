@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.google.closure.it</groupId>
@@ -8,6 +7,178 @@
   <version>1.0-SNAPSHOT</version>
 
   <description>Whole Application Contract Types Demo</description>
+
+  <build>
+    <defaultGoal>verify</defaultGoal>
+
+    <!-- Compiles the project's HTML, CSS, JS and protos -->
+    <plugins>
+      <!-- Make sure @Constant annotations are respected -->
+      <plugin>
+        <groupId>com.google.closure</groupId>
+        <artifactId>closure-maven-plugin</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-closure-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <genJavaPackageName>com.example.demo</genJavaPackageName>
+          <js>
+            <!-- advanced optimizations renames the field names in the
+                 generated JSON. -->
+            <compilationLevel>SIMPLE_OPTIMIZATIONS</compilationLevel>
+
+            <!-- many of these in generated proto and closure library code -->
+            <!-- TODO: need a way to escalate warnings to errors for source files -->
+            <jscompWarning>checkTypes</jscompWarning>
+            <jscompWarning>lintChecks</jscompWarning>
+            <jscompWarning>extraRequire</jscompWarning>
+            <jscompWarning>missingRequire</jscompWarning>
+            <jscompWarning>newCheckTypesAllChecks</jscompWarning>
+
+            <jscompError>*</jscompError>
+            <!--
+            <jscompError>undefinedVars</jscompError>
+            <jscompError>visibility</jscompError>
+            <jscompError>nonStandardJsDocs</jscompError>
+            <jscompError>invalidCasts</jscompError>
+            <jscompError>typeInvalidation</jscompError>
+            <jscompError>checkVars</jscompError>
+            <jscompError>deprecatedAnnotations</jscompError>
+            <jscompError>missingProvide</jscompError>
+            <jscompError>missingRequire</jscompError>
+            <jscompError>violation</jscompError>
+            <jscompError>conformanceViolations</jscompError>
+            -->
+            <useNewTypeInference>true</useNewTypeInference>
+
+            <conformanceConfig>src/main/js/jsconf.textproto</conformanceConfig>
+          </js>
+        </configuration>
+      </plugin>
+
+      <!-- Allows running the project via a Jetty web container -->
+      <plugin>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <version>9.3.11.v20160721</version>
+      </plugin>
+
+      <!-- Compiles the Java -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-compiler-javac-errorprone</artifactId>
+            <version>2.8</version>
+          </dependency>
+          <!-- override plexus-compiler-javac-errorprone's dependency on
+               Error Prone with the latest version -->
+          <dependency>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_core</artifactId>
+            <version>2.0.12</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <compilerId>javac-with-errorprone</compilerId>
+          <forceJavacCompilerUse>true</forceJavacCompilerUse>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <showWarnings>true</showWarnings>
+          <compilerArgs>
+            <arg>-Xep:CheckReturnValue:WARN</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <!-- Assemble the project into an executable JAR -->
+      <!-- TODO: use the assembly plugin instead -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>com.example.demo.Demo</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.3.1</version>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <DependencyConvergence/>
+                <banDuplicateClasses>
+                  <findAllDuplicates>true</findAllDuplicates>
+                  <ignoreClasses>
+                    <ignoreClass>javax.servlet.*</ignoreClass>
+                  </ignoreClasses>
+                </banDuplicateClasses>
+                <!-- check uses of safe HTML constructors -->
+                <fences implementation="com.google.security.fences.FencesMavenEnforcerRule">
+                  <import>com.google.common.html.types:types</import>
+                  <import>com.googlecode.owasp-java-html-sanitizer:html-types</import>
+                  <import>com.google.template:soy</import>
+                  <class>  <!-- TODO: move this into soy -->
+                    <name>com.google.template.soy.data.UnsafeSanitizedContentOrdainer</name>
+                    <method>
+                      <name>ordainAsSafe</name>
+                      <trusts>com.google.template.soy.jbcsrc.gen</trusts>
+                      <rationale>
+                        Template code generated by the Soy JBC-src backend can
+                        ordain as safe.  Only strict templates ordain.
+                      </rationale>
+                    </method>
+                  </class>
+                </fences>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>extra-enforcer-rules</artifactId>
+            <version>1.0-beta-4</version>
+          </dependency>
+          <dependency>
+            <groupId>com.google.security</groupId>
+            <artifactId>fences-maven-enforcer-rule</artifactId>
+            <version>1.8-beta-SNAPSHOT</version>  <!-- TODO: fix version -->
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
 
   <!-- allow building to run as a demo without
        introducing a directory into plugin/src/it/demo
@@ -24,152 +195,13 @@
       <activation>
         <property>
           <name>alt.build.dir</name>
-      </property>
+        </property>
       </activation>
       <build>
         <directory>${alt.build.dir}</directory>
       </build>
     </profile>
   </profiles>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>1.7</java.version>
-  </properties>
-
-  <build>
-    <defaultGoal>verify</defaultGoal>
-
-    <!-- Compiles the project's HTML, CSS, JS and protos -->
-    <plugins>
-      <plugin>
-        <groupId>com.google.closure</groupId>
-        <artifactId>closure-maven-plugin</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-        <configuration>
-          <genJavaPackageName>com.example.demo</genJavaPackageName>
-          <js>
-            <!-- advanced optimizations renames the field names in the
-                 generated JSON. -->
-            <compilationLevel>SIMPLE_OPTIMIZATIONS</compilationLevel>
-            <!--jscompWarn>*</jscompWarn-->
-            <jscompError>undefinedVars</jscompError>
-            <jscompError>visibility</jscompError>
-            <jscompError>nonStandardJsDocs</jscompError>
-            <jscompError>invalidCasts</jscompError>
-            <jscompWarning>checkTypes</jscompWarning>
-            <jscompError>typeInvalidation</jscompError>
-            <jscompError>checkVars</jscompError>
-            <jscompError>deprecatedAnnotations</jscompError>
-            <jscompError>missingProvide</jscompError>
-            <jscompError>missingRequire</jscompError>
-            <useNewTypeInference>true</useNewTypeInference>
-          </js>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>generate-closure-sources</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Allows running the project via a Jetty web container -->
-      <plugin>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-maven-plugin</artifactId>
-        <version>9.3.11.v20160721</version>
-      </plugin>
-
-      <!-- Compiles the Java -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
-        <configuration>
-          <compilerId>javac-with-errorprone</compilerId>
-          <forceJavacCompilerUse>true</forceJavacCompilerUse>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-          <showWarnings>true</showWarnings>
-          <compilerArgs>
-            <arg>-Xep:CheckReturnValue:WARN</arg>
-          </compilerArgs>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-compiler-javac-errorprone</artifactId>
-            <version>2.8</version>
-          </dependency>
-          <!-- override plexus-compiler-javac-errorprone's dependency on
-               Error Prone with the latest version -->
-          <dependency>
-            <groupId>com.google.errorprone</groupId>
-            <artifactId>error_prone_core</artifactId>
-            <version>2.0.12</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-
-      <!-- Assemble the project into an executable JAR -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <transformers>
-                <transformer
-                 implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>com.example.demo.Demo</mainClass>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.3.1</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>extra-enforcer-rules</artifactId>
-            <version>1.0-beta-4</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>enforce</id>
-            <configuration>
-              <rules>
-                <DependencyConvergence/>
-                <banDuplicateClasses>
-                  <findAllDuplicates>true</findAllDuplicates>
-                  <ignoreClasses>
-                    <ignoreClass>javax.servlet.*</ignoreClass>
-                  </ignoreClasses>
-                </banDuplicateClasses>
-              </rules>
-              <fail>true</fail>
-            </configuration>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
   <dependencies>
     <dependency>
@@ -248,6 +280,10 @@
           <groupId>com.google.code.findbugs</groupId>
           <artifactId>jsr305</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.gwt</groupId>
+          <artifactId>gwt-user</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
@@ -265,4 +301,8 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <properties>
+    <java.version>1.7</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 </project>

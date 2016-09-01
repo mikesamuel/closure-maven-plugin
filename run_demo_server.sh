@@ -15,7 +15,7 @@ while true; do
             MVN_PLUGIN_FLAGS="$MVN_PLUGIN_FLAGS -DskipTests=true"
             shift
             ;;
-        "clean" | "-X")
+        "clean" | "-X" | "-o")
             MVN_PLUGIN_FLAGS="$MVN_PLUGIN_FLAGS $1"
             MVN_DEMO_FLAGS="$MVN_DEMO_FLAGS $1"
             shift
@@ -30,12 +30,18 @@ done
 # pick a demo target directory outside the main project tree
 export DEMO_TARGET_DIR="$TMPDIR/closure-demo-target"
 
+# TODO: tweak JSCompiler so that it will match against
+# JSConformance whitelists using a path relative to a search
+# path root instead of the full path.
+export DEMO_TARGET_DIR="$PWD/plugin/src/it/demo/target"
+
 # build the plugin
 mvn install -Djava.awt.headless=true $MVN_PLUGIN_FLAGS
 
 # build the demo
 pushd "$PWD/plugin/src/it/demo/"
-mvn -PalternateBuildDir -Dalt.build.dir="$DEMO_TARGET_DIR" \
+mvn \
+    -PalternateBuildDir -Dalt.build.dir="$DEMO_TARGET_DIR" \
     -Djava.awt.headless=true \
     $MVN_DEMO_FLAGS verify
 popd
