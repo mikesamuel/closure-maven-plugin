@@ -1,8 +1,11 @@
 package com.google.closure.plugin.js;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -58,6 +61,7 @@ public final class Modules implements Serializable {
    * @param argv receives flags.
    */
   public void addClosureCompilerFlags(
+      Optional<File> workingDir,
       ImmutableList.Builder<? super String> argv) {
     for (Module module : modules) {
       StringBuilder moduleSpec = new StringBuilder();
@@ -74,7 +78,18 @@ public final class Modules implements Serializable {
       }
       argv.add("--module").add(moduleSpec.toString());
       for (Source source : module.sources) {
-        argv.add("--js").add(source.canonicalPath.getPath());
+        String path = null;
+        if (workingDir.isPresent()) {
+          File relFile = relativeToBestEffort(
+              workingDir.get(), source.canonicalPath);
+          if (relFile != null) {
+            path = relFile.getPath();
+          }
+        }
+        if (path == null) {
+          path = source.canonicalPath.getPath();
+        }
+        argv.add("--js").add(path);
       }
     }
   }
@@ -108,5 +123,21 @@ public final class Modules implements Serializable {
           + name + ":" + sources.size() + ":" + deps + " " + sources
           + "}";
     }
+  }
+
+  @VisibleForTesting
+  static File relativeToBestEffort(File base, File f) {
+    File p = f.getParentFile();
+    if (p == null) {
+      return null;
+    }
+    if (p.equals(base)) {
+      return new File(f.getName());
+    }
+    File relativeToParent = relativeToBestEffort(base, p);
+    if (relativeToParent == null) {
+      return null;
+    }
+    return new File(relativeToParent, f.getName());
   }
 }
