@@ -71,7 +71,14 @@ final class CompileJs extends Step {
     argvBuilder.add("--create_renaming_reports");
     argvBuilder.add("--create_source_map").add("%outname%-source-map.json");
 
-    modules.addClosureCompilerFlags(argvBuilder);
+    File workingDir;
+    try {
+      workingDir = new File(".").getCanonicalFile();
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to resolve cwd", ex);
+    }
+
+    modules.addClosureCompilerFlags(Optional.of(workingDir), argvBuilder);
 
     final ImmutableList<String> argv = argvBuilder.build();
     if (log.isDebugEnabled()) {
