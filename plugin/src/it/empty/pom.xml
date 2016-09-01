@@ -13,6 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project-under-test.version>1.0.0-SNAPSHOT</project-under-test.version>
   </properties>
 
   <build>
@@ -20,7 +21,7 @@
       <plugin>
         <groupId>com.google.closure</groupId>
         <artifactId>closure-maven-plugin</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${project-under-test.version}</version>
         <executions>
           <execution>
             <goals>

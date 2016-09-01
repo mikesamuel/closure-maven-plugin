@@ -8,6 +8,12 @@
 
   <description>Whole Application Contract Types Demo</description>
 
+  <properties>
+    <java.version>1.7</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project-under-test.version>1.0.0-SNAPSHOT</project-under-test.version>
+  </properties>
+
   <build>
     <defaultGoal>verify</defaultGoal>
 
@@ -17,7 +23,7 @@
       <plugin>
         <groupId>com.google.closure</groupId>
         <artifactId>closure-maven-plugin</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${project-under-test.version}</version>
         <executions>
           <execution>
             <goals>
@@ -195,7 +201,7 @@
     <dependency>
       <groupId>com.google.closure</groupId>
       <artifactId>soy-juice</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project-under-test.version}</version>
     </dependency>
     <!-- The protoc plugin needs protobuf-java so it can figure out which
          version of protoc to invoke. -->
@@ -289,8 +295,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <properties>
-    <java.version>1.7</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
 </project>

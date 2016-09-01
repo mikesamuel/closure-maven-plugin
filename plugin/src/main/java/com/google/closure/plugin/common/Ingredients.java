@@ -393,7 +393,7 @@ public final class Ingredients {
     }
 
     /**
-     * May be called if inputs to {@link #setFiles} are unavailable due to an
+     * May be called if inputs to {@link #setSources} are unavailable due to an
      * exceptional condition.
      */
     protected void setProblem(Throwable th) {

@@ -114,7 +114,7 @@ public final class Sources {
    * In the following directory structure,
    * <pre>
    * foo/
-   *   bar -> symlink to /baz
+   *   bar &rarr; symlink to /baz
    * baz/
    *   boo.txt
    * </pre>

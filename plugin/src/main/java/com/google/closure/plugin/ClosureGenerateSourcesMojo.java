@@ -26,8 +26,8 @@ import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 
 /**
- * Generates .js & .java sources from .proto and .soy and compiles .js and .css
- * to optimized bundles.
+ * Generates .js and .java sources from .proto and .soy and compiles
+ * .js and .css to optimized bundles.
  */
 @Mojo(
     name="generate-closure-sources",

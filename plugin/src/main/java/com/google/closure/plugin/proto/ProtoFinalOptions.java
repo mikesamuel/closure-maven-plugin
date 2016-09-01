@@ -6,6 +6,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.Options;
 import com.google.closure.plugin.plan.KeyedSerializable;
 import com.google.closure.plugin.plan.PlanKey;
 

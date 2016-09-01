@@ -172,7 +172,7 @@ public final class JsOptions extends SourceOptions {
   private final List<FormattingOption> formatting = Lists.newArrayList();
   /** Process CommonJS modules to a concatenable form. */
   public Boolean processCommonJsModules;
-  /** Path prefixes to be removed from ES6 & CommonJS modules. */
+  /** Path prefixes to be removed from ES6 and CommonJS modules. */
   public void setModuleRoot(String x) {
     // Plexus configurator compatible setter that adds.
     this.moduleRoot.add(x);

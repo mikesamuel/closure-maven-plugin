@@ -67,7 +67,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
   /**
    * Directory root for compiled CSS and JS and other resources that are useful
-   * on the client including the CSS rename map and CSS & JS source maps.
+   * on the client including the CSS rename map and CSS and JS source maps.
    * By default, this is under the classes directory so these files will be
    * packaged in the project JAR making these available as resources on the
    * class-path under "{@code /closure/}&hellip;".
