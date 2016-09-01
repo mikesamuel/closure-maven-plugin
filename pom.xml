@@ -345,5 +345,122 @@
         </plugins>
       </build>
     </profile>
+
+    <!-- Build steps that only need to run when publishing to Maven Central. -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <!-- Sign artifacts with local GPG key. -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- Create javadoc.jar. -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.3</version>
+            <configuration>
+              <notimestamp>true</notimestamp>
+              <windowtitle>Closure Maven Plugin API</windowtitle>
+              <author>false</author>
+              <doctitle>
+                <![CDATA[
+                  <h1>Closure Maven Plugin</h1>
+                ]]>
+              </doctitle>
+              <bottom><![CDATA[
+                <p id="copyright">&copy; 2016 Google -
+                  <a href="http://www.google.com/privacy.html">Privacy Policy</a> -
+                  <a href="http://www.google.com/terms_of_service.html">Terms and Conditions</a> -
+                  <a href="http://www.google.com/about.html">About Google</a>
+                </p>]]>
+              </bottom>
+              <!-- Ignore javadoc errors. -->
+              <failOnError>false</failOnError>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadoc</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- Create sources.jar. -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
+
+  <inceptionYear>2016</inceptionYear>
+
+  <scm>
+    <connection>scm:git:https://github.com/mikesamuel/closure-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:mikesamuel/closure-maven-plugin.git</developerConnection>
+    <url>https://github.com/mikesamuel/closure-maven-plugin.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/mikesamuel/closure-maven-plugin/issues</url>
+  </issueManagement>
+
+  <!-- Allow publishing snapshots to Maven Central. -->
+  <distributionManagement>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <organization>
+    <name>Google</name>
+    <url>http://www.google.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Googlers</name>
+      <organization>Google</organization>
+      <organizationUrl>https://www.google.com</organizationUrl>
+    </developer>
+  </developers>
 </project>
