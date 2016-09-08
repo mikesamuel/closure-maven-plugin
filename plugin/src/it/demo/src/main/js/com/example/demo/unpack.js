@@ -16,7 +16,7 @@ goog.require('proto.webutil.html.types.SafeHtmlProto');
 goog.require('security.html.jspbconversions');
 
 /**
- * @param {!Object} JSON serialization of an update proto.
+ * @param {!Object} o JSON serialization of an update proto.
  * @return {!proto.com.example.demo.Update}
  */
 com.example.unpack.unpackUpdate = function (o) {
@@ -39,7 +39,7 @@ com.example.unpack.unpackUpdate = function (o) {
 };
 
 /**
- * @param {!Object} JSON serialization of a wall items proto.
+ * @param {!Object} o JSON serialization of a wall items proto.
  * @return {!proto.com.example.demo.WallItems}
  * @private
  */
@@ -61,7 +61,7 @@ com.example.unpack.unpackWallItems = function (o) {
 };
 
 /**
- * @param {!Object} JSON serialization of a wall item proto.
+ * @param {!Object} o JSON serialization of a wall item proto.
  * @return {!proto.com.example.demo.WallItem}
  * @private
  */
@@ -87,12 +87,12 @@ com.example.unpack.unpackWallItem = function (o) {
   return result;
 };
 
-/** @type {goog.string.Const} */
+/** @type {!goog.string.Const} */
 com.example.unpack.UNPACK_SAFE_HTML_JUSTIFICATION =
   goog.string.Const.from('contract was checked on the server');
 
 /**
- * @param {!Object} JSON serialization of a safe HTML proto.
+ * @param {!Object} o JSON serialization of a safe HTML proto.
  * @return {!proto.webutil.html.types.SafeHtmlProto}
  * @private
  */
@@ -104,7 +104,7 @@ com.example.unpack.unpackSafeHtml = function (o) {
 };
 
 /**
- * @param {!Object} JSON serialization of a point proto.
+ * @param {!Object} o JSON serialization of a point proto.
  * @return {!proto.com.example.demo.Point}
  * @private
  */

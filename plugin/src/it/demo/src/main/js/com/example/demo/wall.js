@@ -1,32 +1,26 @@
 goog.module('com.example.wall');
 
+goog.require('com.example.unpack');
+
 // These abstract away some browser weirdness.
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
-goog.require('goog.dom.safe');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.net.XhrIo');
-goog.require('goog.style');
 
 // A library for drag-and-drop so the fragment we're editing
 // can be dragged to a new location.
 goog.require('goog.fx.Dragger');
-// We sanitize HTML client side for quick display to the user
-// even though that result is not trusted by the server.
-goog.require('goog.html.sanitizer.HtmlSanitizer');
-// Bridges Soy templates and SafeHTML
-goog.require('goog.soy.Renderer');
 
-// We rerender the Soy template on the client when we receive an update.
-goog.require('com.example.demo');
+// Network abstraction
+goog.require('goog.net.XhrIo');
+// More DOM abstraction.
+goog.require('goog.style');
 
 // We manipulate protobufs programatically.
-goog.require('com.example.unpack');
-goog.require('proto.com.example.demo.Point');
 goog.require('proto.com.example.demo.WallItem');
-goog.require('security.html.jspbconversions');
+goog.require('proto.com.example.demo.WallItems');
 
 
 goog.events.listen(
@@ -110,18 +104,6 @@ goog.events.listen(
       5000 /* ms */);
 
     /**
-     * Simulate the sanitization done on the server.
-     * Any XSS is not persisted.
-     *
-     * @return {goog.html.sanitizer.HtmlSanitizer}
-     */
-    function newSanitizer() {
-      return new goog.html.sanitizer.HtmlSanitizer.Builder()
-        .allowCssStyles()
-        .build();
-    }
-
-    /**
      * Update the HTML displayed so that the preview tracks the
      * editor form state.
      */
@@ -135,8 +117,7 @@ goog.events.listen(
         goog.dom.classlist.add(chip, className);
       }
 
-      var safeDomElement = newSanitizer().sanitizeToDomNode(htmlValue);
-      //chip.innerHTML = safeDomElement.innerHTML;  // Conformance violation!!!
+      var safeDomElement = domElementFromHtml(htmlValue);
       goog.dom.removeChildren(chip);
       goog.dom.append(chip, safeDomElement);
     }
@@ -148,9 +129,9 @@ goog.events.listen(
     }
 
     /**
-     * @param {number} n
      * @param {number} left
      * @param {number} right
+     * @param {number} n
      * @return {number} NaN or an n' such that left <= n' <= right.
      */
     function bound(left, right, n) {
@@ -158,7 +139,7 @@ goog.events.listen(
     }
 
     /**
-     * @return {{x:number,y:number}}
+     * @return {!{x:number,y:number}}
      */
     function getChipPosition() {
       return {
@@ -168,7 +149,7 @@ goog.events.listen(
       };
     }
 
-    /** @param {{x:number,y:number}} p */
+    /** @param {!{x:number,y:number}} p */
     function setChipPosition(p) {
       var x = p.x;
       var y = p.y;
@@ -193,18 +174,10 @@ goog.events.listen(
     }
 
     /**
-     * @return {proto.com.example.demo.WallItem}
+     * @return {!proto.com.example.demo.WallItem}
      */
     function getWallItemFromChip() {
-      var location = new proto.com.example.demo.Point();
-      var position = getChipPosition();
-      location.setXPercent(position.x | 0);
-      location.setYPercent(position.y | 0);
-
-      var wallItem = new proto.com.example.demo.WallItem();
-      wallItem.setHtmlUntrusted(htmlTextarea.value);
-      wallItem.setCentroid(location);
-      return wallItem;
+      return makeWallItem(htmlTextarea.value, getChipPosition());
     }
 
     /**
@@ -222,21 +195,7 @@ goog.events.listen(
         'POST',
         JSON.stringify(wallItem.toObject()));
 
-      // Attach the safeHtml by sanitizing client side.
-      wallItem.setHtml(
-        security.html.jspbconversions.safeHtmlToProto(
-          goog.html.sanitizer.HtmlSanitizer.sanitize(
-            wallItem.getHtmlUntrusted())));
-
-      // Pre-render the wall item.
-      // This will be clobbered by the authoritative response from
-      // wall.json.
-      var newWallItemHtml = (new goog.soy.Renderer).renderSafeHtml(
-        com.example.demo.WallItem, { item: wallItem });
-
-      goog.dom.safe.insertAdjacentHtml(
-        chip, goog.dom.safe.InsertAdjacentHtmlPosition.BEFOREBEGIN,
-        newWallItemHtml);
+      wallItemRender(wallItem, chip);
 
       resetForm();
     }
@@ -246,10 +205,10 @@ goog.events.listen(
      * The JSPB binary wire format has not been standardized enough to
      * protobuf team's liking for them to support it publically.
      *
-     * @param {*=} _ ignored.
+     * @param {*=} opt_ignored
      * @this {goog.net.XhrIo}
      */
-    function updateWallFromJson(_) {
+    function updateWallFromJson(opt_ignored) {
       var xhr = this;
 
       // If we got a redirect to a different nonce, then we've been
@@ -278,12 +237,7 @@ goog.events.listen(
         }
 
         // Re-render the template to produce updated items.
-        /** @type {goog.html.SafeHtml} */
-        var newWallItemsHtml = (new goog.soy.Renderer).renderSafeHtml(
-          com.example.demo.WallItems, { wall: items });
-        goog.dom.safe.insertAdjacentHtml(
-          wallContainer, goog.dom.safe.InsertAdjacentHtmlPosition.AFTERBEGIN,
-          newWallItemsHtml);
+        wallItemsRender(items, wallContainer);
       } else {
         console.log(
           'Discarding update.  Have %d, but received update with version %d',
@@ -344,3 +298,65 @@ goog.events.listen(
       };
     }
   });
+
+
+/**
+ * @type {function(!proto.com.example.demo.WallItem, !HTMLElement)}
+ */
+var wallItemRender = function (wi, follower) { throw new Error(); };
+
+/**
+ * @type {function(!proto.com.example.demo.WallItems, !HTMLElement)}
+ */
+var wallItemsRender = function (wi, follower) { throw new Error(); };
+
+// TODO: Does this really need to be external?
+/**
+ * @type
+ *   {function(string, !{x:number, y:number}):proto.com.example.demo.WallItem}
+ */
+var makeWallItem = function (html, position) { throw new Error(); };
+
+/**
+ * @type {function(!string):!HTMLElement}
+ */
+var domElementFromHtml = function (html) { throw new Error(); };
+
+/**
+ * We use different wall item -> HTML renderers depending on the
+ * server variant : whether we're DEMOing a vulnerable, buggy, or fixed
+ * implementation.
+ *
+ * @param {function(!proto.com.example.demo.WallItem, !HTMLElement)} wr
+ */
+function registerWallItemRender(wr) {
+  wallItemRender = wr;
+}
+
+/**
+ * @param {function(!proto.com.example.demo.WallItems, !HTMLElement)} wr
+ */
+function registerWallItemsRender(wr) {
+  wallItemsRender = wr;
+}
+
+/**
+ * @param
+ *   {function(string, !{x:number, y:number}):proto.com.example.demo.WallItem}
+ *   mwi
+ */
+function registerMakeWallItem(mwi) {
+  makeWallItem = mwi;
+}
+
+/**
+ * @param {function(!string):!HTMLElement} defh
+ */
+function registerDomElementFromHtml(defh) {
+  domElementFromHtml = defh;
+}
+
+exports.registerWallItemRender     = registerWallItemRender;
+exports.registerWallItemsRender    = registerWallItemsRender;
+exports.registerMakeWallItem       = registerMakeWallItem;
+exports.registerDomElementFromHtml = registerDomElementFromHtml;

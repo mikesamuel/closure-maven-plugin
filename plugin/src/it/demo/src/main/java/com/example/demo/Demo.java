@@ -19,9 +19,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.example.demo.Wall.Update;
 import com.example.demo.Wall.WallItem;
-import com.example.demo.Wall.WallItems;
-
 import com.google.closure.module.ClosureModule;
+import com.google.closure.module.ResponseWriter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -29,6 +29,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.html.types.SafeHtml;
 import com.google.common.html.types.SafeHtmls;
 import com.google.common.html.types.TrustedResourceUrl;
@@ -43,7 +44,6 @@ import com.google.inject.Injector;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.google.template.soy.data.SoyValueHelper;
-import com.google.template.soy.jbcsrc.api.AdvisingAppendable;
 import com.google.template.soy.jbcsrc.api.Precompiled;
 import com.google.template.soy.jbcsrc.api.SoySauce;
 import com.google.template.soy.jbcsrc.api.SoySauce.WriteContinuation;
@@ -74,6 +74,8 @@ import org.owasp.html.htmltypes.SafeHtmlMint;
  */
 public class Demo extends AbstractHandler {
 
+  final DemoVariant variant;
+
   /** Compute content types for /closure/... resources. */
   static final ImmutableMap<String, String> EXTENSION_TO_CONTENT_TYPE =
       ImmutableMap.of(
@@ -82,7 +84,19 @@ public class Demo extends AbstractHandler {
           "css",  "text/css; charset=utf-8",
           "ico",  "image/x-icon");
 
-  private final SecureRandom nonceGenerator = new SecureRandom();
+  static final ImmutableMap<DemoVariant, TrustedResourceUrl> WALL_ITEM_JS =
+      Maps.immutableEnumMap(ImmutableMap.<DemoVariant, TrustedResourceUrl>of(
+          DemoVariant.FIXED,
+          TrustedResourceUrls.fromConstant(
+              WebFiles.JS_COM_EXAMPLE_WALL_ITEM_FIXED_JS),
+          DemoVariant.OVER_ESCAPING,
+          TrustedResourceUrls.fromConstant(
+              WebFiles.JS_COM_EXAMPLE_WALL_ITEM_OVERESCAPING_JS),
+          DemoVariant.INSECURE,
+          TrustedResourceUrls.fromConstant(
+              WebFiles.JS_COM_EXAMPLE_WALL_ITEM_INSECURE_JS)));
+
+  private final SecureRandom nonceGenerator = makeNonceGenerator();
 
   private final Cache<Nonce, WallData> walls =
       CacheBuilder.newBuilder()
@@ -107,7 +121,8 @@ public class Demo extends AbstractHandler {
     injector.injectMembers(this);
   }
 
-  SafeHtmlMint safeHtmlMint = SafeHtmlMint.fromPolicyFactory(
+  /** We use this to convert untrusted HTML into trustworthy SafeHtml */
+  final SafeHtmlMint safeHtmlMint = SafeHtmlMint.fromPolicyFactory(
       new HtmlPolicyBuilder()
       .allowCommonBlockElements()
       .allowCommonInlineFormattingElements()
@@ -118,6 +133,14 @@ public class Demo extends AbstractHandler {
       .allowStyling()
       .toFactory());
 
+  /**
+   * @param variant specifies which variant to run.
+   */
+  public Demo(DemoVariant variant) {
+    this.variant = Preconditions.checkNotNull(variant);
+  }
+
+  /** Main entry point for Jetty HTTP request dispatch. */
   @Override
   public void handle(
       String targetPath,
@@ -182,9 +205,7 @@ public class Demo extends AbstractHandler {
         }
       }
       if (!handled) {
-        Nonce newNonce = Nonce.create(nonceGenerator);
-        WallData newWall = new WallData();
-        walls.put(newNonce, newWall);
+        Nonce newNonce = createNewWall();
         response.sendRedirect("/" + newNonce.text + "/wall#");
         handled = true;
       }
@@ -213,6 +234,10 @@ public class Demo extends AbstractHandler {
     baseRequest.setHandled(handled);
   }
 
+  /**
+   * Respond with 304 as appropriate when a webservice client tells us which
+   * version they have.
+   */
   private boolean maybeNotModified(
       Target target, HttpServletRequest request, HttpServletResponse response)
   throws IOException {
@@ -223,7 +248,7 @@ public class Demo extends AbstractHandler {
     int version;
     try {
       version = Integer.parseInt(versionString);
-    } catch (@SuppressWarnings("unused") NumberFormatException _) {
+    } catch (@SuppressWarnings("unused") NumberFormatException ex) {
       System.err.println("Malformed have parameter " + request.getRequestURL());
       return false;
     }
@@ -246,32 +271,63 @@ public class Demo extends AbstractHandler {
     return Optional.absent();
   }
 
+  @VisibleForTesting
+  Nonce createNewWall() {
+    Nonce newNonce = Nonce.create(nonceGenerator);
+    WallData newWall = new WallData();
+    walls.put(newNonce, newWall);
+    return newNonce;
+  }
 
-  private Optional<Update> postWallJson(
-      Target target, Reader jsonIn)
+  @SuppressWarnings("static-method")
+  @VisibleForTesting
+  protected SecureRandom makeNonceGenerator() {
+    return new SecureRandom();
+  }
+
+
+  /**
+   * Mutate the internal state and return the details so we can return the
+   * updated state to the client.
+   *
+   * @param jsonIn contains a wall-item to add in protobuf JSON format.
+   */
+  private Optional<Update> postWallJson(Target target, Reader jsonIn)
   throws IOException, InvalidProtocolBufferException {
     WallItem.Builder itemBuilder = WallItem.newBuilder();
     JsonFormat.parser().merge(jsonIn, itemBuilder);
 
-    return postItems(target, itemBuilder.build());
+    return postItem(target, itemBuilder.build());
   }
 
-  private Optional<Update> postWallPb(
-     Target target, InputStream jsonIn)
+
+  /**
+   * @param pbIn contains a wall-item to add in protobuf binary format.
+   */
+  private Optional<Update> postWallPb(Target target, InputStream pbIn)
   throws IOException, InvalidProtocolBufferException {
     WallItem.Builder itemBuilder = WallItem.newBuilder();
-    itemBuilder.mergeFrom(jsonIn);
+    itemBuilder.mergeFrom(pbIn);
 
-    return postItems(target, itemBuilder.build());
+    return postItem(target, itemBuilder.build());
   }
 
-  private Optional<Update> postItems(Target target, WallItem item) {
-    String untrustedHtml = item.getHtmlUntrusted();
-    SafeHtml safeHtml = safeHtmlMint.sanitize(untrustedHtml);
+  /**
+   * @param item to add to the wall specified by target.
+   *     Knowledge of the target nonce implies authority to modify that target.
+   */
+  @VisibleForTesting
+  Optional<Update> postItem(Target target, WallItem item) {
+    WallItem.Builder newItemBuilder = item.toBuilder()
+        .clearHtml();
 
-    final WallItem newItem = item.toBuilder()
-        .setHtml(SafeHtmls.toProto(safeHtml))
-        .build();
+    if (variant == DemoVariant.FIXED) {
+      String untrustedHtml = item.getHtmlUntrusted();
+      SafeHtml safeHtml = safeHtmlMint.sanitize(untrustedHtml);
+      newItemBuilder.setHtml(SafeHtmls.toProto(safeHtml));
+    }
+
+    final WallItem newItem = newItemBuilder.build();
     return getWall(target).transform(new Function<WallData, Update>() {
       @Override
       public Update apply(WallData wd) {
@@ -290,7 +346,8 @@ public class Demo extends AbstractHandler {
     u.writeTo(out);
   }
 
-  private void renderWall(Target target, Update u, final Writer out)
+  @VisibleForTesting
+  void renderWall(Target target, Update u, final Writer out)
   throws IOException {
     Nonce oneTimeCspNonce = Nonce.create(nonceGenerator);
 
@@ -302,11 +359,16 @@ public class Demo extends AbstractHandler {
             TrustedResourceUrls.fromConstant(WebFiles.CSS_WALL_MAIN_CSS)),
         "scripts", ImmutableList.<TrustedResourceUrl>of(
             TrustedResourceUrls.fromConstant(WebFiles.JS_MAIN_JS),
-            TrustedResourceUrls.fromConstant(WebFiles.JS_COM_EXAMPLE_WALL_JS))
+            TrustedResourceUrls.fromConstant(WebFiles.JS_COM_EXAMPLE_WALL_JS),
+            WALL_ITEM_JS.get(variant))
         );
     ImmutableMap<String, Object> ijData = ImmutableMap.<String, Object>of(
         "csp_nonce", oneTimeCspNonce.text);
 
+    if (variant == DemoVariant.INSECURE) {
+      AdHocHtml.write(data, oneTimeCspNonce, this.cssRenamingMap, out);
+      return;
+    }
     SoySauce.Renderer renderer = soySauce
         .renderTemplate("com.example.demo.Wall")
         .setData(data)
@@ -316,97 +378,44 @@ public class Demo extends AbstractHandler {
         .setCssRenamingMap(cssRenamingMap)
         ;
 
-    WriteContinuation wc = renderer.render(new AdvisingAppendable() {
-
-      @Override
-      public AdvisingAppendable append(CharSequence s) throws IOException {
-        out.write(s.toString());
-        return this;
+    try (ResponseWriter rw = new ResponseWriter(out)) {
+      WriteContinuation wc = renderer.render(rw);
+      while (!wc.result().isDone()) {
+        wc = wc.continueRender();
       }
-
-      @Override
-      public AdvisingAppendable append(char ch) throws IOException {
-        out.write(ch);
-        return this;
-      }
-
-      @Override
-      public AdvisingAppendable append(CharSequence s, int lt, int rt)
-      throws IOException {
-        out.write(s.subSequence(lt, rt).toString());
-        return this;
-      }
-
-      @Override
-      public boolean softLimitReached() {
-        return false;
-      }
-    });
-    while (!wc.result().isDone()) {
-      wc = wc.continueRender();
     }
   }
 
   /** Takes optional httpd port number. */
   public static void main(String... args) throws Exception {
     int port = 8080;
-    switch (args.length) {
-      case 1:
-        port = Integer.parseInt(args[0]);
-        break;
-      case 0:
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Expect at most one argument: httpd port");
+    DemoVariant variant = DemoVariant.DEFAULT;
+    for (int i = 0; i < args.length; ++i) {
+      String flag = args[i];
+      try {
+        switch (flag) {
+          case "--port":
+            port = Integer.parseInt(args[++i]);
+            break;
+          case "--variant":
+            variant = DemoVariant.valueOf(args[++i]);
+            break;
+          default:
+            throw new IllegalArgumentException(
+                "Expect at most one argument: httpd port");
+        }
+      } catch (RuntimeException ex) {
+        System.err.println("Failed to parse value of flag " + flag);
+        throw ex;
+      }
     }
 
     Server server = new Server(port);
-    server.setHandler(new Demo());
+    server.setHandler(new Demo(variant));
 
     server.start();
     System.out.println("(Serving from port " + port + ")");
     server.join();
     System.out.println("(Have a nice day)");
-  }
-
-  static final class WallData {
-    private int version = 0;
-    private WallItems items = WallItems.newBuilder().build();
-
-    public Update getWall() {
-      WallItems currentItems;
-      int currentVersion;
-      synchronized (this) {
-        currentItems = this.items;
-        currentVersion = this.version;
-      }
-      return Update.newBuilder()
-          .setItems(currentItems)
-          .setVersion(currentVersion)
-          .build();
-    }
-
-    public int getVersion() {
-      return version;
-    }
-
-    public Update addItem(WallItem newItem) {
-      Preconditions.checkNotNull(newItem);
-
-      WallItems currentItems;
-      int currentVersion;
-      synchronized (this) {
-        Preconditions.checkState(this.version < Integer.MAX_VALUE);
-        WallItems newItems = this.items.toBuilder().addItem(newItem).build();
-
-        currentItems = this.items = newItems;
-        currentVersion = ++this.version;
-      }
-      return Update.newBuilder()
-          .setItems(currentItems)
-          .setVersion(currentVersion)
-          .build();
-    }
   }
 }

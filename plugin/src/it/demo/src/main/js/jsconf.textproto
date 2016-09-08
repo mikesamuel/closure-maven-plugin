@@ -66,6 +66,10 @@ requirement: {
 
   # Content comes from a safe stylesheet which is checked at runtime.
   whitelist: 'target/dep/main/js/goog/style/style.js'
+
+  # HACK: Allow demo code that shows the wrong way to do things
+  whitelist: 'src/main/js/com/example/demo/wall-item-insecure.js'
+  whitelist: 'src/main/js/com/example/demo/wall-item-overescaping.js'
 }
 
 requirement: {
@@ -77,6 +81,18 @@ requirement: {
   value: 'Element.prototype.outerHTML'
 
   # Safe wrapper for this property.
+  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+}
+
+requirement: {
+  type: BANNED_PROPERTY
+  error_message: 'Element.prototype.insertAdjacentHTML is not allowed '
+                 'since passing unsafe content can cause XSS vulnerabilities.'
+                 'Use goog.dom.safe.insertAdjacentHtml instead.'
+
+  value: 'Element.prototype.insertAdjacentHTML'
+
+  # Safe wrapper for this method.
   whitelist: 'target/dep/main/js/goog/dom/safe.js'
 }
 
