@@ -1,3 +1,17 @@
+/**
+ * @fileoverview
+ * Supporting JS for Demo.java.
+ *
+ * <p>This instruments the output of the Wall Soy template
+ * with event handlers, sets up a recurring ping for updates,
+ * and handles form submission.
+ *
+ * <p>It requires one of the wall-item-*.js modules.
+ *
+ * @author Mike Samuel
+ */
+
+
 goog.module('com.example.wall');
 
 goog.require('com.example.unpack');

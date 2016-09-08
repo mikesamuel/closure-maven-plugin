@@ -1,3 +1,9 @@
+/**
+ * @fileoverview
+ * Buggy variant of wlll-item-fixed.js.
+ * See that file for more detail.
+ */
+
 goog.module('com.example.wall.item.overescaping');
 
 // We rerender the Soy template on the client when we receive an update.
@@ -17,8 +23,8 @@ goog.require('proto.com.example.demo.WallItems');
      * @return {!HTMLElement}
      */
     function domElementFromHtml(html) {
-      // Render the wall-item into an <li> and then move the cotnent
-      // int a <div>.
+      // Manufacture a wall-item, render to an <li> and then move the content
+      // int a <div> which can serve as the new content of the chip.
       var newWallItemElement = goog.soy.renderAsElement(
         com.example.demo.WallItem,
         { item: makeWallItem(html, {x: 50, y:50}) });
@@ -69,6 +75,8 @@ goog.require('proto.com.example.demo.WallItems');
     location.setYPercent(centroid.y | 0);
 
     var wallItem = new proto.com.example.demo.WallItem();
+    // The untrusted HTML here is treated as a string of plain text
+    // and escaped by locally run templates.
     wallItem.setHtmlUntrusted(html);
     wallItem.setCentroid(location);
 

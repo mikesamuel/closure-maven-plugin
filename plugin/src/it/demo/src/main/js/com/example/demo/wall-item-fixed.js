@@ -1,3 +1,11 @@
+/**
+ * @fileoverview
+ * Plugs into wall.js to do things in an XSS-safe way
+ * unlike the other variants which show a variety of
+ * problems due to failure to adequately handle untrusted
+ * inputs or cosmetic problems due to over-compensating.
+ */
+
 goog.module('com.example.wall.item.fixed');
 
 // We rerender the Soy template on the client when we receive an update.
@@ -22,7 +30,8 @@ goog.require('security.html.jspbconversions');
 
   /**
    * Simulate the sanitization done on the server.
-   * Any XSS is not persisted.
+   * Any XSS is not persisted since the server-side
+   * sanitizer is authoritative.
    *
    * @return {!goog.html.sanitizer.HtmlSanitizer}
    */
@@ -32,6 +41,11 @@ goog.require('security.html.jspbconversions');
       .build();
   }
 
+  /**
+   * Called to render the contents of the chip that
+   * displays content before a wall item is sent to
+   * the server.
+   */
   registry.registerDomElementFromHtml(
     /**
      * @param {!string} html
@@ -45,6 +59,10 @@ goog.require('security.html.jspbconversions');
 
   registry.registerWallItemRender(
     /**
+     * Pre-renders a wall item that is being sent to the server
+     * so that there is no visible display between an update
+     * being sent and the authoritative content arriving back.
+     *
      * @param {!proto.com.example.demo.WallItem} wallItem
      * @param {!HTMLElement} follower
      */
@@ -68,6 +86,10 @@ goog.require('security.html.jspbconversions');
 
   registry.registerWallItemsRender(
     /**
+     * Re-render all wall items.  Used when an update is received
+     * from the server, either due to a ping that does not return
+     * 304(Not Modified) or as the body of a Wall POST result.
+     *
      * @param {!proto.com.example.demo.WallItems} items
      * @param {!HTMLElement} container
      */
@@ -82,6 +104,8 @@ goog.require('security.html.jspbconversions');
 
   registry.registerMakeWallItem(
     /**
+     * Programatically create a Wall Item.
+     *
      * @param {string} html
      * @param {!{x:number,y:number}} centroid
      * @return {!proto.com.example.demo.WallItem}

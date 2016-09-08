@@ -1,3 +1,9 @@
+/**
+ * @fileoverview
+ * Insecure variant of wlll-item-fixed.js.
+ * See that file for more detail.
+ */
+
 goog.module('com.example.wall.item.insecure');
 
 goog.require('proto.com.example.demo.Point');
