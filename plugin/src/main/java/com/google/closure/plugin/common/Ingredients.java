@@ -493,6 +493,9 @@ public final class Ingredients {
       }
       try {
         Sources sources = Sources.scan(log, spec);
+        log.debug(
+            "Directory scan found " + sources.sources.size()
+            + " sources for " + spec.toString());
 
         ImmutableList.Builder<FileIngredient> fileIngredientList =
             ImmutableList.builder();

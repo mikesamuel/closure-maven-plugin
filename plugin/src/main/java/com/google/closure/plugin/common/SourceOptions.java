@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 /**
@@ -66,7 +67,7 @@ public abstract class SourceOptions extends Options {
       File defaultMainRoot, File defaultTestRoot,
       GenfilesDirs genfilesDirs) {
 
-    ImmutableList.Builder<TypedFile> allRoots = ImmutableList.builder();
+    ImmutableSet.Builder<TypedFile> allRoots = ImmutableSet.builder();
     if (source != null && source.length != 0) {
       for (SourceRootBuilder oneSource : source) {
         allRoots.add(oneSource.build());
