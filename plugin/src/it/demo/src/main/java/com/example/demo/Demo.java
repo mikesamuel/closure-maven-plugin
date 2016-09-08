@@ -84,6 +84,7 @@ public class Demo extends AbstractHandler {
           "css",  "text/css; charset=utf-8",
           "ico",  "image/x-icon");
 
+  /** We load different JS per variant. */
   static final ImmutableMap<DemoVariant, TrustedResourceUrl> WALL_ITEM_JS =
       Maps.immutableEnumMap(ImmutableMap.<DemoVariant, TrustedResourceUrl>of(
           DemoVariant.FIXED,
