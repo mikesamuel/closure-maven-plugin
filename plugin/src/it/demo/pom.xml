@@ -152,6 +152,10 @@
                       </rationale>
                     </method>
                   </class>
+
+                  <addendum>
+                    Question?  security@example.com  |  http://faqs/safecoding
+                  </addendum>
                 </fences>
               </rules>
               <fail>true</fail>
