@@ -33,7 +33,7 @@ final class AdHocHtml {
                 + "\"></script>");
     }
     out.write("</head>");
-    out.write("<body data-wall-version=\"1\">");
+    out.write("<body data-wall-version=\"" + data.get("version") + "\">");
     out.write("<ul class=\"" + cssRenamingMap.get("wall") + "\">");
     WallItems wallItems = (WallItems) data.get("wall");
     for (WallItem item : wallItems.getItemList()) {
