@@ -84,7 +84,7 @@ goog.require('security.html.jspbconversions');
     /**
      * @param {string} html
      * @param {!{x:number,y:number}} centroid
-     * @return {proto.com.example.demo.WallItem}
+     * @return {!proto.com.example.demo.WallItem}
      */
     function makeWallItem(html, centroid) {
       var location = new proto.com.example.demo.Point();

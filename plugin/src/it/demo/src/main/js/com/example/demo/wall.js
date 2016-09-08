@@ -313,7 +313,7 @@ var wallItemsRender = function (wi, follower) { throw new Error(); };
 // TODO: Does this really need to be external?
 /**
  * @type
- *   {function(string, !{x:number, y:number}):proto.com.example.demo.WallItem}
+ *   {function(string, !{x:number, y:number}):!proto.com.example.demo.WallItem}
  */
 var makeWallItem = function (html, position) { throw new Error(); };
 
@@ -342,7 +342,7 @@ function registerWallItemsRender(wr) {
 
 /**
  * @param
- *   {function(string, !{x:number, y:number}):proto.com.example.demo.WallItem}
+ *   {function(string, !{x:number, y:number}):!proto.com.example.demo.WallItem}
  *   mwi
  */
 function registerMakeWallItem(mwi) {

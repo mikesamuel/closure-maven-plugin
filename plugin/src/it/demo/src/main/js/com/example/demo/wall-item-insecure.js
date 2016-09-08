@@ -16,6 +16,7 @@ goog.require('proto.com.example.demo.WallItems');
       var div = document.createElement('div');
       // Not very insecure.  They get to XSS themselves.
       div.innerHTML = html;
+      return /** @type {!HTMLElement} */ (div);
     });
 
   /**
@@ -48,7 +49,7 @@ goog.require('proto.com.example.demo.WallItems');
       var newWallItemHtml = renderWallItem(wallItem);
 
       // http://caniuse.com/#feat=insertadjacenthtml
-      follower.insertAdjacentHtml('beforebegin', newWallItemHtml);
+      follower.insertAdjacentHTML('beforebegin', newWallItemHtml);
     });
 
   registry.registerWallItemsRender(
@@ -59,14 +60,14 @@ goog.require('proto.com.example.demo.WallItems');
     function (items, container) {
       var newWallItemsHtml = items.getItemList().map(renderWallItem).join('');
       // http://caniuse.com/#feat=insertadjacenthtml
-      container.insertAdjacentHtml('afterbegin', newWallItemsHtml);
+      container.insertAdjacentHTML('afterbegin', newWallItemsHtml);
     });
 
   registry.registerMakeWallItem(
     /**
      * @param {string} html
      * @param {!{x:number,y:number}} centroid
-     * @return {proto.com.example.demo.WallItem}
+     * @return {!proto.com.example.demo.WallItem}
      */
     function makeWallItem(html, centroid) {
       var location = new proto.com.example.demo.Point();

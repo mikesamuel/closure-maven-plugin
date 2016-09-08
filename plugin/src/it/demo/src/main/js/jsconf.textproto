@@ -94,6 +94,10 @@ requirement: {
 
   # Safe wrapper for this method.
   whitelist: 'target/dep/main/js/goog/dom/safe.js'
+
+  # HACK: Allow demo code that shows the wrong way to do things
+  whitelist: 'src/main/js/com/example/demo/wall-item-insecure.js'
+  whitelist: 'src/main/js/com/example/demo/wall-item-overescaping.js'
 }
 
 requirement: {
