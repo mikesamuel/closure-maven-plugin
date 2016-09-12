@@ -1,0 +1,88 @@
+ ------
+ Introduction
+ ------
+ Mike Samuel
+ ------
+ 2016-07-20
+ ------
+
+
+Closure Maven Plugin
+
+  The Closure Maven Plugin makes it easy to write web applications in
+  Maven by integrating Closure
+  {{{https://github.com/google/closure-stylesheets}CSS}},
+  {{{https://github.com/google/closure-compiler}JavaScript}},
+  {{{https://github.com/google/closure-templates}Template}}, and
+  {{{https://github.com/google/protobuf}Protocol Buffers}} compilation.
+
+* Goals Overview
+
+  {{{./generate-sources-mojo.html}closure:generate-sources}} compiles
+  <<<.css>>>, <<<.js>>>, <<<.proto>>>, and <<<.soy>>> files
+  generating <<<.class>>> and <<<.js>>> files and resources that are
+  bundled into the output JAR.
+
+* Usage
+
++---------------------------------------
+<plugin>
+  <groupId>com.google.closure</groupId>
+  <artifactId>closure-maven-plugin</artifactId>
+  <version>${project.version}</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>generate-closure-sources</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <!-- See Configuration -->
+  </configuration>
+</plugin>
++---------------------------------------
+
+  processes web sources.  Specifically, it
+
+  * looks for <<<.css>>> and <<<.gss>>> files under <<<src/site/css>>>
+    and, for every file that ends with <<<-main.{css,gss}>>> creates
+    a compiled stylesheet.
+
+  * looks for <<<.proto>>> files under <<<src/main/proto>>>
+    and generates <<<.java>>> and <<<.js>>> files for each message type.
+
+  * looks for <<<.soy>>> files under <<<src/main/soy>>>
+    and generates Java classes and <<<.js>>> files for each template.
+
+  * looks for <<<.js>>> files under <<<src/main/js>>>, and for each
+    {{{https://github.com/google/closure-library/wiki/goog.module:-an-ES6-module-like-alternative-to-goog.provide}<<<goog.module('...')>>>}}
+    declaration, generates a compiled JS file.
+    Closure library and generated JS files are automatically linked in.
+
+* Outputs
+
+  By default, non-java outputs are collected in the <<<target/classes/closure>>>
+  directory, so they are available as resources.
+  The {{{../module/index.html}Soy Juice module}} works with this layout to
+  enable Soy rendering from Java code, and the generated <<<WebFiles>>> Java
+  class contains constants for each output.
+
+  * <<<target/classes/closure/js>>> contains one JS file for each JS module.
+
+  * <<<target/classes/closure/css>>> contains one CSS file for each main CSS
+    or GSS source, and also contains the CSS rename map in JSON format.
+
+  * <<<target/classes/closure/proto>>> contains the full descriptor set.
+
+* Configuration
+
+  See {{{./configuration-com.google.closure.plugin.ClosureGenerateSourcesMojo.html}Configuration}} for an exhaustive list of configuration options.
+
+* Examples
+
+  * {{{./examples/js-configuration.html}JS Compiler Flags}}
+
+  * {{{./examples/protobuf-deps.html}Protobufs}}
+
+  * {{{./examples/extracting-deps.html}Extracting Dependencies}}

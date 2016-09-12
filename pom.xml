@@ -270,6 +270,15 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <!-- allow mvn site:stage to build a collected site under target/stage -->
+          <topSiteUrl>https://mikesamuel.github.io/closure-maven-plugin/</topSiteUrl>
+          <skipDeploy>true</skipDeploy>
+        </configuration>
+      </plugin>
     </plugins>
 
     <pluginManagement>
@@ -310,6 +319,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>2.10.4</version>
+          <configuration>
+            <quiet>true</quiet>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -353,6 +365,28 @@
             </executions>
           </plugin>
         </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <!-- courtesy http://stackoverflow.com/a/34808603/20394 -->
+      <id>relaxed-java8-doclint</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <configuration>
+                <additionalparam>-Xdoclint:html</additionalparam>
+                <additionalparam>-Xdoclint:reference</additionalparam>
+                <additionalparam>-Xdoclint:syntax</additionalparam>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
       </build>
     </profile>
 
@@ -451,6 +485,10 @@
       <id>ossrh</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
+    <site>
+      <id>website</id>
+      <url>https://mikesamuel.github.io/closure-maven-plugin/</url>
+    </site>
   </distributionManagement>
 
   <organization>
