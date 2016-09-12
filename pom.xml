@@ -16,8 +16,9 @@
   <url>http://github.com/mikesamuel/closure-maven-plugin</url>
 
   <modules>
-    <module>plugin</module>
+    <module>doclet</module>
     <module>module</module>
+    <module>plugin</module>
   </modules>
 
   <properties>
@@ -26,7 +27,7 @@
     <jscomp.version>v20160822</jscomp.version>
     <protoc-plugin.version>1.4.56</protoc-plugin.version>
     <soy.version>2016-08-25</soy.version>
-    <java.version>1.7</java.version>
+    <java.source.version>1.7</java.source.version>
     <!-- Used in a resource filter -->
     <protobuf-java.version>3.0.0</protobuf-java.version>
   </properties>
@@ -257,6 +258,7 @@
                 <enforceBytecodeVersion>
                   <maxJdkVersion>1.7</maxJdkVersion>
                   <excludes>
+                    <exclude>com.sun:tools</exclude>
                   </excludes>
                 </enforceBytecodeVersion>
               </rules>
@@ -282,8 +284,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.5.1</version>
           <configuration>
-            <source>${java.version}</source>
-            <target>${java.version}</target>
+            <source>${java.source.version}</source>
+            <target>${java.source.version}</target>
           </configuration>
         </plugin>
         <plugin>
@@ -299,6 +301,15 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>2.9</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>2.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.10.4</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -369,7 +380,6 @@
             <!-- Create javadoc.jar. -->
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.3</version>
             <configuration>
               <notimestamp>true</notimestamp>
               <windowtitle>Closure Maven Plugin API</windowtitle>

@@ -1,0 +1,73 @@
+{namespace com.google.closure.doclet.soy}
+
+{template .Configurable}
+  {@param e : com.google.closure.doclet.Element}
+
+  <doctype html>
+  <meta charset="utf-8">
+  <title>{$e.tagNameList[0]}</title>
+  <style type="text/css" media="all">
+    @import url("./css/maven-base.css");
+    @import url("./css/maven-theme.css");
+    @import url("./css/site.css");
+  </style>
+
+  <h1>{$e.tagNameList[0]}</h1>
+
+  {if $e.commentHtml}
+    <p>{$e.commentHtml}</p>
+  {/if}
+
+  <p>
+  <small>{if $e.isEnum}enum{sp}{/if}{$e.className}</small>
+
+  <p>
+  <code>
+    {foreach $tagName in $e.tagNameList}
+      {if not isFirst($tagName)} or {/if}
+      <code>&lt;{$tagName}&gt;</code>
+    {ifempty}
+      <code>&lt;&gt;</code>
+    {/foreach}
+  </code>
+  <blockquote>
+    <table class="bodyTable">
+      {foreach $p in $e.paramList}
+        {call .Param}
+          {param rowIndex : index($p) /}
+          {param isEnum : $e.isEnum /}
+          {param p : $p /}
+        {/call}
+      {/foreach}
+    </table>
+  </blockquote>
+  <code>&lt;/&gt;</code>
+{/template}
+
+
+{template .Param private="true"}
+  {@param rowIndex : int}
+  {@param isEnum : bool}
+  {@param p : com.google.closure.doclet.Parameter}
+  <tr class="{$rowIndex % 2 == 0 ? 'a' : 'b'}">
+    <td><code>
+      {if $isEnum}
+        {$p.name}
+      {else}
+        &lt;{$p.name}&gt;
+      {/if}
+    </code></td>
+
+  {if not $isEnum}
+    <td>
+      {if $p.typeUrl}<a href="{$p.typeUrl}">{/if}
+      <i>{$p.type}</i>
+      {if $p.typeUrl}</a>{/if}
+  {/if}
+
+    <td>
+      {if $p.commentHtml}
+        {$p.commentHtml}
+      {/if}
+  </tr>
+{/template}

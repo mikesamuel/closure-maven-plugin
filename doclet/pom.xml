@@ -1,0 +1,82 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>doclet</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.google.closure</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+
+  <name>Doclet</name>
+  <description>
+    A custom doclet that is used to generate site documentation
+    for configuration classes.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <!-- http://maven.apache.org/general.html#tools-jar-dependency -->
+      <groupId>com.sun</groupId>
+      <artifactId>tools</artifactId>
+      <version>${java.version}</version>
+      <scope>system</scope>
+      <systemPath>${java.home}/../lib/tools.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.closure</groupId>
+      <artifactId>soy-juice</artifactId>
+      <version>1.0.0</version>  <!-- avoid dependency cycle -->
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.common.html.types</groupId>
+      <artifactId>types</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+      <artifactId>html-types</artifactId>
+      <version>20160827.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.common.html.types</groupId>
+          <artifactId>types</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <defaultGoal>verify</defaultGoal>
+    <plugins>
+      <plugin>
+        <groupId>com.google.closure</groupId>
+        <artifactId>closure-maven-plugin</artifactId>
+        <version>1.0.0</version>  <!-- avoid dependency cycle -->
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-closure-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
