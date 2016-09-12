@@ -77,6 +77,45 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <reportSets>
+          <reportSet>
+            <id>html</id>
+            <reports>
+              <report>javadoc</report>
+            </reports>
+          </reportSet>
+          <reportSet>
+            <id>configuration</id>
+            <configuration>
+              <doclet>com.google.closure.doclet.PluginConfigDoclet</doclet>
+
+              <!-- <docletPath>/path/to/doccheck.jar</docletPath> -->
+              <docletArtifacts>
+                <docletArtifact>
+                  <groupId>com.google.closure</groupId>
+                  <artifactId>doclet</artifactId>
+                  <version>${project.version}</version>
+                </docletArtifact>
+              </docletArtifacts>
+
+              <!-- Other dir than apidocs -->
+              <destDir>${project.build.directory}/site</destDir>
+
+              <!-- For the project-reports page-->
+              <name>site-configuration-docs</name>
+              <description>
+                Generate pages for the project site that describe configuration options
+              </description>
+            </configuration>
+            <reports>
+              <report>javadoc</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
         <version>3.4</version>
       </plugin>
