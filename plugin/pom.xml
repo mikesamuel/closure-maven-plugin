@@ -99,7 +99,6 @@
                 </docletArtifact>
               </docletArtifacts>
 
-              <!-- Other dir than apidocs -->
               <destDir>${project.build.directory}/site</destDir>
 
               <!-- For the project-reports page-->
