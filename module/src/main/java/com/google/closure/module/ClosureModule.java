@@ -2,6 +2,7 @@ package com.google.closure.module;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -79,12 +80,13 @@ public final class ClosureModule extends AbstractModule {
   @Singleton
   public SoyProtoTypeProvider provideProtoTypeProvider()
   throws IOException, Descriptors.DescriptorValidationException {
-    // TODO: make these descriptors available in the JAR.
-    ByteSource descriptorBytes = Resources.asByteSource(
-        getClass().getResource(PROTO_DESCRIPTORS_RESOURCE_PATH));
-    return new SoyProtoTypeProvider.Builder()
-        .addFileDescriptorSetFromByteSource(descriptorBytes)
-        .build();
+    SoyProtoTypeProvider.Builder b = new SoyProtoTypeProvider.Builder();
+    URL pdUrl = getClass().getResource(PROTO_DESCRIPTORS_RESOURCE_PATH);
+    if (pdUrl != null) {
+      ByteSource descriptorBytes = Resources.asByteSource(pdUrl);
+      b.addFileDescriptorSetFromByteSource(descriptorBytes);
+    }
+    return b.build();
   }
 
   /** Reads the CSS rename map  */
@@ -92,15 +94,20 @@ public final class ClosureModule extends AbstractModule {
   @Singleton
   public SoyCssRenamingMap provideCssRenamingMap()
   throws IOException {
-    CharSource cssRenamingMapJson = Resources.asCharSource(
-        getClass().getResource(CSS_RENAMING_MAP_RESOURCE_PATH), Charsets.UTF_8);
-    JsonElement json;
-    try (Reader jsonIn = cssRenamingMapJson.openStream()) {
-      json = new JsonParser().parse(jsonIn);
-    }
     ImmutableMap.Builder<String, String> cssMapBuilder = ImmutableMap.builder();
-    for (Map.Entry<String, JsonElement> e : json.getAsJsonObject().entrySet()) {
-      cssMapBuilder.put(e.getKey(), e.getValue().getAsString());
+
+    URL crUrl = getClass().getResource(CSS_RENAMING_MAP_RESOURCE_PATH);
+    if (crUrl != null) {
+      CharSource cssRenamingMapJson = Resources.asCharSource(
+          crUrl, Charsets.UTF_8);
+      JsonElement json;
+      try (Reader jsonIn = cssRenamingMapJson.openStream()) {
+        json = new JsonParser().parse(jsonIn);
+      }
+      for (Map.Entry<String, JsonElement> e
+           : json.getAsJsonObject().entrySet()) {
+        cssMapBuilder.put(e.getKey(), e.getValue().getAsString());
+      }
     }
     return new SoyCssRenamingMapImpl(cssMapBuilder.build());
   }
