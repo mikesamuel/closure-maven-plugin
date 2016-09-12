@@ -373,6 +373,21 @@ public final class PluginConfigDoclet {
         }
         eb.setIsEnum(c.configurableClass.isEnum());
         eb.setIsMojo(c.isMojo);
+        if (c.isMojo) {
+          String goal = null;
+          Optional<AnnotationDesc> mojoAnnot = annotationNamed(
+              c.configurableClass, MOJO_ANNOTATION_NAME);
+          if (mojoAnnot.isPresent()) {
+            for (ElementValuePair p : mojoAnnot.get().elementValues()) {
+              if ("name".equals(p.element().name())) {
+                goal = (String) p.value().value();
+              }
+            }
+          }
+          if (goal != null) {
+            eb.setGoal(goal);
+          }
+        }
         eb.addAllTagName(c.tagNames);
         // Present in lexicographic order.
         for (String paramName : Sets.newTreeSet(c.params.keySet())) {
@@ -578,14 +593,23 @@ public final class PluginConfigDoclet {
               continue;
             }
           } else if (c.isMojo) {
+            // Mojos only configure @Parameter annotated fields.
             continue;
           }
           String setterName = setterNameFor(name);
           // Look for setter defined on the same class.
           MethodDoc setter = settersBySetterName.remove(setterName);
 
-          if (f.isFinal() && setter == null) {
-            continue;
+          if (setter == null) {
+            if (f.isFinal() || !(parameter.isPresent() || f.isPublic())) {
+              // Final fields with no setter can't be configured.
+              // Setters can be used to modify to final fields that contain
+              // a collection or builder.
+
+              // If there's no @Parameter opt-in, we assume only public fields
+              // are part of the configuration.
+              continue;
+            }
           }
 
           if (!c.params.containsKey(name)) {

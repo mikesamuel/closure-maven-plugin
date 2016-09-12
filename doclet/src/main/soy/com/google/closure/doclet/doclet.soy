@@ -12,7 +12,13 @@
     @import url("./css/site.css");
   </style>
 
-  <h1>{$e.tagNameList[0]}</h1>
+  <h1>
+    {if $e.isMojo and $e.goal}
+      {$e.goal}
+    {else}
+      {$e.tagNameList[0]}
+    {/if}
+  </h1>
 
   {if $e.commentHtml}
     <p>{$e.commentHtml}</p>

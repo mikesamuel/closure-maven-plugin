@@ -13,6 +13,7 @@ message Element {
   repeated com.google.closure.doclet.Parameter param = 4;
   repeated string tag_name = 5;
   optional webutil.html.types.SafeHtmlProto comment_html = 6;
+  optional string goal = 7;
 }
 
 message Parameter {
