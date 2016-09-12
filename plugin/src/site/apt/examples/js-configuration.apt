@@ -1,0 +1,38 @@
+JS Configuration
+
+  The {{{../configuration-com.google.closure.plugin.soy.Js.html}<<<js>>>}} tag allows forwarding flags to the JS Compiler.  You can specify it multiple times to invoke the closure compiler more than once.  This can come in handy if you are generating different JS for different locales or different browser variants.
+
+  The {{{https://github.com/mikesamuel/closure-maven-plugin/blob/master/plugin/src/it/demo/pom.xml}demo POM}} uses a moderately strict configuration.
+
++---------------------------------------
+
+<plugin>
+  <groupId>com.google.closure</groupId>
+  <artifactId>closure-maven-plugin</artifactId>
+  <version>${project.version}</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>generate-closure-sources</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <js>
+      <compilationLevel>SIMPLE_OPTIMIZATIONS</compilationLevel>
+
+      <!-- many of these in generated proto and closure library code -->
+      <jscompWarning>checkTypes</jscompWarning>
+      <jscompWarning>lintChecks</jscompWarning>
+      <jscompWarning>extraRequire</jscompWarning>
+      <jscompWarning>missingRequire</jscompWarning>
+      <jscompWarning>newCheckTypesAllChecks</jscompWarning>
+
+      <!-- Treat all others as errors -->
+      <jscompError>*</jscompError>
+
+      <useNewTypeInference>true</useNewTypeInference>
+    </js>
+  </configuration>
+</plugin>
++---------------------------------------
