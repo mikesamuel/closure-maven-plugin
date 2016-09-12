@@ -30,7 +30,7 @@ public abstract class SourceOptions extends Options {
 
   /**
    * Add a path patterns to include specified as ANT-directory-scanner-style
-   * patterns like <code>**<nobr></nobr>/*.ext</code>.
+   * patterns like <code>**<!---->/*.ext</code>.
    */
   public void setInclude(String filePattern) {
     this.include.add(filePattern);
@@ -39,7 +39,7 @@ public abstract class SourceOptions extends Options {
 
   /**
    * Path patterns to include specified as ANT-directory-scanner-style patterns
-   * like <code>**<nobr></nobr>/*.ext</code>.
+   * like <code>**<!---->/*.ext</code>.
    */
   public ImmutableList<String> getIncludes() {
     return ImmutableList.copyOf(include);
@@ -47,7 +47,7 @@ public abstract class SourceOptions extends Options {
 
   /**
    * Add a path patterns to exclude specified as ANT-directory-scanner-style
-   * patterns like <code>**<nobr></nobr>/*.ext</code>.
+   * patterns like <code>**<!---->/*.ext</code>.
    */
   public void setExclude(String filePattern) {
     this.exclude.add(filePattern);
@@ -55,7 +55,7 @@ public abstract class SourceOptions extends Options {
   private final List<String> exclude = Lists.newArrayList();
   /**
    * Path patterns to exclude specified as ANT-directory-scanner-style patterns
-   * like <code>**<nobr></nobr>/*.ext</code>.
+   * like <code>**<!---->/*.ext</code>.
    */
   public ImmutableList<String> getExcludes() {
     return ImmutableList.copyOf(exclude);
@@ -115,7 +115,7 @@ public abstract class SourceOptions extends Options {
   /**
    * Source extensions used to compute default includes.
    * For example, a source extension of {@code "js"} implies a default include
-   * of <code>**<nobr></nobr>/*.js</code>.
+   * of <code>**<!---->/*.js</code>.
    */
   protected abstract ImmutableList<String> sourceExtensions();
 

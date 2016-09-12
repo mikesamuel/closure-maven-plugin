@@ -14,10 +14,10 @@ public final class DirectoryScannerSpec implements Serializable {
   /** The roots to scan. */
   public final ImmutableList<TypedFile> roots;
 
-  /** <code>**<nobr></nobr>/*.ext</code> style paths to include. */
+  /** <code>**<!---->/*.ext</code> style paths to include. */
   public final ImmutableList<String> includes;
 
-  /** <code>**<nobr></nobr>/*.ext</code> style paths to exclude. */
+  /** <code>**<!---->/*.ext</code> style paths to exclude. */
   public final ImmutableList<String> excludes;
 
   /** */
