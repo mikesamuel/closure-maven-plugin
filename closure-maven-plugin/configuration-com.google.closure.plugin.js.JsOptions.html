@@ -1,0 +1,81 @@
+<doctype html><meta charset="utf-8"><title>js</title><style type="text/css" media="all">@import url("./css/maven-base.css"); @import url("./css/maven-theme.css"); @import url("./css/site.css");</style><h1>js</h1><p>A plexus-configurable set of options compatible with
+ {&#64;link CommandLineRunner}.</p><p><small>com.google.closure.plugin.js.JsOptions</small><p><code><code>&lt;js&gt;</code></code><blockquote><table class="bodyTable"><tr class="a"><td><code>&lt;angularPass&gt;</code></td><td><i>Boolean</i><td>Generate $inject properties for AngularJS for functions
+ annotated with &#64;ngInject</tr><tr class="b"><td><code>&lt;assumeFunctionWrapper&gt;</code></td><td><i>Boolean</i><td>Enable additional optimizations based on the assumption that the
+ output will be wrapped with a function wrapper.  This flag is
+ used to indicate that &#34;global&#34; declarations will not actually be
+ global but instead isolated to the compilation unit. This enables
+ additional optimizations.</tr><tr class="a"><td><code>&lt;charset&gt;</code></td><td><i>String</i><td>Input and output charset for all files. By default, we accept
+ UTF-8 as input and output US_ASCII</tr><tr class="b"><td><code>&lt;checksOnly&gt;</code></td><td><i>Boolean</i><td>Don&#39;t generate output. Run checks, but no optimization passes.</tr><tr class="a"><td><code>&lt;compilationLevel&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilationLevel.html"><i>CompilationLevel</i></a><td>Specifies the compilation level to use.
+ Options: WHITESPACE_ONLY, SIMPLE_OPTIMIZATIONS, ADVANCED_OPTIMIZATIONS</tr><tr class="b"><td><code>&lt;conformanceConfig&gt;</code></td><td><i>String</i><td>A list of JS Conformance configurations in text protocol buffer format.</tr><tr class="a"><td><code>&lt;dartPass&gt;</code></td><td><i>Boolean</i><td>Rewrite Dart Dev Compiler output to be compiler-friendly.</tr><tr class="b"><td><code>&lt;debug&gt;</code></td><td><i>Boolean</i><td>Enable debugging options</tr><tr class="a"><td><code>&lt;define&gt;</code></td><td><i>String</i><td>Override the value of a variable annotated &#64;define. The format is
+ <code>&lt;name&gt;[&#61;&lt;val&gt;],</code> where <code>&lt;name&gt;</code> is the name of
+ a &#64;define variable and <code>&lt;val&gt;</code> is a boolean, number, or a
+ single-quoted string that contains no single quotes.
+ If [&#61;<code>&lt;val&gt;]</code> is omitted, the variable is marked true</tr><tr class="b"><td><code>&lt;dependencyMode&gt;</code></td><td><a href="configuration-com.google.closure.plugin.js.JsOptions.DependencyMode.html"><i>DependencyMode</i></a><td>Specifies how the compiler should determine the set and order of
+ files for a compilation.
+ <p>
+ Options: NONE the compiler will include
+ all src files in the order listed, STRICT files will be included
+ and sorted by starting from namespaces or files listed by the
+ --entry_point flag - files will only be included if they are
+ referenced by a goog.require or CommonJS require or ES6 import,
+ LOOSE same as with STRICT but files which do not goog.provide a
+ namespace and are not modules will be automatically added as
+ --entry_point entries. Defaults to NONE.</p></tr><tr class="a"><td><code>&lt;entryPoint&gt;</code></td><td><i>String</i><td>A file or namespace to use as the starting point for determining
+ which src files to include in the compilation. ES6 and CommonJS
+ modules are specified as file paths (without the
+ extension). Closure-library namespaces are specified with a
+ &#34;goog:&#34; prefix. Example: --entry_point&#61;goog:goog.Promise</tr><tr class="b"><td><code>&lt;environment&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilerOptions.Environment.html"><i>Environment</i></a><td>Determines the set of builtin externs to load. Options: BROWSER,
+ CUSTOM. Defaults to BROWSER.</tr><tr class="a"><td><code>&lt;exclude&gt;</code></td><td><i>String</i><td>Add a path patterns to exclude specified as ANT-directory-scanner-style
+ patterns like <code>**/*.ext</code>.</tr><tr class="b"><td><code>&lt;exportLocalPropertyDefinitions&gt;</code></td><td><i>Boolean</i><td>Generates export code for local properties marked with &#64;export</tr><tr class="a"><td><code>&lt;extraAnnotationName&gt;</code></td><td><i>String</i><td>A whitelist of tag names in JSDoc. You may specify multiple</tr><tr class="b"><td><code>&lt;flagFile&gt;</code></td><td><i>String</i><td>A file containing additional command-line options.</tr><tr class="a"><td><code>&lt;formatting&gt;</code></td><td><a href="configuration-com.google.closure.plugin.js.JsOptions.FormattingOption.html"><i>FormattingOption</i></a><td>Specifies which formatting options, if any, should be applied to
+ the output JS.
+ Options: PRETTY_PRINT, PRINT_INPUT_DELIMITER, SINGLE_QUOTES</tr><tr class="b"><td><code>&lt;generateExports&gt;</code></td><td><i>Boolean</i><td>Generates export code for those marked with &#64;export</tr><tr class="a"><td><code>&lt;hideWarningsFor&gt;</code></td><td><i>String</i><td>If specified, files whose path contains this string will have
+ their warnings hidden. You may specify multiple.</tr><tr class="b"><td><code>&lt;id&gt;</code></td><td><i>String</i><td>If not supplied, autogenerated.
+ <p>
+ Compilers that may be run multiple times with different options may use
+ the ID to disambiguate outputs.</p></tr><tr class="a"><td><code>&lt;include&gt;</code></td><td><i>String</i><td>Add a path patterns to include specified as ANT-directory-scanner-style
+ patterns like <code>**/*.ext</code>.</tr><tr class="b"><td><code>&lt;injectLibraries&gt;</code></td><td><i>Boolean</i><td>Allow injecting runtime libraries.</tr><tr class="a"><td><code>&lt;instrumentationFile&gt;</code></td><td><i>String</i><td>A file containing an instrumentation template.</tr><tr class="b"><td><code>&lt;j2clPassMode&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilerOptions.J2clPassMode.html"><i>J2clPassMode</i></a><td>Rewrite J2CL output to be compiler-friendly if enabled (ON or AUTO).
+ Options:OFF, ON, AUTO(default)</tr><tr class="a"><td><code>&lt;jscompError&gt;</code></td><td><i>String</i><td>Make the named class of warnings an error. Must be one of the
+ error group items. &#39;*&#39; adds all supported.</tr><tr class="b"><td><code>&lt;jscompOff&gt;</code></td><td><i>String</i><td>Turn off the named class of warnings. Must be one of the error
+ group items. &#39;*&#39; adds all supported.</tr><tr class="a"><td><code>&lt;jscompWarning&gt;</code></td><td><i>String</i><td>Make the named class of warnings a normal warning. Must be one
+ of the error group items. &#39;*&#39; adds all supported.</tr><tr class="b"><td><code>&lt;languageIn&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilerOptions.LanguageMode.html"><i>LanguageMode</i></a><td>Sets what language spec that input sources conform. Options:
+ ECMASCRIPT3, ECMASCRIPT5, ECMASCRIPT5_STRICT, ECMASCRIPT6
+ (default), ECMASCRIPT6_STRICT, ECMASCRIPT6_TYPED
+ (experimental)</tr><tr class="a"><td><code>&lt;languageOut&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilerOptions.LanguageMode.html"><i>LanguageMode</i></a><td>Sets what language spec the output should conform to. Options:
+ ECMASCRIPT3 (default), ECMASCRIPT5, ECMASCRIPT5_STRICT,
+ ECMASCRIPT6_TYPED (experimental)</tr><tr class="b"><td><code>&lt;moduleOutputPathPrefix&gt;</code></td><td><i>String</i><td>Prefix for filenames of compiled JS modules.
+ <code>&lt;module-name&gt;.js</code> will be appended to this prefix.
+ Directories will be created as needed. Use with --module</tr><tr class="a"><td><code>&lt;moduleRoot&gt;</code></td><td><i>String</i><td>Path prefixes to be removed from ES6 and CommonJS modules.</tr><tr class="b"><td><code>&lt;moduleWrapper&gt;</code></td><td><i>String</i><td>An output wrapper for a JavaScript module (optional). The format
+ is <code>&lt;name&gt;:&lt;wrapper&gt;.</code> The module name must correspond with
+ a module specified using --module. The wrapper must contain %s as
+ the code placeholder. The %basename% placeholder can also be used
+ to substitute the base name of the module output file.</tr><tr class="a"><td><code>&lt;outputManifest&gt;</code></td><td><i>String</i><td>Prints out a list of all the files in the compilation. If
+ --dependency_mode&#61;STRICT or LOOSE is specified, this will not
+ include files that got dropped because they were not
+ required. The %outname% placeholder expands to the JS output
+ file. If you&#39;re using modularization, using %outname% will create
+ a manifest for each module.</tr><tr class="b"><td><code>&lt;outputModuleDependencies&gt;</code></td><td><i>String</i><td>Prints out a JSON file of dependencies between modules.</tr><tr class="a"><td><code>&lt;outputWrapper&gt;</code></td><td><i>String</i><td>Interpolate output into this string at the place denoted by the
+ marker token %output%. Use marker token %output|jsstring% to do
+ js string escaping on the output.</tr><tr class="b"><td><code>&lt;outputWrapperFile&gt;</code></td><td><i>String</i><td>Loads the specified file and passes the file contents to the
+ --output_wrapper flag, replacing the value if it exists. This is
+ useful if you want special characters like newline in the
+ wrapper.</tr><tr class="a"><td><code>&lt;polymerPass&gt;</code></td><td><i>Boolean</i><td>Rewrite Polymer classes to be compiler-friendly.</tr><tr class="b"><td><code>&lt;preserveTypeAnnotations&gt;</code></td><td><i>Boolean</i><td>Preserves type annotations.</tr><tr class="a"><td><code>&lt;printSourceAfterEachPass&gt;</code></td><td><i>Boolean</i><td>Whether to iteratively print resulting JS source per pass.</tr><tr class="b"><td><code>&lt;processClosurePrimitives&gt;</code></td><td><i>Boolean</i><td>Processes built-ins from the Closure library, such as
+ goog.require(), goog.provide(), and goog.exportSymbol(). True by
+ default.</tr><tr class="a"><td><code>&lt;processCommonJsModules&gt;</code></td><td><i>Boolean</i><td>Process CommonJS modules to a concatenable form.</tr><tr class="b"><td><code>&lt;processJqueryPrimitives&gt;</code></td><td><i>Boolean</i><td>Processes built-ins from the Jquery library, such as jQuery.fn
+ and jQuery.extend()</tr><tr class="a"><td><code>&lt;renamePrefixNamespace&gt;</code></td><td><i>String</i><td>Specifies the name of an object that will be used to store all
+ non-extern globals</tr><tr class="b"><td><code>&lt;rewritePolyfills&gt;</code></td><td><i>Boolean</i><td>Rewrite ES6 library calls to use polyfills provided by the
+ compiler&#39;s runtime.</tr><tr class="a"><td><code>&lt;source&gt;</code></td><td><a href="configuration-com.google.closure.plugin.common.SourceOptions.SourceRootBuilder.html"><i>SourceRootBuilder</i></a><td>Source file roots.</tr><tr class="b"><td><code>&lt;sourceMapFormat&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.SourceMap.Format.html"><i>Format</i></a><td>The source map format to produce. Options are V3 and DEFAULT,
+ which are equivalent.</tr><tr class="a"><td><code>&lt;sourceMapInput&gt;</code></td><td><i>String</i><td>Source map locations for input files, separated by a &#39;|&#39;,
+ (i.e. input-file-path|input-source-map)</tr><tr class="b"><td><code>&lt;sourceMapLocationMapping&gt;</code></td><td><i>String</i><td>Source map location mapping separated by a &#39;|&#39;
+ (i.e. filesystem-path|webserver-path)</tr><tr class="a"><td><code>&lt;summaryDetailLevel&gt;</code></td><td><i>Integer</i><td>Controls how detailed the compilation summary is. Values: 0
+ (never print summary), 1 (print summary only if there are errors
+ or warnings), 2 (print summary if the &#39;checkTypes&#39; diagnostic
+ group is enabled, see --jscomp_warning), 3 (always print
+ summary). The default level is 1</tr><tr class="b"><td><code>&lt;testSource&gt;</code></td><td><a href="configuration-com.google.closure.plugin.common.SourceOptions.SourceRootBuilder.html"><i>SourceRootBuilder</i></a><td>Test file roots.</tr><tr class="a"><td><code>&lt;thirdParty&gt;</code></td><td><i>Boolean</i><td>Check source validity but do not enforce Closure style rules and
+ conventions</tr><tr class="b"><td><code>&lt;tracerMode&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.CompilerOptions.TracerMode.html"><i>TracerMode</i></a><td>Shows the duration of each compiler pass and the impact to the
+ compiled output size.
+ Options: ALL, RAW_SIZE, TIMING_ONLY, OFF</tr><tr class="a"><td><code>&lt;transformAmdModules&gt;</code></td><td><i>Boolean</i><td>Transform AMD to CommonJS modules.</tr><tr class="b"><td><code>&lt;translationsFile&gt;</code></td><td><i>String</i><td>Source of translated messages. Currently only supports XTB.</tr><tr class="a"><td><code>&lt;translationsProject&gt;</code></td><td><i>String</i><td>Scopes all translations to the specified project.When specified,
+ we will use different message ids so that messages in different
+ projects can have different translations.</tr><tr class="b"><td><code>&lt;useNewTypeInference&gt;</code></td><td><i>Boolean</i><td>Checks for type errors using the new type inference algorithm.</tr><tr class="a"><td><code>&lt;useTypesForOptimization&gt;</code></td><td><i>Boolean</i><td>Enable or disable the optimizations based on available type
+ information. Inaccurate type annotations may result in incorrect
+ results.</tr><tr class="b"><td><code>&lt;version&gt;</code></td><td><i>Boolean</i><td>Prints the compiler version to stdout and exit.</tr><tr class="a"><td><code>&lt;warningLevel&gt;</code></td><td><a href="configuration-com.google.javascript.jscomp.WarningLevel.html"><i>WarningLevel</i></a><td>Specifies the warning level to use. Options: QUIET, DEFAULT, VERBOSE</tr><tr class="b"><td><code>&lt;warningsWhitelistFile&gt;</code></td><td><i>String</i><td>A file containing warnings to suppress. Each line should be of the form
+<code>&lt;file-name&gt;:&lt;line-number&gt;?</code>  <code>&lt;warning-description&gt;</code></tr></table></blockquote><code>&lt;/&gt;</code>

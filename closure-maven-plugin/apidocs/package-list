@@ -1,0 +1,9 @@
+com.google.closure.plugin
+com.google.closure.plugin.common
+com.google.closure.plugin.css
+com.google.closure.plugin.extract
+com.google.closure.plugin.genjava
+com.google.closure.plugin.js
+com.google.closure.plugin.plan
+com.google.closure.plugin.proto
+com.google.closure.plugin.soy

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Closure Maven &#x2013; About</title>
+    <title>Closure Maven &#x2013; Reactor Dependency Convergence</title>
     <style type="text/css" media="all">
       @import url("./css/maven-base.css");
       @import url("./css/maven-theme.css");
@@ -56,8 +56,8 @@
                           <a href="project-info.html" title="Project Information">Project Information</a>
                     <ul>
                       <li class="none">
-                          <a href="dependency-convergence.html" title="Dependency Convergence">Dependency Convergence</a>
-            </li>
+            <strong>Dependency Convergence</strong>
+          </li>
                       <li class="none">
                           <a href="dependency-info.html" title="Dependency Information">Dependency Information</a>
             </li>
@@ -68,8 +68,8 @@
                           <a href="distribution-management.html" title="Distribution Management">Distribution Management</a>
             </li>
                       <li class="none">
-            <strong>About</strong>
-          </li>
+                          <a href="index.html" title="About">About</a>
+            </li>
                       <li class="none">
                           <a href="issue-tracking.html" title="Issue Management">Issue Management</a>
             </li>
@@ -106,28 +106,39 @@
     <div id="bodyColumn">
       <div id="contentBox">
         <div class="section">
-<h2><a name="About_Closure_Maven"></a>About Closure Maven</h2><a name="About_Closure_Maven"></a>
-<p>Tools and Utilities related to Google Closure</p>
+<h2><a name="Reactor_Dependency_Convergence"></a>Reactor Dependency Convergence</h2>
+<table border="0" class="bodyTable"><caption>
+  <b>Legend:</b>
+</caption>
+<tr class="a">
+<td><img alt="[Error]" src="images/icon_error_sml.gif" /></td>
+<td>At least one dependency has a differing version of the dependency or has SNAPSHOT dependencies.</td></tr></table><br />
+<table border="0" class="bodyTable"><caption>
+  <b>Statistics:</b>
+</caption>
+<tr class="b">
+<th>Number of modules:</th>
+<td>4</td></tr>
+<tr class="a">
+<th>Number of dependencies (NOD):</th>
+<td>65</td></tr>
+<tr class="b">
+<th>Number of unique artifacts (NOA):</th>
+<td>66</td></tr>
+<tr class="a">
+<th>Number of version-conflicting artifacts (NOC):</th>
+<td>0</td></tr>
+<tr class="b">
+<th>Number of SNAPSHOT artifacts (NOS):</th>
+<td>0</td></tr>
+<tr class="a">
+<th>Convergence (NOD/NOA):</th>
+<td><img alt="[Error]" src="images/icon_error_sml.gif" />&#160;<b>98 %</b></td></tr>
+<tr class="b">
+<th>Ready for release (100% convergence and no SNAPSHOTS):</th>
+<td><img alt="[Error]" src="images/icon_error_sml.gif" />&#160;<b>Error</b><br />You do not have 100% convergence.</td></tr></table></div>
 <div class="section">
-<h3><a name="Project_Modules"></a>Project Modules</h3><a name="Project_Modules"></a>
-<p>This project has declared the following modules:</p>
-<table border="0" class="bodyTable">
-<tr class="a">
-<th>Name</th>
-<th>Description</th></tr>
-<tr class="b">
-<td><a href="doclet/index.html">Doclet</a></td>
-<td>A custom doclet that is used to generate site documentation
-    for configuration classes.</td></tr>
-<tr class="a">
-<td><a href="soy-juice/index.html">Soy Juice</a></td>
-<td>A guice module that makes it easy to render Soy templates compiled by
-    closure-maven-plugin from Java code.</td></tr>
-<tr class="b">
-<td><a href="closure-maven-plugin/index.html">Closure Maven Plugin</a></td>
-<td>A plugin that eases web application building by integrating
-    Closure Compiler (JS), Closure Templates, Closure StyleSheets,
-    and Protocol Buffers.</td></tr></table></div></div>
+<h3><a name="Dependencies_used_in_modules"></a>Dependencies used in modules</h3></div>
       </div>
     </div>
     <div class="clear">
