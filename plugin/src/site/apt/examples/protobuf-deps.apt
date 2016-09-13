@@ -4,12 +4,11 @@ Protobuf Dependencies
 
   If you use protocol buffers, you will probably need to depend on
   <<<protobuf-java>>>.  See
-  {{{http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.google.protobuf%22%20AND%20a%3A%22protobuf-java%22}maven
-  central} for the latest release.  This plugin uses the
+  {{{http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.google.protobuf%22%20AND%20a%3A%22protobuf-java%22}maven central}}
+  for the latest release.  This plugin uses the
   <<<protoc-bundled-plugin>>> under the hood, so looking at
-  {{{http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.comoyo.maven.plugins%22%20AND%20a%3A%22protoc-bundled-plugin%22}its
-  central repo listing}} can help figure out which compilers are
-  available.
+  {{{http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.comoyo.maven.plugins%22%20AND%20a%3A%22protoc-bundled-plugin%22}its central repo listing}}
+  can help figure out which compilers are available.
 
 +---------------------------------------
 <dependencies>
