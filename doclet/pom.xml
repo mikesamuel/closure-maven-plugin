@@ -38,7 +38,7 @@
     <dependency>
       <groupId>com.google.closure</groupId>
       <artifactId>soy-juice</artifactId>
-      <version>1.0.0</version>  <!-- avoid dependency cycle -->
+      <version>1.1.0</version>  <!-- avoid dependency cycle -->
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -68,7 +68,7 @@
       <plugin>
         <groupId>com.google.closure</groupId>
         <artifactId>closure-maven-plugin</artifactId>
-        <version>1.0.0</version>  <!-- avoid dependency cycle -->
+        <version>1.1.0</version>  <!-- avoid dependency cycle -->
         <executions>
           <execution>
             <goals>
