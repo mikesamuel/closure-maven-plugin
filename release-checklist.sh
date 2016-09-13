@@ -30,15 +30,15 @@ if ! (java -version 2>&1) | grep -q 1.8; then
 fi
 
 # Check out a clean copy of the repo.
-cd ~/work
-export RELEASE_CLONE="$PWD/closureplugin-release"
-rm -rf "$RELEASE_CLONE"
-cd "$(dirname "$RELEASE_CLONE")"
-git clone git@github.com:mikesamuel/closure-maven-plugin.git \
-    "$(basename "$RELEASE_CLONE")"
-cd "$RELEASE_CLONE"
-git submodule init
-git submodule update
+cd ~/work \
+&& export RELEASE_CLONE="$PWD/closureplugin-release" \
+&& rm -rf "$RELEASE_CLONE" \
+&& cd "$(dirname "$RELEASE_CLONE")" \
+&& git clone git@github.com:mikesamuel/closure-maven-plugin.git \
+    "$(basename "$RELEASE_CLONE")" \
+&& cd "$RELEASE_CLONE" \
+&& git submodule init \
+&& git submodule update
 
 # Make sure the build is ok
 mvn clean && \
@@ -78,10 +78,13 @@ mvn -B \
     -DdevelopmentVersion="$VERSION_PLACEHOLDER"
 
 find plugin/src/it -name pom.xml \
-    | xargs perl -pe "s|(?<=<project-under-test.version>)[^<]*(?=</project-under-test.version>)|$VERSION_PLACEHOLDER|g;"
+    | xargs perl -i -pe "s|(?<=<project-under-test.version>)[^<]*(?=</project-under-test.version>)|$VERSION_PLACEHOLDER|g;"
 
 find . -name pom.xml -not -path ./submodules/\* \
     | xargs perl -i.placeholder -pe "s/$VERSION_PLACEHOLDER/$NEW_VERSION/g"
+
+git diff
+
 
 # A dry run with the updated <version>.
 mvn clean && \
@@ -109,6 +112,10 @@ echo '5. Check that its OK.'
 echo '6. Release it.'
 
 
+# Generate the site with the release version
+mvn clean site site:stage
+
+
 # Bump the development version.
 for f in $(find . -name pom.xml.placeholder); do
     mv "$f" "$(dirname "$f")"/"$(basename "$f" .placeholder)"
@@ -121,4 +128,27 @@ git diff
 git checkout master
 git commit -am 'bump dev version'
 git push origin master
+
+
+# Publish the site
+cd ~/work
+export SITE_CLONE="$PWD/closureplugin-site"
+
+rm -rf "$SITE_CLONE" \
+&& cd "$(dirname "$SITE_CLONE")" \
+&& git clone -b gh-pages git@github.com:mikesamuel/closure-maven-plugin.git \
+       "$(basename "$SITE_CLONE")" \
+&& cd "$SITE_CLONE"
+
+# Empty all source files.  Later we will git rm any that were not copied
+# from site.
+find . -type f -not -path ./.git/\* -exec rm '{}' \; -exec touch '{}' \;
+
+cp -r "$RELEASE_CLONE"/target/staging/* "$SITE_CLONE"/
+
+find . -type f -not -path ./.git/\* -exec git add '{}' \;
+find . -size 0 -not -path ./.git/\* -exec git rm '{}' \;
+
+git commit -m "publish site for $NEW_VERSION"
+git push origin gh-pages
 
