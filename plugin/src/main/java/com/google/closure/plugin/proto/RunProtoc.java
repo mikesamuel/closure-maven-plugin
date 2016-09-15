@@ -127,7 +127,7 @@ final class RunProtoc extends Step {
       argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
     }
     if (langSet.emitJs) {
-      String jsOutFlagPrefix = null;
+      String jsOutFlagPrefix = "";
       switch (rootSet) {
         case MAIN:
           jsOutFlagPrefix = "--js_out=";

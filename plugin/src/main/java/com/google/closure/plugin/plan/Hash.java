@@ -81,8 +81,7 @@ public final class Hash implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof Hash)) { return false; }
-    return Arrays.equals(this.bytes, ((Hash) o).bytes);
+    return o instanceof Hash && Arrays.equals(this.bytes, ((Hash) o).bytes);
   }
 
   @Override
@@ -197,7 +196,7 @@ public final class Hash implements Serializable {
   }
 
   private static MessageDigest newDigest() {
-    MessageDigest md = null;
+    MessageDigest md;
     try {
       md = MessageDigest.getInstance("SHA-1");
     } catch (NoSuchAlgorithmException ex) {

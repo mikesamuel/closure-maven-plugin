@@ -208,14 +208,14 @@ public final class OptionsUtils {
     };
   }
 
-  private static Object DEFAULT_VALUE_PLACEHOLDER = new Object() {
+  private static final Object DEFAULT_VALUE_PLACEHOLDER = new Object() {
     @Override
     public String toString() {
       return "DEFAULT_VALUE_PLACEHOLDER";
     }
   };
 
-  private static ImmutableSet<Object> DEFAULT_VALUE_SET = ImmutableSet.of(
+  private static final ImmutableSet<Object> DEFAULT_VALUE_SET = ImmutableSet.of(
       DEFAULT_VALUE_PLACEHOLDER);
 
   static <OPTIONS extends Options>

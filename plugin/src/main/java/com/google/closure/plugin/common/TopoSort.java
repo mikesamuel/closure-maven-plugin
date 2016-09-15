@@ -19,7 +19,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 /**
- * Sorts depencies before dependers.
+ * Sorts dependencies before dependers.
  * <a href="https://en.wikipedia.org/wiki/Topological_sorting">Toposort wiki</a>
  *
  * @param <I> The type of a sortable item.
@@ -27,7 +27,6 @@ import com.google.common.collect.Sets;
  */
 public final class TopoSort<I extends Comparable<? super I>,
                             D extends Comparable<? super D>> {
-  private final ImmutableList<I> items;
   private final ImmutableMap<I, DepNode<I, D>> nodes;
   private final ImmutableList<I> orderedItems;
 
@@ -53,7 +52,7 @@ public final class TopoSort<I extends Comparable<? super I>,
           }
         });
 
-    this.items = ImmutableList.copyOf(itemsToSort);
+    ImmutableList<I> items = ImmutableList.copyOf(itemsToSort);
     for (I item : itemsToSort) {
       DepNode<I, D> node = new DepNode<>(
           item, ImmutableSortedSet.copyOf(getProvides.apply(item)));
@@ -132,7 +131,7 @@ public final class TopoSort<I extends Comparable<? super I>,
     }
 
     this.orderedItems = orderedResultBuilder.build();
-    if (orderedItems.size() != this.items.size()) {
+    if (orderedItems.size() != items.size()) {
       // Since we ruled out missing dependencies above, the only reason
       // something wouldn't be omitted is either
       // 1. A key that doesn't obey equals/compareTo contracts.

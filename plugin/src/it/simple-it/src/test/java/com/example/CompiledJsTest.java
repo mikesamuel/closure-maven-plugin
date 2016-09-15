@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Method;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public final class CompiledJsTest extends TestCase {
   public void setUp() throws Exception {
     super.setUp();
     cx = Context.enter();
-    scope = cx.initSafeStandardObjects();
+    scope = initScope(cx);
     // Interpret since compiled JS can blow out the method bytecode limit
     // when compiling to bytecode.
     cx.setOptimizationLevel(-1);
@@ -60,5 +61,17 @@ public final class CompiledJsTest extends TestCase {
     assertEquals(
         "<div id=\"greeting\">Hello, <b class=\"b\">Cle&lt;eland</b>!</div>",
         Context.toString(alerts.get(0)));
+  }
+
+
+  static Scriptable initScope(Context cx) {
+    // initSafeStandardObjects is a fairly recent addition.  Prefer it.
+    try {
+      Method initSafeStandardObjects = Context.class.getMethod("initSafeStandardObjects");
+      return (Scriptable) initSafeStandardObjects.invoke(cx);
+    } catch (ReflectiveOperationException ex) {
+      // OK
+    }
+    return cx.initStandardObjects();
   }
 }

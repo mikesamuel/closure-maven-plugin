@@ -1,6 +1,7 @@
 def file_of = { Object... names -> new File(names.join(File.separator)) }
 
-File targetDir = new File(basedir, "target");
+File baseDir = (File) basedir;
+File targetDir = new File(baseDir, "target");
 File closureOutDir = file_of(targetDir, "classes", "closure");
 
 // Sanity check the compiled CSS
@@ -53,6 +54,6 @@ assert webFilesJavaCode.contains('String CSS_BAR_MAIN_CSS = "/css/bar-main.css";
 assert webFilesJavaCode.contains('String JS_HELLO_WORLD_JS = "/js/hello.world.js";');
 
 
-File logFile = new File(basedir, "build.log");
+File logFile = new File(baseDir, "build.log");
 String logText = logFile.getText("UTF-8");
 assert logText.contains("[INFO] BUILD SUCCESS");

@@ -43,7 +43,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-import com.google.template.soy.data.SoyValueHelper;
 import com.google.template.soy.jbcsrc.api.Precompiled;
 import com.google.template.soy.jbcsrc.api.SoySauce;
 import com.google.template.soy.jbcsrc.api.SoySauce.WriteContinuation;
@@ -77,7 +76,7 @@ public class Demo extends AbstractHandler {
   final DemoVariant variant;
 
   /** Compute content types for /closure/... resources. */
-  static final ImmutableMap<String, String> EXTENSION_TO_CONTENT_TYPE =
+  private static final ImmutableMap<String, String> EXTENSION_TO_CONTENT_TYPE =
       ImmutableMap.of(
           "js",   "text/javascript; charset=utf-8",
           "html", "text/html; charset=utf-8",
@@ -85,7 +84,7 @@ public class Demo extends AbstractHandler {
           "ico",  "image/x-icon");
 
   /** We load different JS per variant. */
-  static final ImmutableMap<DemoVariant, TrustedResourceUrl> WALL_ITEM_JS =
+  private static final ImmutableMap<DemoVariant, TrustedResourceUrl> WALL_ITEM_JS =
       Maps.immutableEnumMap(ImmutableMap.<DemoVariant, TrustedResourceUrl>of(
           DemoVariant.FIXED,
           TrustedResourceUrls.fromConstant(
@@ -108,14 +107,11 @@ public class Demo extends AbstractHandler {
   private final Injector injector;
 
   @Inject
-  SoyValueHelper valueHelper;
-
-  @Inject
-  SoyCssRenamingMap cssRenamingMap;
+  private SoyCssRenamingMap cssRenamingMap;
 
   @Inject
   @Precompiled
-  SoySauce soySauce;
+  private SoySauce soySauce;
 
   {
     injector = Guice.createInjector(new ClosureModule());
@@ -123,7 +119,7 @@ public class Demo extends AbstractHandler {
   }
 
   /** We use this to convert untrusted HTML into trustworthy SafeHtml */
-  final SafeHtmlMint safeHtmlMint = SafeHtmlMint.fromPolicyFactory(
+  private final SafeHtmlMint safeHtmlMint = SafeHtmlMint.fromPolicyFactory(
       new HtmlPolicyBuilder()
       .allowCommonBlockElements()
       .allowCommonInlineFormattingElements()
@@ -294,7 +290,7 @@ public class Demo extends AbstractHandler {
    * @param jsonIn contains a wall-item to add in protobuf JSON format.
    */
   private Optional<Update> postWallJson(Target target, Reader jsonIn)
-  throws IOException, InvalidProtocolBufferException {
+  throws InvalidProtocolBufferException, IOException {
     WallItem.Builder itemBuilder = WallItem.newBuilder();
     JsonFormat.parser().merge(jsonIn, itemBuilder);
 
@@ -306,7 +302,7 @@ public class Demo extends AbstractHandler {
    * @param pbIn contains a wall-item to add in protobuf binary format.
    */
   private Optional<Update> postWallPb(Target target, InputStream pbIn)
-  throws IOException, InvalidProtocolBufferException {
+  throws InvalidProtocolBufferException, IOException {
     WallItem.Builder itemBuilder = WallItem.newBuilder();
     itemBuilder.mergeFrom(pbIn);
 

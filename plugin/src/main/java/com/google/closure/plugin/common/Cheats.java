@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * Some projects use package-private APIs to programmatically build compile
+ * Some projects use package-private APIs to programmaticly build compile
  * configurations.
  * I prefer programmatic APIs to building flag lists, so use reflection in
  * dodgy ways while I negotiate programmatic APIs and push them into central.

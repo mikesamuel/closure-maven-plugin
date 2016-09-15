@@ -52,14 +52,14 @@ public final class ProtoFinalOptions implements KeyedSerializable {
 
   /**
    * Protobuf packages to only compile only to JS.
-   * If a package appears on the {@link #jsOnly} and {@link #javaOnly} lists
+   * If a package appears on the jsOnly and {@link #javaOnly} lists
    * then it will be compiled to both.
    */
   final ImmutableSet<String> jsOnly;
 
   /**
    * Protobuf packages to only compile only to Java.
-   * If a package appears on the {@link #jsOnly} and {@link #jsOnly} lists
+   * If a package appears on the {@link #jsOnly} and javaOnly lists
    * then it will be compiled to both.
    */
   final ImmutableSet<String> javaOnly;

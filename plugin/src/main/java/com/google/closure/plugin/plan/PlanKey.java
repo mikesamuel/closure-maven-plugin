@@ -88,7 +88,7 @@ public final class PlanKey {
 
 /** Escapes keys for inclusion into other keys. */
 final class Escaper {
-  final Pattern metachar;
+  private final Pattern metachar;
 
   static final Escaper DEFAULT = new Escaper();
 

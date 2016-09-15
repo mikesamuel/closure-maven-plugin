@@ -267,15 +267,11 @@ public final class PluginConfigDoclet {
   }
 
   static boolean isSelfExplanatory(Type t) {
-    if (t.isPrimitive()) { return false; }
+    if (t.isPrimitive()) { return true; }
     String qualName = t.qualifiedTypeName();
-    if (qualName.startsWith("java.lang.")) {
-      return true;
-    }
-    if (File.class.getName().equals(qualName)) {
-      return true;
-    }
-    return false;
+    return (
+         qualName.startsWith("java.lang.")
+         || File.class.getName().equals(qualName));
   }
 
 
@@ -431,7 +427,7 @@ public final class PluginConfigDoclet {
 
       Continuation<String> renderedHtml = renderer.render();
       while (!renderedHtml.result().isDone()) {
-        renderedHtml.continueRender();
+        renderedHtml = renderedHtml.continueRender();
       }
 
       File outFile = new File(outDir.toURI().resolve(urlFor(c)));

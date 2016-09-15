@@ -27,7 +27,7 @@ abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
   private final ImmutableList.Builder<Source> sources = ImmutableList.builder();
   private Log log = new TestLog();
 
-  private Class<T> typ;
+  private final Class<T> typ;
 
   AbstractDepTestBuilder(Class<T> typ) {
     this.typ = typ;
@@ -73,7 +73,7 @@ abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
   abstract void run(
       Log alog, JsOptions options, ImmutableList<Source> sourceList,
       JsDepInfo depInfo)
-  throws IOException, MojoExecutionException ;
+  throws MojoExecutionException;
 
   void run() throws IOException, MojoExecutionException {
     ImmutableList<Source> sourceList = this.sources.build();

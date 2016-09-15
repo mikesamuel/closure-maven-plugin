@@ -12,9 +12,9 @@ import com.google.common.base.Preconditions;
  */
 public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
   final String content;
-  final boolean preserveDocComments;
+  private final boolean preserveDocComments;
 
-  static final Pattern TOKEN = Pattern.compile(
+  private static final Pattern TOKEN = Pattern.compile(
       ""
       + "[\t\n\r ]+"
       + "|//[^\r\n]*"
@@ -77,6 +77,7 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
         return t;
       }
 
+      @SuppressWarnings("synthetic-access")
       private void lex() {
         int n = content.length();
         while (type == null && left < n) {
@@ -190,7 +191,7 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
     ;
   }
 
-  private static long SPACE_CHARS =
+  private static final long SPACE_CHARS =
       (1L << '\t') | (1L << '\n') | (1L << '\r') | (1L << ' ');
 
   static boolean isSpace(int cp) {

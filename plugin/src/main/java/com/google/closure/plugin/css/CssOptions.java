@@ -68,7 +68,7 @@ public final class CssOptions extends SourceOptions {
   /** Add a prefix to all renamed css class names. */
   public String cssRenamingPrefix;
   public Boolean eliminateDeadStyles;
-  /** A list of CSS class names that shoudn't be renamed. */
+  /** A list of CSS class names that shouldn't be renamed. */
   public void setExcludedClassesFromRenaming(String x) {
     excludedClassesFromRenaming.add(x);
   }

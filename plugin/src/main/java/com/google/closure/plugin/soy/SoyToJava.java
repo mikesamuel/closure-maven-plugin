@@ -35,9 +35,6 @@ final class SoyToJava extends Step {
 
   /**
    * @param protoDescriptors the path to the .fd file.
-   * @param protobufClassPath a class path that can be used to load the
-   *     generated message classes so that the compiler can introspect when
-   *     generating bytecode that interfaces with protobuf instances.
    */
   SoyToJava(
       HashedInMemory<SoyOptions> options,

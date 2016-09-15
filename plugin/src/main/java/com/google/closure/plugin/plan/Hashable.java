@@ -17,13 +17,13 @@ public interface Hashable {
    * @throws IOException if fetching bytes failed.  FileNotFoundException should
    *     result in an absent value, not be thrown.
    */
-  public abstract Optional<Hash> hash() throws IOException;
+  Optional<Hash> hash() throws IOException;
 
   /**
    * A hashable which knows how to transition from an absent hash state to
    * a present hash state.
    */
-  public interface AutoResolvable extends Hashable {
+  interface AutoResolvable extends Hashable {
     /**
      * If called when <code>!{@link #hash()}.isPresent()</code>, makes a
      * best effort to make it {@linkplain Optional#isPresent() present}.

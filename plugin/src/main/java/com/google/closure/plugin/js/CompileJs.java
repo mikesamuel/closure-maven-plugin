@@ -94,7 +94,7 @@ final class CompileJs extends Step {
           new WithStdOutAndStderrAndWithoutStdin() {
             @Override
             void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
-            throws IOException, MojoExecutionException {
+            throws MojoExecutionException {
               CommandLineRunner runner = new CommandLineRunner(
                   argv.toArray(new String[0]),
                   stdin, stdout, stderr) {
@@ -243,6 +243,6 @@ final class CompileJs extends Step {
 
   abstract class WithStdOutAndStderrAndWithoutStdin {
     abstract void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
-    throws IOException, MojoExecutionException;
+    throws MojoExecutionException;
   }
 }

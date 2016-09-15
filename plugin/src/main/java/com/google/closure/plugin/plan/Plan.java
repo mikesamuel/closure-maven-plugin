@@ -170,15 +170,12 @@ public class Plan {
       }
     }
 
-    boolean outputsExist = true;
-
     Optional<Hash> storedStepHash = hashStore.getHash(step.key);
     Hash stepHash = Hash.hashAllHashes(inputHashes);
 
     boolean reuse =
         storedStepHash.isPresent()
-        && stepHash.equals(storedStepHash.get())
-        && outputsExist;
+        && stepHash.equals(storedStepHash.get());
 
     // Maybe rebuild.
     if (reuse) {

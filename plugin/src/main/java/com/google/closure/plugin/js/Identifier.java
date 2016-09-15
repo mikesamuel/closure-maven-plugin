@@ -28,10 +28,7 @@ implements Comparable<Identifier>, Serializable {
 
   @Override
   public final boolean equals(Object o) {
-    if (o == null || o.getClass() != getClass()) {
-      return false;
-    }
-    return text.equals(((Identifier) o).text);
+    return o != null && o.getClass() == getClass() && text.equals(((Identifier) o).text);
   }
 
   @Override

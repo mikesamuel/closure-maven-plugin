@@ -307,8 +307,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       @SuppressWarnings("synthetic-access")
       void find(
           Log log,
-          Optional<String>protobufVersionOpt,
-          Optional<File>protocExecOpt,
+          Optional<String> protobufVersionOpt,
+          Optional<File> protocExecOpt,
           Ingredients ingredients,
           SettableFileSetIngredient protocPathOut) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();

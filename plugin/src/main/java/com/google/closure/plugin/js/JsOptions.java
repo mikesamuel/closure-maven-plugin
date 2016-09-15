@@ -367,7 +367,7 @@ public final class JsOptions extends SourceOptions {
    * This is done because there is a whole lot of compiler machinery
    * that is available via the CommandLineRunner that is not available via
    * {@link CompilerOptions}.
-   * I would prefer to use the latter programmatically.
+   * I would prefer to use the latter programmaticly.
    */
   public void addArgv(
       @SuppressWarnings("unused") Log log,
@@ -443,7 +443,7 @@ public final class JsOptions extends SourceOptions {
     static {
       ClassLoader cl = CommandLineRunner.class.getClassLoader();
       if (cl == null) { cl = ClassLoader.getSystemClassLoader(); }
-      Class<?> flagsClass = null;
+      Class<?> flagsClass;
       try {
         flagsClass = cl.loadClass(CommandLineRunner.class.getName() + "$Flags");
       } catch (ReflectiveOperationException ex) {

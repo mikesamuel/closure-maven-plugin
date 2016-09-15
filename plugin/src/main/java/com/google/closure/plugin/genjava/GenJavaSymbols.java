@@ -91,7 +91,7 @@ final class GenJavaSymbols extends Step {
     jw.appendCode(" */\n");
     jw.appendCode("public final class ").appendCode(cName).appendCode(" {\n");
     jw.appendCode(  "private ").appendCode(cName).appendCode("() {\n");
-    jw.appendCode(    "// Not insantiable.\n");
+    jw.appendCode(    "// Not instantiable.\n");
     jw.appendCode(  "}\n");
     for (Map.Entry<String, String> e : uniqConstantNameToUriPath.entrySet()) {
       String ident = e.getKey();
