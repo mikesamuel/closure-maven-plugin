@@ -52,12 +52,28 @@ public final class CssOptions extends SourceOptions {
   }
   private final List<String> allowedUnrecognizedProperties =
     Lists.newArrayList();
+  /** Allow use of experimental <code>{@literal @keyframes}</code>. */
   public Boolean allowKeyframes;
+  /**
+   * Allow use of the vendor specific
+   * <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@document"
+   *  >{@literal @-moz-document}</a> rule.
+   */
   public Boolean allowMozDocument;
+  /**
+   * Do not error out on references to constants
+   * for which there is no definition.
+   */
   public Boolean allowUndefinedConstants;
+  /**
+   * Whether to allow unknown function calls,
+   * leaving them as is, instead of reporting an error.
+   */
   public Boolean allowUnrecognizedFunctions;
+  /**
+   * Whether to allow unrecognized properties.
+   */
   public Boolean allowUnrecognizedProperties;
-  public Boolean allowWebkitKeyframes;
   /**
    * JSON map from strings to integers that specify integer constants
    * to be used in for loops.
@@ -67,7 +83,10 @@ public final class CssOptions extends SourceOptions {
   public String copyrightNotice;
   /** Add a prefix to all renamed css class names. */
   public String cssRenamingPrefix;
-  public Boolean eliminateDeadStyles;
+  /**
+   * Whether to merge/split rules and selectors to eliminate duplicate styles.
+   */
+  public Boolean eliminateDeadStyles = true;
   /** A list of CSS class names that shouldn't be renamed. */
   public void setExcludedClassesFromRenaming(String x) {
     excludedClassesFromRenaming.add(x);
@@ -123,8 +142,15 @@ public final class CssOptions extends SourceOptions {
   public OutputRenamingMapFormat outputRenamingMapFormat;
   /** Preserve comments from sources into pretty printed output css. */
   public Boolean preserveComments;
+  /**
+   * TODO: remove per https://github.com/google/closure-stylesheets/issues/96
+   */
   public Boolean processDependencies = true;
-  public Boolean simplifyCss;
+  /**
+   * Whether to replace property values with
+   * equivalent, compact representations.
+   */
+  public Boolean simplifyCss = true;
   /**
    * The level to generate source maps. You could choose between
    * DEFAULT, which will generate source map only for selectors,
@@ -132,8 +158,20 @@ public final class CssOptions extends SourceOptions {
    * outputs mappings for all elements.
    */
   public JobDescription.SourceMapDetailLevel sourceMapLevel;
+  /**
+   * Whether to be silent on malformed {@literal @goog.*} rules that are
+   * specially interpreted by CSS stylesheets.
+   */
   public Boolean suppressDependencyCheck;
+  /**
+   * Whether the Bidi flipper class should swap text like "-left-" and
+   * "-right-" in {@code url(...)}s.
+   */
   public Boolean swapLeftRightInUrl;
+  /**
+   * Whether the Bidi flipper class should swap text like "-ltr-" and
+   * "-rtl-" in {@code url(...)}s.
+   */
   public Boolean swapLtrRtlInUrl;
   /**
    * Specifies the name of a true condition.
@@ -144,6 +182,9 @@ public final class CssOptions extends SourceOptions {
     trueConditionNames.add(x);
   }
   private final List<String> trueConditionNames = Lists.newArrayList();
+  /**
+   * TODO: remove per https://github.com/google/closure-stylesheets/issues/96
+   */
   public Boolean useInternalBidiFlipper;
   /**
    * Creates browser-vendor-specific output by stripping all
@@ -217,9 +258,6 @@ public final class CssOptions extends SourceOptions {
     if (wasSet(allowUnrecognizedProperties)) {
       jobDescriptionBuilder.setAllowUnrecognizedProperties(
           allowUnrecognizedProperties);
-    }
-    if (wasSet(allowWebkitKeyframes) && allowWebkitKeyframes.booleanValue()) {
-      jobDescriptionBuilder.allowWebkitKeyframes();
     }
     if (wasSet(compileConstants)) {
       Optional<ImmutableMap<String, Object>> constants =
