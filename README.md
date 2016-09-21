@@ -9,10 +9,10 @@ See the [site documentation](https://mikesamuel.github.io/closure-maven-plugin/c
 To check out and run the demo app:
 
 ```bash
-$ git checkout https://github.com/mikesamuel/closure-maven-plugin.git
+$ git clone https://github.com/mikesamuel/closure-maven-plugin.git
 $ cd closure-maven-plugin
-$ git submodule init
-$ ./run_demo_server
+$ git submodule update
+$ ./run_demo_server.sh
 ```
 
 or browse the [demo source code](https://github.com/mikesamuel/closure-maven-plugin/tree/master/plugin/src/it/demo).
