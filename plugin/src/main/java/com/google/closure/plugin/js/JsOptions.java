@@ -213,22 +213,28 @@ public final class JsOptions extends SourceOptions {
    * (default), ECMASCRIPT6_STRICT, ECMASCRIPT6_TYPED
    * (experimental) */
   public CompilerOptions.LanguageMode languageIn;
-  /** Sets what language spec the output should conform to. Options:
+  /**
+   * Sets what language spec the output should conform to. Options:
    * ECMASCRIPT3 (default), ECMASCRIPT5, ECMASCRIPT5_STRICT,
-   * ECMASCRIPT6_TYPED (experimental) */
+   * ECMASCRIPT6_TYPED (experimental)
+   */
   public CompilerOptions.LanguageMode languageOut;
   /** Prints the compiler version to stdout and exit. */
   public Boolean version;
   /** Source of translated messages. Currently only supports XTB. */
   public String translationsFile;
-  /** Scopes all translations to the specified project.When specified,
+  /**
+   * Scopes all translations to the specified project.When specified,
    * we will use different message ids so that messages in different
-   * projects can have different translations. */
+   * projects can have different translations.
+   */
   public String translationsProject;
   /** A file containing additional command-line options. */
   public String flagFile;
-  /** A file containing warnings to suppress. Each line should be of the form
-{@code <file-name>:<line-number>?}  {@code <warning-description>} */
+  /**
+   * A file containing warnings to suppress. Each line should be of the
+   * form {@code <file-name>:<line-number>?}  {@code <warning-description>}
+   */
   public String warningsWhitelistFile;
   /** If specified, files whose path contains this string will have
    * their warnings hidden. You may specify multiple. */

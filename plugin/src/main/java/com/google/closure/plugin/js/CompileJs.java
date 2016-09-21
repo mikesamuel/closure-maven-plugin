@@ -16,11 +16,13 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteSource;
 import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
 import com.google.closure.plugin.common.Ingredients.PathValue;
 import com.google.closure.plugin.common.Ingredients
     .SerializedObjectIngredient;
+import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.Ingredient;
 import com.google.closure.plugin.plan.PlanKey;
 import com.google.closure.plugin.plan.Step;
@@ -71,14 +73,15 @@ final class CompileJs extends Step {
     argvBuilder.add("--create_renaming_reports");
     argvBuilder.add("--create_source_map").add("%outname%-source-map.json");
 
-    File workingDir;
-    try {
-      workingDir = new File(".").getCanonicalFile();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to resolve cwd", ex);
-    }
+    ImmutableList.Builder<Source> jsSources = ImmutableList.builder();
 
-    modules.addClosureCompilerFlags(Optional.of(workingDir), argvBuilder);
+    modules.addClosureCompilerFlags(argvBuilder, jsSources);
+    // Tell the compiler that we're going to be passing inputs via the JSON
+    // streaming API so that we can control the path associated with the
+    // source file.
+    // Closure Compiler compares the path to whitelists when doing conformance
+    // checking, so we want to use paths relative to search roots.
+    argvBuilder.add("--json_streams").add("IN");
 
     final ImmutableList<String> argv = argvBuilder.build();
     if (log.isDebugEnabled()) {
@@ -88,10 +91,14 @@ final class CompileJs extends Step {
     // TODO: Fix jscompiler so I can thread MavenLogJSErrorManager
     // through instead of mucking around with stdout, stderr.
     try {
+      ByteSource streamableJson = new StreamableJsonByteSource(
+          log, jsSources.build());
+
       logViaErrStreams(
           "jscomp: ",
           log,
-          new WithStdOutAndStderrAndWithoutStdin() {
+          streamableJson,
+          new WithStdOutAndStderrAndStdin() {
             @Override
             void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
             throws MojoExecutionException {
@@ -204,19 +211,11 @@ final class CompileJs extends Step {
   }
 
 
-  static final class DevNullInputStream extends InputStream {
-    @Override
-    public int read() throws IOException {
-      return -1;
-    }
-  }
-
-
   private static void logViaErrStreams(
-      String prefix, final Log log,
-      WithStdOutAndStderrAndWithoutStdin withStdOutAndStderrAndWithoutStdin)
+      String prefix, final Log log, ByteSource input,
+      WithStdOutAndStderrAndStdin withStdOutAndStderrAndStdin)
   throws IOException, MojoExecutionException {
-    try (InputStream in = new DevNullInputStream()) {
+    try (InputStream in = input.openBufferedStream()) {
       try (PrefixingOutputStream infoWriter =
           new PrefixingOutputStream(prefix) {
         @Override
@@ -233,7 +232,7 @@ final class CompileJs extends Step {
             }
           }) {
             try (PrintStream err = new PrintStream(warnWriter, true, "UTF-8")) {
-              withStdOutAndStderrAndWithoutStdin.run(in, out, err);
+              withStdOutAndStderrAndStdin.run(in, out, err);
             }
           }
         }
@@ -241,7 +240,7 @@ final class CompileJs extends Step {
     }
   }
 
-  abstract class WithStdOutAndStderrAndWithoutStdin {
+  abstract class WithStdOutAndStderrAndStdin {
     abstract void run(InputStream stdin, PrintStream stdout, PrintStream stderr)
     throws MojoExecutionException;
   }

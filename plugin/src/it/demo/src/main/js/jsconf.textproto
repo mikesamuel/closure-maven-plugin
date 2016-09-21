@@ -25,8 +25,8 @@ requirement: {
 
   value: 'eval'
 
-  whitelist: 'target/dep/main/js/goog/base.js'
-  whitelist: 'target/dep/main/js/goog/json/json.js'
+  whitelist: 'goog/base.js'
+  whitelist: 'goog/json/json.js'
 }
 
 requirement: {
@@ -38,8 +38,8 @@ requirement: {
 
   value: 'Arguments.prototype.callee'
 
-  whitelist: 'target/dep/main/js/goog/base.js'  # goog.base uses arguments.callee
-  whitelist: 'target/dep/main/js/goog/debug/'  # legacy stack trace support, etc
+  whitelist: 'goog/base.js'  # goog.base uses arguments.callee
+  whitelist: 'goog/debug/'  # legacy stack trace support, etc
 }
 
 requirement: {
@@ -51,25 +51,25 @@ requirement: {
   value: 'Element.prototype.innerHTML'
 
   # Safe wrapper for this property.
-  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+  whitelist: 'goog/dom/safe.js'
 
   # Safely used in goog.string.unescapeEntitiesUsingDom_; the string assigned to
   # innerHTML is a single HTML entity.
-  whitelist: 'target/dep/main/js/goog/string/string.js'
+  whitelist: 'goog/string/string.js'
 
   # The sanitizer has been vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/sanitizer/htmlsanitizer.js'
+  whitelist: 'goog/html/sanitizer/htmlsanitizer.js'
 
   # Vetted by ISE.
   # All assignments first check that the template is strict and has type HTML.
-  whitelist: 'target/dep/main/js/goog/soy/soy.js'
+  whitelist: 'goog/soy/soy.js'
 
   # Content comes from a safe stylesheet which is checked at runtime.
-  whitelist: 'target/dep/main/js/goog/style/style.js'
+  whitelist: 'goog/style/style.js'
 
   # HACK: Allow demo code that shows the wrong way to do things
-  whitelist: 'src/main/js/com/example/demo/wall-item-insecure.js'
-  whitelist: 'src/main/js/com/example/demo/wall-item-overescaping.js'
+  whitelist: 'com/example/demo/wall-item-insecure.js'
+  whitelist: 'com/example/demo/wall-item-overescaping.js'
 }
 
 requirement: {
@@ -81,7 +81,7 @@ requirement: {
   value: 'Element.prototype.outerHTML'
 
   # Safe wrapper for this property.
-  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+  whitelist: 'goog/dom/safe.js'
 }
 
 requirement: {
@@ -93,11 +93,11 @@ requirement: {
   value: 'Element.prototype.insertAdjacentHTML'
 
   # Safe wrapper for this method.
-  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+  whitelist: 'goog/dom/safe.js'
 
   # HACK: Allow demo code that shows the wrong way to do things
-  whitelist: 'src/main/js/com/example/demo/wall-item-insecure.js'
-  whitelist: 'src/main/js/com/example/demo/wall-item-overescaping.js'
+  whitelist: 'com/example/demo/wall-item-insecure.js'
+  whitelist: 'com/example/demo/wall-item-overescaping.js'
 }
 
 requirement: {
@@ -111,7 +111,7 @@ requirement: {
   value: 'Location.prototype.href'
 
   # Safe wrapper for this property.
-  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+  whitelist: 'goog/dom/safe.js'
 }
 
 requirement: {
@@ -141,7 +141,7 @@ requirement: {
   value: 'Element.prototype.href'
 
   # Safe wrapper for this property.
-  whitelist: 'target/dep/main/js/goog/dom/safe.js'
+  whitelist: 'goog/dom/safe.js'
 }
 
 requirement: {
@@ -163,27 +163,27 @@ requirement: {
   value: 'goog.html.uncheckedconversions'
 
   # self reference OK as whole was vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # unpack just does what should be done via proto unpack code
   # so this is legit when the server side packing code is valid.
-  whitelist: 'src/main/js/com/example/demo/unpack.js'
+  whitelist: 'com/example/demo/unpack.js'
   # use to create view-source URLS vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/debug/debug.js'
+  whitelist: 'goog/debug/debug.js'
   # use to create safe HTML from const strings vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/dom/dom.js'
+  whitelist: 'goog/dom/dom.js'
   # sanitizes vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/sanitizer/htmlsanitizer.js'
-  whitelist: 'target/dep/main/js/goog/html/sanitizer/csssanitizer.js'
+  whitelist: 'goog/html/sanitizer/htmlsanitizer.js'
+  whitelist: 'goog/html/sanitizer/csssanitizer.js'
   # Uses to convert between safe strings and Soy sanitized content
   # vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/soy/data.js'
+  whitelist: 'goog/soy/data.js'
   # Render to safe contract type with runtime strict template type check
   # vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/soy/renderer.js'
+  whitelist: 'goog/soy/renderer.js'
   # Safe* <-> Safe*Proto conversions vetted by ISE.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # bidiSpanWrap workaround vetted by ISE.  TODO: double check this with gboyer
-  whitelist: 'target/dep/main/js/soy/soyutils_usegoog.js'
+  whitelist: 'soy/soyutils_usegoog.js'
 }
 
 requirement: {
@@ -193,12 +193,12 @@ requirement: {
   value: 'goog.html.legacyconversions'
 
   # Self reference allowed.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Use is safe because the template type and strictness are checked.
   # TODO: This should probably use uncheckedconversions.
-  whitelist: 'target/dep/main/js/goog/soy/soy.js'
+  whitelist: 'goog/soy/soy.js'
   # TODO: should we deprecate goog.style.{setStyles,installStyles}?
-  whitelist: 'target/dep/main/js/goog/style/style.js'
+  whitelist: 'goog/style/style.js'
 }
 
 # TODO: goog.string.Const
@@ -210,21 +210,21 @@ requirement: {
   value: 'Object.prototype.createSafeHtmlSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -235,21 +235,21 @@ requirement: {
   value: 'Object.prototype.createSafeHtmlTagSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -260,21 +260,21 @@ requirement: {
   value: 'Object.prototype.createSafeScriptSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -285,21 +285,21 @@ requirement: {
   value: 'Object.prototype.createSafeStyleSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -310,21 +310,21 @@ requirement: {
   value: 'Object.prototype.createSafeStyleSheetSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -335,21 +335,21 @@ requirement: {
   value: 'Object.prototype.createSafeUrlSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -360,21 +360,21 @@ requirement: {
   value: 'Object.prototype.createTrustedResourceUrlSecurityPrivateDoNotAccessOrElse'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -385,21 +385,21 @@ requirement: {
   value: 'Object.prototype.initSecurityPrivateDoNotAccessOrElse_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -410,24 +410,24 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeHtmlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 
   # Should be handled by generated protobuf unwrap code but is not.
-  whitelist: 'src/main/js/com/example/demo/unpack.js'
+  whitelist: 'com/example/demo/unpack.js'
 }
 
 
@@ -438,21 +438,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeHtmlWrappedValue_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -463,21 +463,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeScriptWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -488,21 +488,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeScriptWrappedValue_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -513,21 +513,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeStyleSheetWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -538,21 +538,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeStyleSheetWrappedValue_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -563,21 +563,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeStyleWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -588,21 +588,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeStyleWrappedValue_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -613,21 +613,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseSafeUrlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -638,21 +638,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseTrustedResourceUrlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -663,21 +663,21 @@ requirement: {
   value: 'Object.prototype.privateDoNotAccessOrElseTrustedResourceUrlWrappedValue_'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -688,21 +688,21 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseSafeHtmlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -713,21 +713,21 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseSafeScriptWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -738,21 +738,21 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseSafeStyleSheetWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -763,21 +763,21 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseSafeStyleWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -788,21 +788,21 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseSafeUrlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist_regexp: '^target/src/main/js/safe.*proto[.]js$'
+  whitelist_regexp: '^safe[^/]*proto[.]js$'
 }
 
 
@@ -813,19 +813,19 @@ requirement: {
   value: 'Object.prototype.setPrivateDoNotAccessOrElseTrustedResourceUrlWrappedValue'
 
   # Legacy conversions is needed, but the use of that namespace is banned.
-  whitelist: 'target/dep/main/js/goog/html/legacyconversions.js'
+  whitelist: 'goog/html/legacyconversions.js'
   # Maintained & vetted by ISE.
-  whitelist_regexp: '^target/dep/main/js/goog/html/safe.*[.]js$'
-  whitelist: 'target/dep/main/js/goog/html/trustedresourceurl.js'
-  whitelist: 'target/dep/main/js/goog/html/uncheckedconversions.js'
+  whitelist_regexp: '^goog/html/safe[^/]*[.]js$'
+  whitelist: 'goog/html/trustedresourceurl.js'
+  whitelist: 'goog/html/uncheckedconversions.js'
   # Vetted by ISE.
-  whitelist: 'target/dep/main/js/goog/html/flash.js'
-  whitelist: 'target/dep/main/js/goog/html/silverlight.js'
+  whitelist: 'goog/html/flash.js'
+  whitelist: 'goog/html/silverlight.js'
   # Only allowed in test code.
-  whitelist: 'target/dep/main/js/goog/html/testing.js'
-  whitelist: 'target/dep/main/js/goog/window/window.js'
+  whitelist: 'goog/html/testing.js'
+  whitelist: 'goog/window/window.js'
   # Vetted by ISE.  Does proto <-> JS type conversions.
-  whitelist: 'target/dep/main/js/soy/jspbconversions.js'
+  whitelist: 'soy/jspbconversions.js'
   # Generates Protobuf code for the safe contract types.
-  whitelist: 'target/src/main/js/trustedresourceurlproto.js'
+  whitelist: 'trustedresourceurlproto.js'
 }

@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.Map;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -59,10 +58,14 @@ public final class Modules implements Serializable {
    * Adds flags to declare this module to {@link CommandLineRunner}.
    *
    * @param argv receives flags.
+   * @param jsSources receives sources for the modules added to argv
+   *     in topological order.
+   *     These can then be dispatched via "--js" or streamed to the compiler
+   *     via "--json_streams".
    */
   public void addClosureCompilerFlags(
-      Optional<File> workingDir,
-      ImmutableList.Builder<? super String> argv) {
+        ImmutableList.Builder<? super String> argv,
+        ImmutableList.Builder<? super Source> jsSources) {
     for (Module module : modules) {
       StringBuilder moduleSpec = new StringBuilder();
       Preconditions.checkState(!module.name.contains(":"));
@@ -77,20 +80,7 @@ public final class Modules implements Serializable {
         moduleSpec.append(dep);
       }
       argv.add("--module").add(moduleSpec.toString());
-      for (Source source : module.sources) {
-        String path = null;
-        if (workingDir.isPresent()) {
-          File relFile = relativeToBestEffort(
-              workingDir.get(), source.canonicalPath);
-          if (relFile != null) {
-            path = relFile.getPath();
-          }
-        }
-        if (path == null) {
-          path = source.canonicalPath.getPath();
-        }
-        argv.add("--js").add(path);
-      }
+      jsSources.addAll(module.sources);
     }
   }
 

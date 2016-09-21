@@ -30,11 +30,6 @@ done
 # pick a demo target directory outside the main project tree
 export DEMO_TARGET_DIR="$TMPDIR/closure-demo-target"
 
-# TODO: tweak JSCompiler so that it will match against
-# JSConformance whitelists using a path relative to a search
-# path root instead of the full path.
-export DEMO_TARGET_DIR="$PWD/plugin/src/it/demo/target"
-
 # build the plugin
 mvn install -Djava.awt.headless=true $MVN_PLUGIN_FLAGS
 

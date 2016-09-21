@@ -1,14 +1,13 @@
 package com.google.closure.plugin.js;
 
-import java.io.File;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.Test;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.TopoSort;
 import com.google.closure.plugin.TestLog;
 import com.google.closure.plugin.common.SourceFileProperty;
@@ -67,30 +66,34 @@ public final class ComputeJsDepGraphTest extends TestCase {
     .expectArgv(
             // We get a main module first that just includes the basic closure
             // primitives like goog.require & goog.provide.
-            "--module", "main:1",
-            "--js", "/dep/closure/goog/base.js",
-
+            "--module", "main:1")
+    .expectInputs(
+            "/dep/closure/goog/base.js")
+    .expectArgv(
             // main.b has no external dependencies and contains 2 files
-            "--module", "b:2:main",
+            "--module", "b:2:main")
+    .expectInputs(
             // Stable file order.
-            "--js", "/src/main/js/b/baz.js",
-            "--js", "/src/main/js/b/boo.js",
-
+            "/src/main/js/b/baz.js",
+            "/src/main/js/b/boo.js")
+    .expectArgv(
             // main.a depends upon main.b and contains 2 files
-            "--module", "a:2:main,b",
+            "--module", "a:2:main,b")
+    .expectInputs(
             // bar.js depends upon foo.js
-            "--js", "/src/main/js/a/foo.js",
-            "--js", "/src/main/js/a/bar.js",
-
+            "/src/main/js/a/foo.js",
+            "/src/main/js/a/bar.js")
+    .expectArgv(
             // test.b depends upon main.b
-            "--module", "b.test:1:main,b",
-            "--js", "/src/test/js/b/test.js",
-
+            "--module", "b.test:1:main,b")
+    .expectInputs(
+            "/src/test/js/b/test.js")
+    .expectArgv(
             // test.a depends upon main.a and transitively upon main.b
             // Since main.a depends upon main.b, main.b comes first.
-            "--module", "a.test:1:main,b,a",
-            "--js", "/src/test/js/a/test.js"
-            )
+            "--module", "a.test:1:main,b,a")
+    .expectInputs(
+            "/src/test/js/a/test.js")
     .run();
   }
 
@@ -208,11 +211,12 @@ public final class ComputeJsDepGraphTest extends TestCase {
            + "goog.provide('a.boo');\n"
            + "goog.require('a.bar');")
        .expectArgv(
-           "--module", "main:4",
-           "--js", "/dep/closure/goog/base.js",  // No deps
-           "--js", "/src/dep/js/a/bar.js",  // Depends on base.js implicitly
-           "--js", "/src/dep/js/a/baz.js",  // Depends on a/bar.js
-           "--js", "/src/main/js/a/foo.js"  // Depends on a/baz.js
+           "--module", "main:4")
+       .expectInputs(
+           "/dep/closure/goog/base.js",  // No deps
+           "/src/dep/js/a/bar.js",  // Depends on base.js implicitly
+           "/src/dep/js/a/baz.js",  // Depends on a/bar.js
+           "/src/main/js/a/foo.js"  // Depends on a/baz.js
            )
        .log(new TestLog().verbose(false))
        .run();
@@ -242,12 +246,17 @@ public final class ComputeJsDepGraphTest extends TestCase {
             + "goog.module('d');\n"
             + "goog.require('b');")
         .expectArgv(
-            "--module", "main:1",
-            "--js", "/dep/closure/goog/base.js",
-            "--module", "c:1:main",
-            "--js", "/src/dep/js/c/baz.js",
-            "--module", "a:1:main,c",
-            "--js", "/src/main/js/a/foo.js"  // Depends on c/baz.js
+            "--module", "main:1")
+        .expectInputs(
+            "/dep/closure/goog/base.js")
+        .expectArgv(
+            "--module", "c:1:main")
+        .expectInputs(
+            "/src/dep/js/c/baz.js")
+        .expectArgv(
+            "--module", "a:1:main,c")
+        .expectInputs(
+            "/src/main/js/a/foo.js"  // Depends on c/baz.js
             )
         .log(new TestLog().verbose(false))
         .run();
@@ -255,7 +264,10 @@ public final class ComputeJsDepGraphTest extends TestCase {
 
   static final class TestBuilder extends AbstractDepTestBuilder<TestBuilder> {
 
-    private ImmutableList.Builder<String> wantedArgv = ImmutableList.builder();
+    private final ImmutableList.Builder<String> wantedArgv =
+        ImmutableList.builder();
+    private final ImmutableList.Builder<String> wantedSources =
+        ImmutableList.builder();
 
     TestBuilder() {
       super(TestBuilder.class);
@@ -267,9 +279,12 @@ public final class ComputeJsDepGraphTest extends TestCase {
     }
 
     TestBuilder expectArgv(String... args) {
-      for (String arg : args) {
-        this.wantedArgv.add(arg);
-      }
+      this.wantedArgv.add(args);
+      return this;
+    }
+
+    TestBuilder expectInputs(String... canonPaths) {
+      this.wantedSources.add(canonPaths);
       return this;
     }
 
@@ -284,11 +299,26 @@ public final class ComputeJsDepGraphTest extends TestCase {
           di);
 
       ImmutableList.Builder<String> modulesArgv = ImmutableList.builder();
-      modules.addClosureCompilerFlags(Optional.<File>absent(), modulesArgv);
+      ImmutableList.Builder<Source> sources = ImmutableList.builder();
+      modules.addClosureCompilerFlags(modulesArgv, sources);
+
+      ImmutableList<String> canonPaths = ImmutableList.<String>copyOf(
+          Lists.transform(
+              sources.build(),
+              new Function<Source, String>() {
+                @Override
+                public String apply(Source s) {
+                  return s.canonicalPath.getPath();
+                }
+              }));
 
       assertEquals(
           Joiner.on("\n").join(wantedArgv.build()),
           Joiner.on("\n").join(modulesArgv.build()));
+
+      assertEquals(
+          Joiner.on("\n").join(wantedSources.build()),
+          Joiner.on("\n").join(canonPaths));
     }
   }
 }
