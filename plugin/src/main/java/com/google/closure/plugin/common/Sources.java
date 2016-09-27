@@ -3,17 +3,14 @@ package com.google.closure.plugin.common;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.DirectoryScanner;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -24,10 +21,6 @@ public final class Sources implements Serializable {
 
   /** Files that contribute source code to the artifact. */
   public final ImmutableList<Source> sources;
-
-  /** An empty set of source files. */
-  public static final Sources EMPTY = new Sources(
-      ImmutableList.<Source>of());
 
   private Sources(
       Iterable<? extends Source> sources) {
@@ -133,15 +126,6 @@ public final class Sources implements Serializable {
 
     private static final long serialVersionUID = -6057344928125267557L;
 
-    /** Maps sources to their canonical paths. */
-    public static final Function<Source, File> GET_CANON_FILE
-    = new Function<Source, File>() {
-      @Override
-      public File apply(Source s) {
-        return s.canonicalPath;
-      }
-    };
-
     /** The canonical path to the source file on the local file system. */
     public final File canonicalPath;
     /** The canonical path to the source file root. */
@@ -233,60 +217,5 @@ public final class Sources implements Serializable {
 
       return new Source(absFile, root, relFile);
     }
-
-    /**
-     * The file, but with the given suffix appended.
-     */
-    public Source suffix(String suffix) {
-      return new Source(
-          new File(canonicalPath.getParentFile(),
-                   canonicalPath.getName() + suffix),
-          root,
-          new File(relativePath.getParentFile(),
-                   relativePath.getName() + suffix));
-    }
-
-    /**
-     * The same relativePath but with the given root.
-     */
-    public Source reroot(TypedFile newRoot) throws IOException {
-      File rerooted = new File(FilenameUtils.concat(
-          newRoot.f.getPath(), this.relativePath.getPath()));
-      return new Source(
-          rerooted.getCanonicalFile(),
-          newRoot,
-          this.relativePath);
-    }
-  }
-
-
-  static URI uriOfPath(File f) throws URISyntaxException {
-    String path = f.getPath();
-    path = path.replace("%", "%25");
-    if (File.separatorChar != '/') {
-      assert(File.separatorChar != '%');
-      path = path.replace("/", "%2f").replace(File.separatorChar, '/');
-    }
-    return new URI(path);
-  }
-
-  static String prettyPatternQuote(String s) {
-    int n = s.length();
-    if (n != 0) {
-      // If it's only dot and letters then we can make a more readable
-      // pattern than \Q which is confusing in log output.
-      boolean onlyDotAndLetters = true;
-      for (int i = 0; i < n; ++i) {
-        char ch = s.charAt(i);
-        if (!(ch == '.' || (ch < 0x80 && Character.isLetterOrDigit(ch)))) {
-          onlyDotAndLetters = false;
-          break;
-        }
-      }
-      if (onlyDotAndLetters) {
-        return s.replace(".", "\\.");
-      }
-    }
-    return Pattern.quote(s);
   }
 }

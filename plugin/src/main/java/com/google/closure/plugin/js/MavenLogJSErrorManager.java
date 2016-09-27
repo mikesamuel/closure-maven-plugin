@@ -26,10 +26,6 @@ final class MavenLogJSErrorManager implements ErrorManager {
     this.log = log;
   }
 
-  void setSourceExcerptProvider(SourceExcerptProvider sep) {
-    this.sourceExcerptProvider = sep;
-  }
-
   @Override
   public void generateReport() {
     MessageFormatter formatter = new LightweightMessageFormatter(

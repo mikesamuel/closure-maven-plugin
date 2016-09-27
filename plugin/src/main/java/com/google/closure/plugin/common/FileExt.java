@@ -66,7 +66,7 @@ public final class FileExt implements Comparable<FileExt>, Serializable {
     if (canon == null) {
       canon = ext;
     }
-    return new FileExt(ext);
+    return new FileExt(canon);
   }
 
   /** The extension for the given file. */

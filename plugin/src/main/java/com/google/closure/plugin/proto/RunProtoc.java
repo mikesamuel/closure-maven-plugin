@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.common.SourceFileProperty;
@@ -70,10 +71,7 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
       argv.add("--include_imports");
       argv.add("--descriptor_set_out")
           .add(descriptorSetFile.getPath());
-      File descriptorSetDir = descriptorSetFile.getParentFile();
-      if (descriptorSetDir != null) {
-        descriptorSetDir.mkdirs();
-      }
+      Files.createParentDirs(descriptorSetFile);
       allOutputs.add(descriptorSetFile);
     }
 
@@ -171,8 +169,8 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     this.outputs = Optional.of(allOutputs.build());
   }
 
-  private static String ensureDirExists(File dirPath) {
-    dirPath.mkdirs();
+  private static String ensureDirExists(File dirPath) throws IOException {
+    java.nio.file.Files.createDirectories(dirPath.toPath());
     return dirPath.getPath();
   }
 

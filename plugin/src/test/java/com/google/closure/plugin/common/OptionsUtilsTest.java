@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.closure.plugin.common.Options;
 import com.google.closure.plugin.common.OptionsUtils;
@@ -84,10 +83,8 @@ public final class OptionsUtilsTest extends TestCase {
     OptionsUtils.disambiguateIds(opts);
 
     ImmutableList.Builder<String> ids = ImmutableList.builder();
-    ImmutableSet.Builder<String> keys = ImmutableSet.builder();
     for (TestOptions o : opts) {
       ids.add(o.getId());
-      keys.add(o.getKey().text);
     }
 
     assertEquals(
@@ -102,9 +99,6 @@ public final class OptionsUtilsTest extends TestCase {
             "test.2",
             "test.3"),
         ids.build());
-    assertEquals(
-        opts.size(),
-        keys.build().size());
 
     assertTrue(opts.get(0).wasIdImplied);
     assertFalse(opts.get(3).wasIdImplied);

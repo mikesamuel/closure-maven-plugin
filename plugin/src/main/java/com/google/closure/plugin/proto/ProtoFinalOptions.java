@@ -1,20 +1,19 @@
 package com.google.closure.plugin.proto;
 
 import java.io.File;
+import java.io.Serializable;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.Options;
-import com.google.closure.plugin.plan.KeyedSerializable;
-import com.google.closure.plugin.plan.PlanKey;
 
 /**
  * An immutable representation of the same data as {@link ProtoOptions} that
  * includes default path information derived from the project configuration.
  */
-public final class ProtoFinalOptions implements KeyedSerializable {
+public final class ProtoFinalOptions implements Serializable {
 
   private static final long serialVersionUID = -8936056156839617489L;
 
@@ -82,13 +81,5 @@ public final class ProtoFinalOptions implements KeyedSerializable {
         Preconditions.checkNotNull(testDescriptorSetFile);
     this.jsOnly = Preconditions.checkNotNull(jsOnly);
     this.javaOnly = Preconditions.checkNotNull(javaOnly);
-  }
-
-  @Override
-  public PlanKey getKey() {
-    return PlanKey.builder("fopt")
-        .addString(getClass().getName())
-        .addString(id)
-        .build();
   }
 }

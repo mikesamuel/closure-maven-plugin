@@ -1,6 +1,5 @@
 package com.google.closure.plugin.proto;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -10,7 +9,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.CStyleLexer;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
-import com.google.closure.plugin.plan.Hash;
 import com.google.closure.plugin.plan.Metadata;
 
 /** Relates proto input files to their package declarations. */
@@ -60,21 +58,6 @@ public final class ProtoPackageMap implements Bundle {
       }
     }
     return Optional.fromNullable(packageName);
-  }
-
-  /** Bundles the hash and package name for a .proto file. */
-  public static final class HashAndPackage implements Serializable {
-    private static final long serialVersionUID = -7762936669341276750L;
-
-    /** Hash of the proto file from which this was derived. */
-    public final Hash hash;
-    /** The extracted package name. */
-    public final Optional<String> packageName;
-
-    HashAndPackage(Hash hash, Optional<String> packageName) {
-      this.hash = hash;
-      this.packageName = packageName;
-    }
   }
 
   @Override

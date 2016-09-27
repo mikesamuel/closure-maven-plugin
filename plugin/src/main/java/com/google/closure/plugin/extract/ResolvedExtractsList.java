@@ -9,8 +9,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.SourceFileProperty;
 
 /**
- * Like an {@link ExtractsList} but after all the extracts have been resolved
- * against a list of actual dependencies.
+ * A list like {@link Extracts#getExtracts} but after all the extracts have been
+ * resolved against the project's actual dependencies.
  */
 public final class ResolvedExtractsList implements Serializable {
 

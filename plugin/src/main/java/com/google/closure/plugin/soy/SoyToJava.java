@@ -82,7 +82,7 @@ final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
             context.log.debug("Unpacking " + name + " from soy generated jar");
             File outputFile = new File(FilenameUtils.concat(
                 projectBuildOutputDirectory.getPath(), name));
-            outputFile.getParentFile().mkdirs();
+            Files.createParentDirs(outputFile);
             try (FileOutputStream dest = new FileOutputStream(outputFile)) {
               ByteStreams.copy(zipIn, dest);
             }

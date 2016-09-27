@@ -40,20 +40,10 @@ public final class CssPlanner {
     return this;
   }
 
-  /** @return a default css source search path. */
-  public File defaultCssSource() {
-    return this.defaultCssSource;
-  }
-
   /** @param t a default path template for the compiled css. */
   public CssPlanner defaultCssOutputPathTemplate(String t) {
     this.defaultCssOutputPathTemplate = Preconditions.checkNotNull(t);
     return this;
-  }
-
-  /** @return a default path template for the compiled css. */
-  public String defaultCssOutputPathTemplate() {
-    return this.defaultCssOutputPathTemplate;
   }
 
   /** @param t a default path template for the source line mapping. */
@@ -62,12 +52,7 @@ public final class CssPlanner {
     return this;
   }
 
-  /** @return a default path template for the source line mapping. */
-  public String defaultCssSourceMapPathTemplate() {
-    return this.defaultCssSourceMapPathTemplate;
-  }
-
-  ImmutableList<CssOptions> optionSets(
+  private ImmutableList<CssOptions> optionSets(
       Iterable<? extends CssOptions> options)
   throws MojoExecutionException {
     // Multiple the options out so that there is at most one output

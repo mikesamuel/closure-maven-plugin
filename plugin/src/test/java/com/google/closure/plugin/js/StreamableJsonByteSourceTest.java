@@ -102,6 +102,7 @@ public final class StreamableJsonByteSourceTest extends TestCase {
   private static Source src(String relPath) {
     return new Source(
         new File("/" + relPath),
+        // TODO: make this test pass under windows
         new TypedFile(new File("/")),
         new File(relPath));
   }

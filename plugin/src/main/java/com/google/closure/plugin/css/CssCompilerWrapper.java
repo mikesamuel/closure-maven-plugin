@@ -104,7 +104,7 @@ final class CssCompilerWrapper {
   private static void ensureParentDirectoryFor(Optional<File> file)
   throws IOException {
     if (file.isPresent()) {
-      file.get().getCanonicalFile().getParentFile().mkdirs();
+      Files.createParentDirs(file.get().getCanonicalFile());
     }
   }
 }

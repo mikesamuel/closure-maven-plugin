@@ -6,6 +6,7 @@ import java.util.Arrays;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.SourceOptions;
 import com.google.closure.plugin.plan.PlanContext;

@@ -314,24 +314,6 @@ final class ComputeJsDepGraph extends PlanGraphNode<ComputeJsDepGraph.SV> {
     }
   }
 
-  static String moduleNamePrefixFor(Set<? extends SourceFileProperty> ps) {
-    String first = "src";
-    String second = "main";
-    for (SourceFileProperty p : ps) {
-      switch (p) {
-        case LOAD_AS_NEEDED:
-          // Leave deps in the same module as sources since we will use the
-          // dependency graph to pick which deps to promote to sources later.
-          continue;
-        case TEST_ONLY:
-          second = "test";
-          continue;
-      }
-      throw new AssertionError(p.name());
-    }
-    return first + "." + second;
-  }
-
   static final class SourceAndDepInfo
   implements Comparable<SourceAndDepInfo> {
     final Source s;
@@ -345,6 +327,18 @@ final class ComputeJsDepGraph extends PlanGraphNode<ComputeJsDepGraph.SV> {
     @Override
     public int compareTo(SourceAndDepInfo that) {
       return this.s.canonicalPath.compareTo(that.s.canonicalPath);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof SourceAndDepInfo)) { return false; }
+      SourceAndDepInfo that = (SourceAndDepInfo) o;
+      return this.s.canonicalPath.equals(that.s.canonicalPath);
+    }
+
+    @Override
+    public int hashCode() {
+      return this.s.canonicalPath.hashCode();
     }
 
     @Override

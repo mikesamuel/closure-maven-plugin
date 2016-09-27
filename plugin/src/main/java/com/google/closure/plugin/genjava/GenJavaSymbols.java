@@ -133,8 +133,8 @@ final class GenJavaSymbols extends PlanGraphNode<GenJavaSymbols.SV> {
     }
     jw.appendCode("}\n");
 
-    webFilesJava.getParentFile().mkdirs();
     try {
+      Files.createParentDirs(webFilesJava);
       Files.write(jw.toJava(), webFilesJava, Charsets.UTF_8);
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to write symbols file", ex);

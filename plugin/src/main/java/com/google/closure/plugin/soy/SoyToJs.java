@@ -51,7 +51,7 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
       // TODO: relay errors and warnings via build context.
       List<String> jsFileContent = sfs.compileToJsSrc(jsSrcOptions, msgBundle);
-      jsOutDir.mkdirs();
+      java.nio.file.Files.createDirectories(jsOutDir.toPath());
 
       int nOutputs = jsFileContent.size();
       Preconditions.checkState(nOutputs == sources.size());
@@ -70,7 +70,7 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
           FilenameUtils.getBaseName(inputRelPath.getName()) + suffix);
         File outputPath = new File(FilenameUtils.concat(
             jsOutDir.getPath(), outputRelPath.getPath()));
-        outputPath.getParentFile().mkdirs();
+        Files.createParentDirs(outputPath);
         try {
           Files.write(compiledJsContent, outputPath, Charsets.UTF_8);
         } catch (IOException ex) {

@@ -31,7 +31,6 @@ public final class SourcesTest extends TestCase {
   @Override
   public void setUp() throws IOException {
     tmpDir = Files.createTempDir().getCanonicalFile();
-    tmpDir.mkdirs();
     tmpDirRoot = new TypedFile(tmpDir);
     // T/bar/foo.txt
     // T/bar/baz.txt/
@@ -43,11 +42,11 @@ public final class SourcesTest extends TestCase {
     foo = new File(tmpDir, "foo");
     assertTrue(bar.mkdirs());
     assertTrue(foo.mkdirs());
-    new File(bar, "foo.txt").createNewFile();
-    new File(bar, "baz.txt").createNewFile();
-    new File(tmpDir, "boo.txt").createNewFile();
-    new File(foo, "bar.txt").createNewFile();
-    new File(foo, "bar.not").createNewFile();
+    assertTrue(new File(bar, "foo.txt").createNewFile());
+    assertTrue(new File(bar, "baz.txt").createNewFile());
+    assertTrue(new File(tmpDir, "boo.txt").createNewFile());
+    assertTrue(new File(foo, "bar.txt").createNewFile());
+    assertTrue(new File(foo, "bar.not").createNewFile());
     assertTrue(new File(tmpDir, "not.txt").mkdirs());
   }
 

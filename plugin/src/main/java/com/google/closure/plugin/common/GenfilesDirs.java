@@ -3,8 +3,6 @@ package com.google.closure.plugin.common;
 import java.io.File;
 import java.util.EnumSet;
 
-import com.google.closure.plugin.plan.KeyedSerializable;
-import com.google.closure.plugin.plan.PlanKey;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -12,9 +10,7 @@ import com.google.common.collect.Sets;
 /**
  * The directories where code-generators should put their output.
  */
-public final class GenfilesDirs implements KeyedSerializable {
-
-  private static final long serialVersionUID = 1635729944473350335L;
+public final class GenfilesDirs {
 
   /** The {@code target} directory. */
   public final File outputDir;
@@ -80,10 +76,5 @@ public final class GenfilesDirs implements KeyedSerializable {
           extension.extension);
     }
     return base;
-  }
-
-  @Override
-  public PlanKey getKey() {
-    return PlanKey.builder("genfiles-dirs").build();
   }
 }

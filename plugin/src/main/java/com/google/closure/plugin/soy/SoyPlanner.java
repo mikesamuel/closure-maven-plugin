@@ -32,7 +32,11 @@ public final class SoyPlanner {
     soyPlanRoot.setOptionSets(ImmutableList.of(opts));
     // Run after node that extracts .soy files from <dependency>'s JARs
     joinNodes.pipeline(
-        ImmutableSortedSet.of(FileExt.SOY),
+        ImmutableSortedSet.of(
+            // We need the soy files to compile
+            FileExt.SOY,
+            // The Soy type system needs to know about protobuffers.
+            FileExt.PD),
         soyPlanRoot,
         ImmutableSortedSet.of(FileExt.CLASS, FileExt.JS));
     return soyPlanRoot;

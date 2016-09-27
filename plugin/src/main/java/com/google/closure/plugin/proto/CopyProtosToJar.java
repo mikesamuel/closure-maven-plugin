@@ -49,7 +49,7 @@ final class CopyProtosToJar extends PlanGraphNode<CopyProtosToJar.SV> {
           DESCRIPTORS_FILE_BASENAME);
       // Not generated if protoc is not run.
       try {
-        context.closureOutputDirectory.mkdirs();
+        Files.createParentDirs(outputFile);
         Files.copy(
             descriptorSetFile,
             outputFile);

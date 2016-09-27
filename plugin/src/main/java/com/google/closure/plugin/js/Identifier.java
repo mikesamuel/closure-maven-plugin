@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 abstract class Identifier
@@ -64,14 +63,6 @@ implements Comparable<Identifier>, Serializable {
 
     GoogNamespace(String text) {
       super(text);
-    }
-
-    static ImmutableList<GoogNamespace> allOf(Iterable<? extends String> xs) {
-      ImmutableList.Builder<GoogNamespace> b = ImmutableList.builder();
-      for (String x : xs) {
-        b.add(new GoogNamespace(x));
-      }
-      return b.build();
     }
 
     static CharSequence shortLogForm(

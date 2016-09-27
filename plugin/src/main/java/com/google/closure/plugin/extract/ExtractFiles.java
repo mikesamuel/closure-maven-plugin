@@ -87,14 +87,16 @@ final class ExtractFiles extends PlanGraphNode<ExtractFiles.SV> {
                   gd, name, e.props, bytes);
               if (extractedLocation.isPresent()) {
                 File outFile = extractedLocation.get();
-                outFile.getParentFile().mkdirs();
+                Files.createParentDirs(outFile);
 
                 File tmpFile = File.createTempFile("extract", ext);
                 Files.write(bytes, tmpFile);
                 if (outFile.exists() && Files.equal(outFile, tmpFile)) {
                   // Don't generate unnecessary churn in timestamps or
-                  // file-system watcher.
-                  tmpFile.delete();
+                  // file-system watcher by copying equivalent content into a
+                  // file.
+                  @SuppressWarnings("unused")
+                  boolean deleted = tmpFile.delete();  // best effort
                 } else {
                   log.debug(
                       "Extracting " + e.groupId + ":" + e.artifactId

@@ -34,6 +34,7 @@ final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
     Modules modules = bundle;
     final Log log = context.log;
     File jsOutputDir = new File(context.closureOutputDirectory, "js");
+    java.nio.file.Files.createDirectories(jsOutputDir.toPath());
 
     if (modules.modules.isEmpty()) {
       log.info("Skipping JS compilation -- zero modules");
@@ -45,7 +46,6 @@ final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
 
     argvBuilder.add("--module_output_path_prefix")
         .add(jsOutputDir.getPath() + File.separator);
-    jsOutputDir.mkdirs();
 
     argvBuilder.add("--create_renaming_reports");
     argvBuilder.add("--create_source_map").add("%outname%-source-map.json");

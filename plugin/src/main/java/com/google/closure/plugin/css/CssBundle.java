@@ -1,14 +1,13 @@
 package com.google.closure.plugin.css;
 
 import com.google.common.collect.ImmutableList;
+
 import com.google.closure.plugin.common.Sources;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode;
-import com.google.closure.plugin.plan.KeyedSerializable;
-import com.google.closure.plugin.plan.PlanKey;
 
 final class CssBundle
-implements BundlingPlanGraphNode.Bundle, KeyedSerializable {
+implements BundlingPlanGraphNode.Bundle {
 
   private static final long serialVersionUID = 1756086919632313649L;
 
@@ -16,7 +15,6 @@ implements BundlingPlanGraphNode.Bundle, KeyedSerializable {
   final Sources.Source entryPoint;
   final ImmutableList<Sources.Source> inputs;
   final CssOptions.Outputs outputs;
-  private transient PlanKey key;
 
   CssBundle(
       String optionsId,
@@ -27,17 +25,6 @@ implements BundlingPlanGraphNode.Bundle, KeyedSerializable {
     this.entryPoint = entryPoint;
     this.inputs = inputs;
     this.outputs = outputs;
-  }
-
-  @Override
-  public PlanKey getKey() {
-    if (key == null) {
-      key = PlanKey.builder("plan-key")
-        .addString(optionsId)
-        .addString(entryPoint.canonicalPath.getPath())
-        .build();
-    }
-    return key;
   }
 
   @Override

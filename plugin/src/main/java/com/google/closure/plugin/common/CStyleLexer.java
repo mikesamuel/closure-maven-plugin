@@ -190,15 +190,4 @@ public final class CStyleLexer implements Iterable<CStyleLexer.Token> {
     DOC_COMMENT,
     ;
   }
-
-  private static final long SPACE_CHARS =
-      (1L << '\t') | (1L << '\n') | (1L << '\r') | (1L << ' ');
-
-  static boolean isSpace(int cp) {
-    return cp <= 32 && (SPACE_CHARS & (1 << cp)) != 0;
-  }
-
-  static boolean isWordStart(int cp) {
-    return Character.isJavaIdentifierStart(cp);
-  }
 }

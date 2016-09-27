@@ -94,21 +94,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
   protected File defaultCssSource;
 
   @Parameter(
-      defaultValue="${project.basedir}/src/main/js",
-      readonly=true, required=true)
-  protected File defaultJsSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/test/js",
-      readonly=true, required=true)
-  protected File defaultJsTestSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/extern/js",
-      readonly=true, required=true)
-  protected File defaultJsExterns;
-
-  @Parameter(
       defaultValue="${project.build.directory}/src/main/js",
       readonly=true, required=true)
   protected File jsGenfiles;
@@ -117,21 +102,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       defaultValue="${project.build.directory}/src/test/js",
       readonly=true, required=true)
   protected File jsTestGenfiles;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/proto",
-      readonly=true, required=true)
-  protected File defaultProtoSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/test/proto",
-      readonly=true, required=true)
-  protected File defaultProtoTestSource;
-
-  @Parameter(
-      defaultValue="${project.basedir}/src/main/soy",
-      readonly=true, required=true)
-  protected File defaultSoySource;
 
   /**
    * Options for the closure template compiler.
@@ -188,9 +158,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException {
-    if (!outputDir.exists()) {
-      outputDir.mkdirs();
-    }
     Log log = this.getLog();
 
     File cssRenameMapFile = new File(
@@ -198,6 +165,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
     log.info("Reading CSS rename map " + cssRenameMapFile);
     StableCssSubstitutionMapProvider substitutionMapProvider;
     try {
+      Files.createParentDirs(cssRenameMapFile);
       substitutionMapProvider = new StableCssSubstitutionMapProvider(
           cssRenameMapFile);
     } catch (IOException ex) {
@@ -275,7 +243,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
     log.debug("Writing rename map to " + cssRenameMapFile);
     try {
-      cssRenameMapFile.getParentFile().mkdirs();
+      Files.createParentDirs(cssRenameMapFile);
       try (Writer out = Files.asCharSink(cssRenameMapFile, Charsets.UTF_8)
               .openBufferedStream()) {
         OutputRenamingMapFormat.JSON.writeRenamingMap(

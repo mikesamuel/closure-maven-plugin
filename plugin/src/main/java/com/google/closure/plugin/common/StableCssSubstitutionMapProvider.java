@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.css.RecordingSubstitutionMap;
@@ -71,15 +69,5 @@ implements SubstitutionMapProvider {
   /** True if the mappings have changed. */
   public boolean hasChanged() {
     return !this.originalMappings.equals(substitutionMap.getMappings());
-  }
-}
-
-
-final class MakeMinimalSubstMap
-implements Function<Iterable<? extends String>, MinimalSubstitutionMap> {
-
-  @Override
-  public MinimalSubstitutionMap apply(Iterable<? extends String> exclusions) {
-    return new MinimalSubstitutionMap(ImmutableSet.copyOf(exclusions));
   }
 }

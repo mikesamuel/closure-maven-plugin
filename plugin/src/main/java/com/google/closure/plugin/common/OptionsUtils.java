@@ -3,8 +3,6 @@ package com.google.closure.plugin.common;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -243,10 +241,7 @@ public final class OptionsUtils {
       ImmutableList.Builder<Field> b = ImmutableList.builder();
       for (Field f : cl.getDeclaredFields()) {
         if (f.isAnnotationPresent(Asplodable.class)) {
-          Type ft = f.getType();
-          if (ft instanceof ParameterizedType) {
-            ft = ((ParameterizedType) ft).getRawType();
-          }
+          Class<?> ft = f.getType();
           Preconditions.checkState(List.class.equals(ft), f.getName());
           b.add(f);
           f.setAccessible(true);
@@ -261,7 +256,6 @@ public final class OptionsUtils {
     } else {
       int nAxes = asplodableFields.size();
       ImmutableList.Builder<OPTIONS> asploded = ImmutableList.builder();
-      List<?>[] asplodedFieldArrays = new List<?>[nAxes];
       // Asplode each individually.
       for (OPTIONS o : optionSetList) {
         ImmutableList.Builder<Set<Object>> elementSetsBuilder =
@@ -275,7 +269,6 @@ public final class OptionsUtils {
             throw (AssertionError)
                 new AssertionError("setAccessible").initCause(ex);
           }
-          asplodedFieldArrays[i] = ImmutableList.copyOf(listOfValues);
 
           ImmutableSet<Object> elementSet;
           if (listOfValues == null) {
