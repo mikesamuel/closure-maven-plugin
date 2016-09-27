@@ -34,4 +34,50 @@ final class ProtoBundle implements Bundle {
   public ImmutableCollection<Source> getInputs() {
     return inputs;
   }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((descriptorSetFile == null) ? 0 : descriptorSetFile.hashCode());
+    result = prime * result + ((inputs == null) ? 0 : inputs.hashCode());
+    result = prime * result + ((langSet == null) ? 0 : langSet.hashCode());
+    result = prime * result + ((rootSet == null) ? 0 : rootSet.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    ProtoBundle other = (ProtoBundle) obj;
+    if (descriptorSetFile == null) {
+      if (other.descriptorSetFile != null) {
+        return false;
+      }
+    } else if (!descriptorSetFile.equals(other.descriptorSetFile)) {
+      return false;
+    }
+    if (inputs == null) {
+      if (other.inputs != null) {
+        return false;
+      }
+    } else if (!inputs.equals(other.inputs)) {
+      return false;
+    }
+    if (langSet != other.langSet) {
+      return false;
+    }
+    if (rootSet != other.rootSet) {
+      return false;
+    }
+    return true;
+  }
 }

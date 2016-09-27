@@ -9,6 +9,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -27,7 +28,7 @@ import com.google.template.soy.types.proto.SoyProtoTypeProvider;
  * so that we don't generate duplicate error messages and warnings when we
  * apply different backends to the inputs.
  */
-final class SoyFileSetSupplier implements Serializable {
+final class SoyFileSetSupplier implements Serializable, StructurallyComparable {
   private static final long serialVersionUID = -1120612669828338378L;
 
   private transient SoyFileSet sfs;
@@ -117,5 +118,20 @@ final class SoyFileSetSupplier implements Serializable {
 
     this.sfs = sfsBuilder.build();
     return sfs;
+  }
+
+  @Override
+  public int hashCode() {
+    return options.hashCode() + 31 * sources.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || o.getClass() != getClass()) { return false; }
+    SoyFileSetSupplier that = (SoyFileSetSupplier) o;
+    return this.context == that.context
+        // Ignore sfs which should be determinable from options & sources
+        && this.options.equals(that.options)
+        && this.sources.equals(that.options);
   }
 }

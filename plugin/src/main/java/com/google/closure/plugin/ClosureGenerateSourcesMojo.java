@@ -94,11 +94,8 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
             .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
             .plan(css.build()));
 
-    planGraph.addRoot(
-        new ProtoPlanner(context, joinNodes, protocExecutable())
-            .defaultMainDescriptorFile(defaultMainDescriptorFile)
-            .defaultTestDescriptorFile(defaultTestDescriptorFile)
-            .plan(proto != null ? proto : new ProtoOptions()));
+    ProtoPlanner protoPlanner = makeProtoPlanner(context, joinNodes);
+    planGraph.addRoot(protoPlanner.plan(protoPlanner.prepare(proto)));
 
     SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
     planGraph.addRoot(
@@ -125,5 +122,21 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
   /** Additive setter called by plexus configurator. */
   public void setCss(CssOptions options) {
     this.css.add(options);
+  }
+
+  @Override
+  protected void initLoadedPlan(PlanGraph planGraph)
+  throws MojoExecutionException {
+    PlanContext context = planGraph.getContext();
+    JoinNodes joinNodes = planGraph.getJoinNodes();
+
+    makeProtoPlanner(context, joinNodes).prepare(proto);
+  }
+
+  private ProtoPlanner makeProtoPlanner(
+      PlanContext context, JoinNodes joinNodes) {
+  return new ProtoPlanner(context, joinNodes, protocExecutable())
+      .defaultMainDescriptorFile(defaultMainDescriptorFile)
+      .defaultTestDescriptorFile(defaultTestDescriptorFile);
   }
 }

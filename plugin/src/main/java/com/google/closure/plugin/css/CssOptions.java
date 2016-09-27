@@ -31,6 +31,7 @@ import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions;
 import com.google.closure.plugin.common.Sources;
 import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.io.Files;
 
 /**
@@ -368,7 +369,8 @@ public final class CssOptions extends SourceOptions {
   /**
    * The outputs of a compilation job.
    */
-  public static final class Outputs implements Serializable {
+  public static final class Outputs
+  implements Serializable, StructurallyComparable {
     private static final long serialVersionUID = -600433593903008098L;
 
     /** The file that will contain the process CSS. */
@@ -414,6 +416,47 @@ public final class CssOptions extends SourceOptions {
     public ImmutableList<File> allOutputFiles() {
       return ImmutableList.of(css, sourceMap);
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = super.hashCode();
+      result = prime * result + ((css == null) ? 0 : css.hashCode());
+      result = prime * result + ((sourceMap == null) ? 0 : sourceMap.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      Outputs other = (Outputs) obj;
+      if (!super.equals(other)) {
+        return false;
+      }
+      if (css == null) {
+        if (other.css != null) {
+          return false;
+        }
+      } else if (!css.equals(other.css)) {
+        return false;
+      }
+      if (sourceMap == null) {
+        if (other.sourceMap != null) {
+          return false;
+        }
+      } else if (!sourceMap.equals(other.sourceMap)) {
+        return false;
+      }
+      return true;
+    }
   }
 
   @Override
@@ -454,6 +497,258 @@ public final class CssOptions extends SourceOptions {
   @Override
   protected ImmutableList<FileExt> sourceExtensions() {
     return ImmutableList.of(FileExt.CSS);
+  }
+
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((allowDefPropagation == null) ? 0 : allowDefPropagation.hashCode());
+    result = prime * result + ((allowKeyframes == null) ? 0 : allowKeyframes.hashCode());
+    result = prime * result + ((allowMozDocument == null) ? 0 : allowMozDocument.hashCode());
+    result = prime * result + ((allowUndefinedConstants == null) ? 0 : allowUndefinedConstants.hashCode());
+    result = prime * result + ((allowUnrecognizedFunctions == null) ? 0 : allowUnrecognizedFunctions.hashCode());
+    result = prime * result + ((allowUnrecognizedProperties == null) ? 0 : allowUnrecognizedProperties.hashCode());
+    result = prime * result + ((allowedNonStandardFunctions == null) ? 0 : allowedNonStandardFunctions.hashCode());
+    result = prime * result + ((allowedUnrecognizedProperties == null) ? 0 : allowedUnrecognizedProperties.hashCode());
+    result = prime * result + ((compileConstants == null) ? 0 : compileConstants.hashCode());
+    result = prime * result + ((copyrightNotice == null) ? 0 : copyrightNotice.hashCode());
+    result = prime * result + ((cssRenamingPrefix == null) ? 0 : cssRenamingPrefix.hashCode());
+    result = prime * result + ((eliminateDeadStyles == null) ? 0 : eliminateDeadStyles.hashCode());
+    result = prime * result + ((excludedClassesFromRenaming == null) ? 0 : excludedClassesFromRenaming.hashCode());
+    result = prime * result + ((gssFunctionMapProvider == null) ? 0 : gssFunctionMapProvider.hashCode());
+    result = prime * result + ((inputOrientation == null) ? 0 : inputOrientation.hashCode());
+    result = prime * result + ((optimize == null) ? 0 : optimize.hashCode());
+    result = prime * result + ((output == null) ? 0 : output.hashCode());
+    result = prime * result + ((outputFormat == null) ? 0 : outputFormat.hashCode());
+    result = prime * result + ((outputOrientation == null) ? 0 : outputOrientation.hashCode());
+    result = prime * result + ((outputRenamingMapFormat == null) ? 0 : outputRenamingMapFormat.hashCode());
+    result = prime * result + ((preserveComments == null) ? 0 : preserveComments.hashCode());
+    result = prime * result + ((processDependencies == null) ? 0 : processDependencies.hashCode());
+    result = prime * result + ((simplifyCss == null) ? 0 : simplifyCss.hashCode());
+    result = prime * result + ((sourceMapFile == null) ? 0 : sourceMapFile.hashCode());
+    result = prime * result + ((sourceMapLevel == null) ? 0 : sourceMapLevel.hashCode());
+    result = prime * result + ((suppressDependencyCheck == null) ? 0 : suppressDependencyCheck.hashCode());
+    result = prime * result + ((swapLeftRightInUrl == null) ? 0 : swapLeftRightInUrl.hashCode());
+    result = prime * result + ((swapLtrRtlInUrl == null) ? 0 : swapLtrRtlInUrl.hashCode());
+    result = prime * result + ((trueConditionNames == null) ? 0 : trueConditionNames.hashCode());
+    result = prime * result + ((useInternalBidiFlipper == null) ? 0 : useInternalBidiFlipper.hashCode());
+    result = prime * result + ((vendor == null) ? 0 : vendor.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    CssOptions other = (CssOptions) obj;
+    if (!super.equals(other)) { return false; }
+    if (allowDefPropagation == null) {
+      if (other.allowDefPropagation != null) {
+        return false;
+      }
+    } else if (!allowDefPropagation.equals(other.allowDefPropagation)) {
+      return false;
+    }
+    if (allowKeyframes == null) {
+      if (other.allowKeyframes != null) {
+        return false;
+      }
+    } else if (!allowKeyframes.equals(other.allowKeyframes)) {
+      return false;
+    }
+    if (allowMozDocument == null) {
+      if (other.allowMozDocument != null) {
+        return false;
+      }
+    } else if (!allowMozDocument.equals(other.allowMozDocument)) {
+      return false;
+    }
+    if (allowUndefinedConstants == null) {
+      if (other.allowUndefinedConstants != null) {
+        return false;
+      }
+    } else if (!allowUndefinedConstants.equals(other.allowUndefinedConstants)) {
+      return false;
+    }
+    if (allowUnrecognizedFunctions == null) {
+      if (other.allowUnrecognizedFunctions != null) {
+        return false;
+      }
+    } else if (!allowUnrecognizedFunctions.equals(other.allowUnrecognizedFunctions)) {
+      return false;
+    }
+    if (allowUnrecognizedProperties == null) {
+      if (other.allowUnrecognizedProperties != null) {
+        return false;
+      }
+    } else if (!allowUnrecognizedProperties.equals(other.allowUnrecognizedProperties)) {
+      return false;
+    }
+    if (allowedNonStandardFunctions == null) {
+      if (other.allowedNonStandardFunctions != null) {
+        return false;
+      }
+    } else if (!allowedNonStandardFunctions.equals(other.allowedNonStandardFunctions)) {
+      return false;
+    }
+    if (allowedUnrecognizedProperties == null) {
+      if (other.allowedUnrecognizedProperties != null) {
+        return false;
+      }
+    } else if (!allowedUnrecognizedProperties.equals(other.allowedUnrecognizedProperties)) {
+      return false;
+    }
+    if (compileConstants == null) {
+      if (other.compileConstants != null) {
+        return false;
+      }
+    } else if (!compileConstants.equals(other.compileConstants)) {
+      return false;
+    }
+    if (copyrightNotice == null) {
+      if (other.copyrightNotice != null) {
+        return false;
+      }
+    } else if (!copyrightNotice.equals(other.copyrightNotice)) {
+      return false;
+    }
+    if (cssRenamingPrefix == null) {
+      if (other.cssRenamingPrefix != null) {
+        return false;
+      }
+    } else if (!cssRenamingPrefix.equals(other.cssRenamingPrefix)) {
+      return false;
+    }
+    if (eliminateDeadStyles == null) {
+      if (other.eliminateDeadStyles != null) {
+        return false;
+      }
+    } else if (!eliminateDeadStyles.equals(other.eliminateDeadStyles)) {
+      return false;
+    }
+    if (excludedClassesFromRenaming == null) {
+      if (other.excludedClassesFromRenaming != null) {
+        return false;
+      }
+    } else if (!excludedClassesFromRenaming.equals(other.excludedClassesFromRenaming)) {
+      return false;
+    }
+    if (gssFunctionMapProvider == null) {
+      if (other.gssFunctionMapProvider != null) {
+        return false;
+      }
+    } else if (!gssFunctionMapProvider.equals(other.gssFunctionMapProvider)) {
+      return false;
+    }
+    if (inputOrientation != other.inputOrientation) {
+      return false;
+    }
+    if (optimize != other.optimize) {
+      return false;
+    }
+    if (output == null) {
+      if (other.output != null) {
+        return false;
+      }
+    } else if (!output.equals(other.output)) {
+      return false;
+    }
+    if (outputFormat != other.outputFormat) {
+      return false;
+    }
+    if (outputOrientation == null) {
+      if (other.outputOrientation != null) {
+        return false;
+      }
+    } else if (!outputOrientation.equals(other.outputOrientation)) {
+      return false;
+    }
+    if (outputRenamingMapFormat != other.outputRenamingMapFormat) {
+      return false;
+    }
+    if (preserveComments == null) {
+      if (other.preserveComments != null) {
+        return false;
+      }
+    } else if (!preserveComments.equals(other.preserveComments)) {
+      return false;
+    }
+    if (processDependencies == null) {
+      if (other.processDependencies != null) {
+        return false;
+      }
+    } else if (!processDependencies.equals(other.processDependencies)) {
+      return false;
+    }
+    if (simplifyCss == null) {
+      if (other.simplifyCss != null) {
+        return false;
+      }
+    } else if (!simplifyCss.equals(other.simplifyCss)) {
+      return false;
+    }
+    if (sourceMapFile == null) {
+      if (other.sourceMapFile != null) {
+        return false;
+      }
+    } else if (!sourceMapFile.equals(other.sourceMapFile)) {
+      return false;
+    }
+    if (sourceMapLevel != other.sourceMapLevel) {
+      return false;
+    }
+    if (suppressDependencyCheck == null) {
+      if (other.suppressDependencyCheck != null) {
+        return false;
+      }
+    } else if (!suppressDependencyCheck.equals(other.suppressDependencyCheck)) {
+      return false;
+    }
+    if (swapLeftRightInUrl == null) {
+      if (other.swapLeftRightInUrl != null) {
+        return false;
+      }
+    } else if (!swapLeftRightInUrl.equals(other.swapLeftRightInUrl)) {
+      return false;
+    }
+    if (swapLtrRtlInUrl == null) {
+      if (other.swapLtrRtlInUrl != null) {
+        return false;
+      }
+    } else if (!swapLtrRtlInUrl.equals(other.swapLtrRtlInUrl)) {
+      return false;
+    }
+    if (trueConditionNames == null) {
+      if (other.trueConditionNames != null) {
+        return false;
+      }
+    } else if (!trueConditionNames.equals(other.trueConditionNames)) {
+      return false;
+    }
+    if (useInternalBidiFlipper == null) {
+      if (other.useInternalBidiFlipper != null) {
+        return false;
+      }
+    } else if (!useInternalBidiFlipper.equals(other.useInternalBidiFlipper)) {
+      return false;
+    }
+    if (vendor == null) {
+      if (other.vendor != null) {
+        return false;
+      }
+    } else if (!vendor.equals(other.vendor)) {
+      return false;
+    }
+    return true;
   }
 }
 

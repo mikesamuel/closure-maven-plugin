@@ -2,13 +2,15 @@ package com.google.closure.plugin.common;
 
 import java.io.Serializable;
 
+import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 /**
  * Describes a set of files.
  */
-public final class DirectoryScannerSpec implements Serializable {
+public final class DirectoryScannerSpec
+implements Serializable, StructurallyComparable {
   private static final long serialVersionUID = 2622978832273403508L;
 
   /** The roots to scan. */

@@ -11,6 +11,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.DirectoryScanner;
 
+import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -122,7 +123,8 @@ public final class Sources implements Serializable {
    *   relativePath: "bar/boo.txt",
    * }</pre>
    */
-  public static final class Source implements Comparable<Source>, Serializable {
+  public static final class Source
+  implements Comparable<Source>, Serializable, StructurallyComparable {
 
     private static final long serialVersionUID = -6057344928125267557L;
 

@@ -39,4 +39,37 @@ public final class Extracts extends Options {
     }
     return clone;
   }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = super.hashCode();
+    result = prime * result + ((extract == null) ? 0 : extract.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    Extracts other = (Extracts) obj;
+    if (!super.equals(other)) {
+      return false;
+    }
+    if (extract == null) {
+      if (other.extract != null) {
+        return false;
+      }
+    } else if (!extract.equals(other.extract)) {
+      return false;
+    }
+    return true;
+  }
 }

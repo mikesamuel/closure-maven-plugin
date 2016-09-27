@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
+import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.javascript.jscomp.CommandLineRunner;
 
 /**
@@ -87,7 +88,8 @@ public final class Modules implements Bundle {
 
 
   /** A single JS module definition. */
-  public static final class Module implements Serializable {
+  public static final class Module
+  implements Serializable, StructurallyComparable {
     private static final long serialVersionUID = -8460629612062250977L;
 
     /** Module name. */
@@ -114,6 +116,52 @@ public final class Modules implements Bundle {
           + name + ":" + sources.size() + ":" + deps + " " + sources
           + "}";
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((deps == null) ? 0 : deps.hashCode());
+      result = prime * result + ((name == null) ? 0 : name.hashCode());
+      result = prime * result + ((sources == null) ? 0 : sources.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      Module other = (Module) obj;
+      if (deps == null) {
+        if (other.deps != null) {
+          return false;
+        }
+      } else if (!deps.equals(other.deps)) {
+        return false;
+      }
+      if (name == null) {
+        if (other.name != null) {
+          return false;
+        }
+      } else if (!name.equals(other.name)) {
+        return false;
+      }
+      if (sources == null) {
+        if (other.sources != null) {
+          return false;
+        }
+      } else if (!sources.equals(other.sources)) {
+        return false;
+      }
+      return true;
+    }
   }
 
   @VisibleForTesting
@@ -139,5 +187,35 @@ public final class Modules implements Bundle {
       inputs.addAll(module.sources);
     }
     return inputs.build();
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((modules == null) ? 0 : modules.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    Modules other = (Modules) obj;
+    if (modules == null) {
+      if (other.modules != null) {
+        return false;
+      }
+    } else if (!modules.equals(other.modules)) {
+      return false;
+    }
+    return true;
   }
 }

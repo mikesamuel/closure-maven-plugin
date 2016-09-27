@@ -24,7 +24,6 @@ import com.google.closure.plugin.js.JsDepInfo.DepInfo;
 import com.google.closure.plugin.plan.SourceMetadataMapBuilder;
 import com.google.closure.plugin.plan.SourceMetadataMapBuilder.Extractor;
 import com.google.closure.plugin.plan.SourceSpecedPlanGraphNode;
-import com.google.closure.plugin.plan.Hash;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.Metadata;
 import com.google.closure.plugin.plan.PlanContext;
@@ -187,8 +186,8 @@ extends SourceSpecedPlanGraphNode<ComputeJsDepInfo.SV> {
     if (!followers.isEmpty()) {
       Preconditions.checkState(followers.size() == 1);
       ComputeJsDepGraph cdg = (ComputeJsDepGraph) followers.get(0);
-      if (Hash.same(options, cdg.options)
-          && Hash.same(depInfoOpt.get(), cdg.depInfo)) {
+      if (options.equals(cdg.options)
+          && depInfoOpt.get().equals(cdg.depInfo)) {
         return Optional.absent();
       }
     }

@@ -8,12 +8,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.Options;
+import com.google.closure.plugin.plan.StructurallyComparable;
 
 /**
  * An immutable representation of the same data as {@link ProtoOptions} that
  * includes default path information derived from the project configuration.
  */
-public final class ProtoFinalOptions implements Serializable {
+public final class ProtoFinalOptions
+implements Serializable, StructurallyComparable {
 
   private static final long serialVersionUID = -8936056156839617489L;
 
@@ -81,5 +83,91 @@ public final class ProtoFinalOptions implements Serializable {
         Preconditions.checkNotNull(testDescriptorSetFile);
     this.jsOnly = Preconditions.checkNotNull(jsOnly);
     this.javaOnly = Preconditions.checkNotNull(javaOnly);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((descriptorSetFile == null) ? 0 : descriptorSetFile.hashCode());
+    result = prime * result + ((id == null) ? 0 : id.hashCode());
+    result = prime * result + ((javaOnly == null) ? 0 : javaOnly.hashCode());
+    result = prime * result + ((jsOnly == null) ? 0 : jsOnly.hashCode());
+    result = prime * result + ((protobufVersion == null) ? 0 : protobufVersion.hashCode());
+    result = prime * result + ((protocExec == null) ? 0 : protocExec.hashCode());
+    result = prime * result + ((sources == null) ? 0 : sources.hashCode());
+    result = prime * result + ((testDescriptorSetFile == null) ? 0 : testDescriptorSetFile.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    ProtoFinalOptions other = (ProtoFinalOptions) obj;
+    if (descriptorSetFile == null) {
+      if (other.descriptorSetFile != null) {
+        return false;
+      }
+    } else if (!descriptorSetFile.equals(other.descriptorSetFile)) {
+      return false;
+    }
+    if (id == null) {
+      if (other.id != null) {
+        return false;
+      }
+    } else if (!id.equals(other.id)) {
+      return false;
+    }
+    if (javaOnly == null) {
+      if (other.javaOnly != null) {
+        return false;
+      }
+    } else if (!javaOnly.equals(other.javaOnly)) {
+      return false;
+    }
+    if (jsOnly == null) {
+      if (other.jsOnly != null) {
+        return false;
+      }
+    } else if (!jsOnly.equals(other.jsOnly)) {
+      return false;
+    }
+    if (protobufVersion == null) {
+      if (other.protobufVersion != null) {
+        return false;
+      }
+    } else if (!protobufVersion.equals(other.protobufVersion)) {
+      return false;
+    }
+    if (protocExec == null) {
+      if (other.protocExec != null) {
+        return false;
+      }
+    } else if (!protocExec.equals(other.protocExec)) {
+      return false;
+    }
+    if (sources == null) {
+      if (other.sources != null) {
+        return false;
+      }
+    } else if (!sources.equals(other.sources)) {
+      return false;
+    }
+    if (testDescriptorSetFile == null) {
+      if (other.testDescriptorSetFile != null) {
+        return false;
+      }
+    } else if (!testDescriptorSetFile.equals(other.testDescriptorSetFile)) {
+      return false;
+    }
+    return true;
   }
 }

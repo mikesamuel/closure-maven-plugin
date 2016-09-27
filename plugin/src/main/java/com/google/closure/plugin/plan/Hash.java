@@ -6,12 +6,13 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.common.io.Files;
@@ -153,16 +154,14 @@ public final class Hash implements Serializable {
    * @param hashables order is significant to the resulting hash.
    * @throws IOException if any {@link Hashable#hash} call throws.
    */
-  public static Optional<Hash> hashAllHashables(
-      Iterable<? extends Hashable> hashables)
+  public static Hash hashAllHashables(Iterable<? extends Hashable> hashables)
   throws IOException {
     MessageDigest md = newDigest();
     for (Hashable hashable : hashables) {
-      Optional<Hash> hash = hashable.hash();
-      if (!hash.isPresent()) { return Optional.absent(); }
-      md.update(hash.get().bytes);
+      Hash hash = hashable.hash();
+      md.update(hash.bytes);
     }
-    return Optional.of(new Hash(md.digest()));
+    return new Hash(md.digest());
   }
 
   /**
@@ -232,12 +231,89 @@ public final class Hash implements Serializable {
   private static MessageDigest newDigest() {
     MessageDigest md;
     try {
-      md = MessageDigest.getInstance("SHA-1");
+      md = MessageDigest.getInstance("SHA-512");
     } catch (NoSuchAlgorithmException ex) {
       throw (AssertionError) new AssertionError(
-          "SHA-1 unavailable")
+          "SHA-512 unavailable")
           .initCause(ex);
     }
     return md;
+  }
+
+  @SuppressWarnings("synthetic-access")
+  public static final class Builder {
+    final MessageDigest md = newDigest();
+
+    public Builder hash(Hashable h) {
+      if (h == null) { return hash(0); }
+      hash(h.getClass().getName());
+      if (h instanceof Hashable.RecursivelyHashable) {
+        ((Hashable.RecursivelyHashable) h).hash(this);
+      } else {
+        hash(h.hash());
+      }
+      return this;
+    }
+
+    public Builder hash(Hash h) {
+      md.update(h.bytes);
+      return this;
+    }
+
+    public Builder hash(Iterable<? extends Hashable> hs) {
+      for (Hashable h : hs) {
+        hash(h);
+      }
+      // Make sure adjacent collections don't hash when split at different
+      // points.
+      hash(-1);
+      return this;
+    }
+
+    public Builder hash(CharSequence cs) {
+      ByteBuffer bb = Charsets.UTF_8.encode(CharBuffer.wrap(cs));
+      byte[] bytes = new byte[bb.remaining()];
+      bb.get(bytes);
+      md.update(bytes);
+      hash(-1);
+      return this;
+    }
+
+    public Builder hash(int i) {
+      byte[] bytes = new byte[4];
+      bytes[0] = (byte) ((i >>> 24) & 0xff);
+      bytes[1] = (byte) ((i >>> 16) & 0xff);
+      bytes[2] = (byte) ((i >>>  8) & 0xff);
+      bytes[3] = (byte) ((i >>>  0) & 0xff);
+      md.update(bytes);
+      return this;
+    }
+
+    public Builder hash(long l) {
+      byte[] bytes = new byte[8];
+      bytes[0] = (byte) ((l >>> 56) & 0xff);
+      bytes[1] = (byte) ((l >>> 48) & 0xff);
+      bytes[2] = (byte) ((l >>> 40) & 0xff);
+      bytes[3] = (byte) ((l >>> 32) & 0xff);
+      bytes[4] = (byte) ((l >>> 24) & 0xff);
+      bytes[5] = (byte) ((l >>> 16) & 0xff);
+      bytes[6] = (byte) ((l >>>  8) & 0xff);
+      bytes[7] = (byte) ((l >>>  0) & 0xff);
+      md.update(bytes);
+      return this;
+    }
+
+    public Builder hash(float f) {
+      return hash(Float.floatToIntBits(f));
+    }
+
+    public Builder hash(double d) {
+      return hash(Double.doubleToLongBits(d));
+    }
+
+    /** The final hash bytes. */
+    public Hash build() {
+      return new Hash(md.digest());
+    }
   }
 }

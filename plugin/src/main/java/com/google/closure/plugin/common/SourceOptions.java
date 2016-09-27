@@ -184,6 +184,48 @@ public abstract class SourceOptions extends Options {
       allProps.addAll(Arrays.asList(implied));
       return new TypedFile(root, allProps);
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = super.hashCode();
+      result = prime * result + ((props == null) ? 0 : props.hashCode());
+      result = prime * result + ((root == null) ? 0 : root.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      // Make sure this class was overridden properly.
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      SourceRootBuilder other = (SourceRootBuilder) obj;
+      if (!super.equals(other)) {
+        return false;
+      }
+      if (props == null) {
+        if (other.props != null) {
+          return false;
+        }
+      } else if (!props.equals(other.props)) {
+        return false;
+      }
+      if (root == null) {
+        if (other.root != null) {
+          return false;
+        }
+      } else if (!root.equals(other.root)) {
+        return false;
+      }
+      return true;
+    }
   }
 
 
@@ -237,5 +279,51 @@ public abstract class SourceOptions extends Options {
         };
       }
     };
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((exclude == null) ? 0 : exclude.hashCode());
+    result = prime * result + ((include == null) ? 0 : include.hashCode());
+    result = prime * result + Arrays.hashCode(source);
+    result = prime * result + Arrays.hashCode(testSource);
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    SourceOptions other = (SourceOptions) obj;
+    if (exclude == null) {
+      if (other.exclude != null) {
+        return false;
+      }
+    } else if (!exclude.equals(other.exclude)) {
+      return false;
+    }
+    if (include == null) {
+      if (other.include != null) {
+        return false;
+      }
+    } else if (!include.equals(other.include)) {
+      return false;
+    }
+    if (!Arrays.equals(source, other.source)) {
+      return false;
+    }
+    if (!Arrays.equals(testSource, other.testSource)) {
+      return false;
+    }
+    return true;
   }
 }

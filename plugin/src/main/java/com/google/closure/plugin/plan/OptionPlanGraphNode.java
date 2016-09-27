@@ -1,7 +1,6 @@
 package com.google.closure.plugin.plan;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +20,8 @@ import com.google.common.collect.Maps;
  *
  * @param <O> bundle of options
  */
-public abstract class OptionPlanGraphNode<O extends Serializable>
+public abstract
+class OptionPlanGraphNode<O extends Serializable & StructurallyComparable>
 extends PlanGraphNode<OptionPlanGraphNode.OptionStateVector<O>> {
   private final List<O> optionSets = Lists.newArrayList();
 
@@ -83,35 +83,30 @@ extends PlanGraphNode<OptionPlanGraphNode.OptionStateVector<O>> {
   Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
   throws MojoExecutionException {
 
-    try {
-      Map<Hash, PlanGraphNode<?>> hashToFollower = Maps.newHashMap();
-      for (PlanGraphNode<?> f : getFollowerList()) {
-        Hash fHash = Hash.hashSerializable(this.getOptionsForFollower(f));
-        hashToFollower.put(fHash, f);
-      }
+    Map<O, PlanGraphNode<?>> optsToFollower = Maps.newHashMap();
+    for (PlanGraphNode<?> f : getFollowerList()) {
+      O opts = this.getOptionsForFollower(f);
+      optsToFollower.put(opts, f);
+    }
 
-      boolean changed = false;
-      ImmutableList.Builder<PlanGraphNode<?>> out = ImmutableList.builder();
-      for (O opts : this.optionSets) {
-        Hash oHash = Hash.hashSerializable(opts);
-        PlanGraphNode<?> f = hashToFollower.remove(oHash);
-        if (f == null) {
-          changed = true;
-          f = fanOutTo(opts);
-        }
-        out.add(f);
-      }
-      if (!hashToFollower.isEmpty()) {
+    boolean changed = false;
+    ImmutableList.Builder<PlanGraphNode<?>> out = ImmutableList.builder();
+    for (O opts : this.optionSets) {
+      PlanGraphNode<?> f = optsToFollower.remove(opts);
+      if (f == null) {
         changed = true;
+        f = fanOutTo(opts);
       }
+      out.add(f);
+    }
+    if (!optsToFollower.isEmpty()) {
+      changed = true;
+    }
 
-      if (changed) {
-        return Optional.of(out.build());
-      } else {
-        return Optional.absent();
-      }
-    } catch (NotSerializableException ex) {
-      throw (AssertionError) new AssertionError().initCause(ex);
+    if (changed) {
+      return Optional.of(out.build());
+    } else {
+      return Optional.absent();
     }
   }
 

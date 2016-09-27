@@ -64,11 +64,10 @@ extends BundlingPlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     }
 
     this.protoPackageMap = Optional.of(newProtoPackageMap);
-    this.bundles = Optional.of(makeBundles());
+    this.bundles = Optional.of(makeBundles(newProtoPackageMap));
   }
 
-  ImmutableList<ProtoBundle> makeBundles() {
-    final ProtoPackageMap packageMap = protoPackageMap.get();
+  ImmutableList<ProtoBundle> makeBundles(final ProtoPackageMap packageMap) {
     final Sources protoSources = this.sources.get();
     final Log log = context.log;
     final ImmutableSet<String> javaOnly = options.javaOnly;

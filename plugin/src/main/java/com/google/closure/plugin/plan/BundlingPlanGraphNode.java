@@ -1,7 +1,6 @@
 package com.google.closure.plugin.plan;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -17,7 +16,7 @@ import com.google.closure.plugin.plan.BundlingPlanGraphNode.BundleStateVector;
  * A plan graph node that groups inputs into compilation bundles.
  */
 public abstract class BundlingPlanGraphNode<
-    O extends Serializable,
+    O extends Serializable & StructurallyComparable,
     B extends BundlingPlanGraphNode.Bundle>
 extends SourceSpecedPlanGraphNode<BundleStateVector<O, B>> {
   protected final O options;
@@ -54,36 +53,30 @@ extends SourceSpecedPlanGraphNode<BundleStateVector<O, B>> {
   @Override
   protected
   Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn) {
-    try {
-      // Hash each followers bundle so we can reuse as appropriate.
-      Map<Hash, PlanGraphNode<?>> hashToFollower = Maps.newLinkedHashMap();
-      for (PlanGraphNode<?> f : getFollowerList()) {
-        Hash h = Hash.hashSerializable(bundleForFollower(f));
-        hashToFollower.put(h, f);
-      }
+    Map<B, PlanGraphNode<?>> bundleToFollower = Maps.newLinkedHashMap();
+    for (PlanGraphNode<?> f : getFollowerList()) {
+      B bundleForFollower = bundleForFollower(f);
+      bundleToFollower.put(bundleForFollower, f);
+    }
 
-      boolean changed = false;
-      ImmutableList.Builder<PlanGraphNode<?>> out = ImmutableList.builder();
-      for (B bundle : bundles.or(ImmutableList.<B>of())) {
-        Hash bHash = Hash.hashSerializable(bundle);
-        PlanGraphNode<?> f = hashToFollower.remove(bHash);
-        if (f == null) {
-          changed = true;
-          f = fanOutTo(bundle);
-        }
-        out.add(f);
-      }
-      if (!hashToFollower.isEmpty()) {
+    boolean changed = false;
+    ImmutableList.Builder<PlanGraphNode<?>> out = ImmutableList.builder();
+    for (B bundle : bundles.or(ImmutableList.<B>of())) {
+      PlanGraphNode<?> f = bundleToFollower.remove(bundle);
+      if (f == null) {
         changed = true;
+        f = fanOutTo(bundle);
       }
+      out.add(f);
+    }
+    if (!bundleToFollower.isEmpty()) {
+      changed = true;
+    }
 
-      if (changed) {
-        return Optional.of(out.build());
-      } else {
-        return Optional.absent();
-      }
-    } catch (NotSerializableException ex) {
-      throw (AssertionError) new AssertionError().initCause(ex);
+    if (changed) {
+      return Optional.of(out.build());
+    } else {
+      return Optional.absent();
     }
   }
 
@@ -91,7 +84,7 @@ extends SourceSpecedPlanGraphNode<BundleStateVector<O, B>> {
   /**
    * A bundle of source files.
    */
-  public interface Bundle extends Serializable {
+  public interface Bundle extends Serializable, StructurallyComparable {
     /** The inputs which can be checked against the build context. */
     ImmutableCollection<Source> getInputs();
   }
@@ -100,7 +93,8 @@ extends SourceSpecedPlanGraphNode<BundleStateVector<O, B>> {
    * State vector for a bundling node.
    */
   public static abstract
-  class BundleStateVector<O extends Serializable, B extends Bundle>
+  class BundleStateVector<O extends Serializable & StructurallyComparable,
+                          B extends Bundle>
   implements PlanGraphNode.StateVector {
     private static final long serialVersionUID = 1L;
     protected final O options;

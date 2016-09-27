@@ -103,4 +103,51 @@ public final class SoyOptions extends SourceOptions {
   protected ImmutableList<FileExt> sourceExtensions() {
     return ImmutableList.of(FileExt.SOY);
   }
+
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = super.hashCode();
+    result = prime * result + ((compileTimeGlobals == null) ? 0 : compileTimeGlobals.hashCode());
+    result = prime * result + ((js == null) ? 0 : js.hashCode());
+    result = prime * result + ((strictAutoescapingRequired == null) ? 0 : strictAutoescapingRequired.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!super.equals(obj)) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    SoyOptions other = (SoyOptions) obj;
+    if (compileTimeGlobals == null) {
+      if (other.compileTimeGlobals != null) {
+        return false;
+      }
+    } else if (!compileTimeGlobals.equals(other.compileTimeGlobals)) {
+      return false;
+    }
+    if (js == null) {
+      if (other.js != null) {
+        return false;
+      }
+    } else if (!js.equals(other.js)) {
+      return false;
+    }
+    if (strictAutoescapingRequired == null) {
+      if (other.strictAutoescapingRequired != null) {
+        return false;
+      }
+    } else if (!strictAutoescapingRequired.equals(other.strictAutoescapingRequired)) {
+      return false;
+    }
+    return true;
+  }
 }

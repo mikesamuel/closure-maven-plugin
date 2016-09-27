@@ -64,4 +64,34 @@ public final class ProtoPackageMap implements Bundle {
   public ImmutableSet<Source> getInputs() {
     return protoPackages.keySet();
   }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((protoPackages == null) ? 0 : protoPackages.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    ProtoPackageMap other = (ProtoPackageMap) obj;
+    if (protoPackages == null) {
+      if (other.protoPackages != null) {
+        return false;
+      }
+    } else if (!protoPackages.equals(other.protoPackages)) {
+      return false;
+    }
+    return true;
+  }
 }

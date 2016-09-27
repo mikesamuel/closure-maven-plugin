@@ -233,6 +233,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
     if (buildPlanGraph) {
       formulatePlan(planGraph);
+    } else {
+      initLoadedPlan(planGraph);
     }
 
     try {
@@ -268,6 +270,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
   protected abstract void formulatePlan(PlanGraph planGraph)
   throws MojoExecutionException;
 
+  protected abstract void initLoadedPlan(PlanGraph planGraph)
+  throws MojoExecutionException;
 
 
   // For protoc support.

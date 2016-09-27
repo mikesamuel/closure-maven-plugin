@@ -1,9 +1,5 @@
 package com.google.closure.plugin.plan;
 
-import java.io.IOException;
-
-import com.google.common.base.Optional;
-
 /** Can be hashed. */
 public interface Hashable {
 
@@ -12,8 +8,18 @@ public interface Hashable {
    *
    * @return may be absent if this represents a resource like a file which has
    *     not yet been created.
-   * @throws IOException if fetching bytes failed.  FileNotFoundException should
-   *     result in an absent value, not be thrown.
    */
-  Optional<Hash> hash() throws IOException;
+  Hash hash();
+
+
+  static abstract class RecursivelyHashable implements Hashable {
+    /** Hashes by creating a builder for {@link #hash(Hash.Builder)}. */
+    @Override
+    public final Hash hash() {
+      // Not actually recursive.
+      return new Hash.Builder().hash(this).build();
+    }
+
+    protected abstract void hash(Hash.Builder hb);
+  }
 }

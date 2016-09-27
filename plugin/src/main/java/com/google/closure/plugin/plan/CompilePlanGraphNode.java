@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableList;
  * A plan node that compiles one bundle.
  */
 public abstract class CompilePlanGraphNode<
-    O extends Serializable,
+    O extends Serializable & StructurallyComparable,
     B extends BundlingPlanGraphNode.Bundle>
 extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
 

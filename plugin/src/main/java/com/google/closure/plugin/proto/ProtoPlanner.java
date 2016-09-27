@@ -47,16 +47,17 @@ public final class ProtoPlanner {
     return this;
   }
 
-  /** Adds steps to the common planner. */
-  public PlanGraphNode<?> plan(ProtoOptions opts)
+  /** Adds steps to the plan graph. */
+  public ProtoFinalOptions prepare(ProtoOptions opts)
   throws MojoExecutionException {
     Preconditions.checkNotNull(defaultMainDescriptorFile);
     Preconditions.checkNotNull(defaultTestDescriptorFile);
-    Preconditions.checkNotNull(opts);
 
-    ProtoFinalOptions protoOptions = OptionsUtils.prepareOne(opts).freeze(
-        context,
-        defaultMainDescriptorFile, defaultTestDescriptorFile);
+    ProtoFinalOptions protoOptions =
+        OptionsUtils.prepareOne(opts != null ? opts : new ProtoOptions())
+        .freeze(
+            context,
+            defaultMainDescriptorFile, defaultTestDescriptorFile);
 
     context.protoIO.mainDescriptorSetFile = Optional.of(
         Optional.fromNullable(protoOptions.descriptorSetFile)
@@ -67,7 +68,11 @@ public final class ProtoPlanner {
         .or(defaultTestDescriptorFile));
 
     context.protoIO.protocFinder = Optional.of(this.protocFinder);
+    return protoOptions;
+  }
 
+  /** Adds steps to the plan graph. */
+  public PlanGraphNode<?> plan(ProtoFinalOptions protoOptions) {
     joinNodes.follows(new CopyProtosToJar(context), FileExt.PD);
 
     GenerateProtoPackageMap gppm = new GenerateProtoPackageMap(

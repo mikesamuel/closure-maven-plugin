@@ -150,4 +150,109 @@ public final class Js extends Options {
   protected void createLazyDefaults() {
     // Done
   }
+
+
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = super.hashCode();
+    result = prime * result + ((bidiGlobalDir == null) ? 0 : bidiGlobalDir.hashCode());
+    result = prime * result + ((googMsgsAreExternal == null) ? 0 : googMsgsAreExternal.hashCode());
+    result = prime * result
+        + ((shouldDeclareTopLevelNamespaces == null) ? 0 : shouldDeclareTopLevelNamespaces.hashCode());
+    result = prime * result + ((shouldGenerateGoogModules == null) ? 0 : shouldGenerateGoogModules.hashCode());
+    result = prime * result + ((shouldGenerateGoogMsgDefs == null) ? 0 : shouldGenerateGoogMsgDefs.hashCode());
+    result = prime * result + ((shouldGenerateJsdoc == null) ? 0 : shouldGenerateJsdoc.hashCode());
+    result = prime * result + ((shouldProvideBothSoyNamespacesAndJsFunctions == null) ? 0
+        : shouldProvideBothSoyNamespacesAndJsFunctions.hashCode());
+    result = prime * result
+        + ((shouldProvideRequireJsFunctions == null) ? 0 : shouldProvideRequireJsFunctions.hashCode());
+    result = prime * result
+        + ((shouldProvideRequireSoyNamespaces == null) ? 0 : shouldProvideRequireSoyNamespaces.hashCode());
+    result = prime * result + ((useGoogIsRtlForBidiGlobalDir == null) ? 0 : useGoogIsRtlForBidiGlobalDir.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!super.equals(obj)) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    Js other = (Js) obj;
+    if (bidiGlobalDir != other.bidiGlobalDir) {
+      return false;
+    }
+    if (googMsgsAreExternal == null) {
+      if (other.googMsgsAreExternal != null) {
+        return false;
+      }
+    } else if (!googMsgsAreExternal.equals(other.googMsgsAreExternal)) {
+      return false;
+    }
+    if (shouldDeclareTopLevelNamespaces == null) {
+      if (other.shouldDeclareTopLevelNamespaces != null) {
+        return false;
+      }
+    } else if (!shouldDeclareTopLevelNamespaces.equals(other.shouldDeclareTopLevelNamespaces)) {
+      return false;
+    }
+    if (shouldGenerateGoogModules == null) {
+      if (other.shouldGenerateGoogModules != null) {
+        return false;
+      }
+    } else if (!shouldGenerateGoogModules.equals(other.shouldGenerateGoogModules)) {
+      return false;
+    }
+    if (shouldGenerateGoogMsgDefs == null) {
+      if (other.shouldGenerateGoogMsgDefs != null) {
+        return false;
+      }
+    } else if (!shouldGenerateGoogMsgDefs.equals(other.shouldGenerateGoogMsgDefs)) {
+      return false;
+    }
+    if (shouldGenerateJsdoc == null) {
+      if (other.shouldGenerateJsdoc != null) {
+        return false;
+      }
+    } else if (!shouldGenerateJsdoc.equals(other.shouldGenerateJsdoc)) {
+      return false;
+    }
+    if (shouldProvideBothSoyNamespacesAndJsFunctions == null) {
+      if (other.shouldProvideBothSoyNamespacesAndJsFunctions != null) {
+        return false;
+      }
+    } else
+      if (!shouldProvideBothSoyNamespacesAndJsFunctions.equals(other.shouldProvideBothSoyNamespacesAndJsFunctions)) {
+      return false;
+    }
+    if (shouldProvideRequireJsFunctions == null) {
+      if (other.shouldProvideRequireJsFunctions != null) {
+        return false;
+      }
+    } else if (!shouldProvideRequireJsFunctions.equals(other.shouldProvideRequireJsFunctions)) {
+      return false;
+    }
+    if (shouldProvideRequireSoyNamespaces == null) {
+      if (other.shouldProvideRequireSoyNamespaces != null) {
+        return false;
+      }
+    } else if (!shouldProvideRequireSoyNamespaces.equals(other.shouldProvideRequireSoyNamespaces)) {
+      return false;
+    }
+    if (useGoogIsRtlForBidiGlobalDir == null) {
+      if (other.useGoogIsRtlForBidiGlobalDir != null) {
+        return false;
+      }
+    } else if (!useGoogIsRtlForBidiGlobalDir.equals(other.useGoogIsRtlForBidiGlobalDir)) {
+      return false;
+    }
+    return true;
+  }
 }
