@@ -2,12 +2,12 @@ package com.google.closure.plugin.genjava;
 
 import java.io.File;
 
-import com.google.closure.plugin.common.CommonPlanner;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
-import com.google.closure.plugin.common.Ingredients;
-import com.google.closure.plugin.common.Ingredients.DirScanFileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -17,12 +17,14 @@ import com.google.common.collect.ImmutableList;
  */
 public final class GenSymbolsPlanner {
 
-  private final CommonPlanner planner;
+  private final PlanContext context;
+  private final JoinNodes joinNodes;
   private String genJavaPackageName;
 
   /** */
-  public GenSymbolsPlanner(CommonPlanner planner) {
-    this.planner = planner;
+  public GenSymbolsPlanner(PlanContext context, JoinNodes joinNodes) {
+    this.context = context;
+    this.joinNodes = joinNodes;
   }
 
   /** Sets the package name in generated java files. */
@@ -32,24 +34,22 @@ public final class GenSymbolsPlanner {
   }
 
   /** Adds steps to the common planner. */
-  public void plan() {
-    Ingredients ingredients = planner.ingredients;
+  public PlanGraphNode<?> plan() {
     DirectoryScannerSpec outputFilesSpec = new DirectoryScannerSpec(
-        ImmutableList.of(new TypedFile(planner.closureOutputDirectory.value)),
+        ImmutableList.of(new TypedFile(context.closureOutputDirectory)),
         ImmutableList.of("**"),
         ImmutableList.<String>of());
-    DirScanFileSetIngredient outputFiles = ingredients.fileset(outputFilesSpec);
 
-    PathValue webFilesJava = ingredients.pathValue(
-        javaSourcePath("WebFiles.java"));
+    File webFilesJava = javaSourcePath("WebFiles.java");
 
-    planner.addStep(new GenJavaSymbols(
-            outputFiles, webFilesJava,
-            ingredients.stringValue(genJavaPackageName)));
+    GenJavaSymbols gjs = new GenJavaSymbols(
+        context, outputFilesSpec, webFilesJava, genJavaPackageName);
+    joinNodes.follows(gjs, FileExt._ANY);
+    return gjs;
   }
 
   private File javaSourcePath(String basename) {
-    File dir = planner.genfiles.getValue().javaGenfiles;
+    File dir = context.genfilesDirs.javaGenfiles;
     if (!genJavaPackageName.isEmpty()) {
       for (String packageDirName : genJavaPackageName.split("[.]")) {
         dir = new File(dir, packageDirName);

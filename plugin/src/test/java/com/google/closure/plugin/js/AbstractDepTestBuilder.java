@@ -79,7 +79,7 @@ abstract class AbstractDepTestBuilder<T extends AbstractDepTestBuilder<T>> {
     ImmutableList<Source> sourceList = this.sources.build();
     JsOptions options = OptionsUtils.prepareOne(new JsOptions());
     JsDepInfo depInfo = new JsDepInfo(ComputeJsDepInfo.computeDepInfo(
-        log, ImmutableMap.<File, Metadata<DepInfo>>of(),
+        log, ImmutableMap.<Source, Metadata<DepInfo>>of(),
         options,
         new Function<Source, ByteSource>() {
           @SuppressWarnings("synthetic-access")

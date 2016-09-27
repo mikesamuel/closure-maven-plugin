@@ -3,6 +3,7 @@ package com.google.closure.plugin.common;
 import java.io.File;
 
 import org.apache.maven.plugin.logging.Log;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.Ingredients.HashedInMemory;
@@ -33,6 +34,9 @@ public class CommonPlanner {
   /** The {@code target/classes/closure}. */
   public final PathValue closureOutputDirectory;
 
+  /** Used to detect file changes and write output files. */
+  public final BuildContext buildContext;
+
 
   /**
    * May be used by steps to run a compiler but stubbed out in tests.
@@ -43,12 +47,14 @@ public class CommonPlanner {
 
   /** */
   public CommonPlanner(
-      Log log, File baseDir, File outputDir, File projectBuildOutputDirectory,
+      Log log, BuildContext buildContext,
+      File baseDir, File outputDir, File projectBuildOutputDirectory,
       File closureOutputDirectory,
       StableCssSubstitutionMapProvider substitutionMapProvider,
       HashStore hashStore, Ingredients ingredients, GenfilesDirs genfiles) {
     this.ingredients = ingredients;
     this.log = log;
+    this.buildContext = buildContext;
     this.baseDir = baseDir;
     this.outputDir = outputDir;
     this.projectBuildOutputDirectory = ingredients.pathValue(

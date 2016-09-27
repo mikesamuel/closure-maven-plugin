@@ -1,65 +1,39 @@
 package com.google.closure.plugin.proto;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.closure.plugin.common.CommonPlanner;
-import com.google.closure.plugin.common.Ingredients.DirScanFileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
-import com.google.closure.plugin.common.Ingredients
-    .SettableFileSetIngredient;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.ToolFinder;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 
 /**
  * Adds steps that feed .proto files to protoc.
  */
 public final class ProtoPlanner {
 
-  private final CommonPlanner planner;
+  private final PlanContext context;
+  private final JoinNodes joinNodes;
   private final ToolFinder<ProtoFinalOptions> protocFinder;
-  private File defaultProtoSource;
-  private File defaultProtoTestSource;
   private File defaultMainDescriptorFile;
   private File defaultTestDescriptorFile;
-  private final SerializedObjectIngredient<ProtoIO> protoIO;
 
   /** */
   public ProtoPlanner(
-      CommonPlanner planner, ToolFinder<ProtoFinalOptions> protocFinder)
-  throws IOException {
-    this.planner = planner;
+      PlanContext context, JoinNodes joinNodes,
+      ToolFinder<ProtoFinalOptions> protocFinder) {
+    this.context = context;
+    this.joinNodes = joinNodes;
     this.protocFinder = protocFinder;
-
-    this.protoIO = planner.ingredients.serializedObject(
-        "protoc-files.ser", ProtoIO.class);
   }
 
-
-  /**
-   * Gets info about protobuf compiler inputs and outputs derived from the
-   * proto options and file-system.
-   */
-  public SerializedObjectIngredient<ProtoIO> getProtoIO() {
-    return protoIO;
-  }
-
-  /** Sets the default source root for proto files used in sources. */
-  public ProtoPlanner defaultProtoSource(File dir) {
-    this.defaultProtoSource = dir;
-    return this;
-  }
-
-  /** Sets the default source root for proto files used in tests. */
-  public ProtoPlanner defaultProtoTestSource(File dir) {
-    this.defaultProtoTestSource = dir;
-    return this;
-  }
 
   /** Path for generated proto descriptor file set. */
   public ProtoPlanner defaultMainDescriptorFile(File f) {
@@ -74,48 +48,34 @@ public final class ProtoPlanner {
   }
 
   /** Adds steps to the common planner. */
-  public void plan(ProtoOptions opts) throws MojoExecutionException {
-    Preconditions.checkNotNull(defaultProtoSource);
-    Preconditions.checkNotNull(defaultProtoTestSource);
+  public PlanGraphNode<?> plan(ProtoOptions opts)
+  throws MojoExecutionException {
     Preconditions.checkNotNull(defaultMainDescriptorFile);
     Preconditions.checkNotNull(defaultTestDescriptorFile);
     Preconditions.checkNotNull(opts);
 
     ProtoFinalOptions protoOptions = OptionsUtils.prepareOne(opts).freeze(
-        defaultProtoSource, defaultProtoTestSource,
-        planner.genfiles.getValue(),
+        context,
         defaultMainDescriptorFile, defaultTestDescriptorFile);
 
-    HashedInMemory<ProtoFinalOptions> protoOptionsIng =
-        planner.ingredients.hashedInMemory(
-            ProtoFinalOptions.class, protoOptions);
+    context.protoIO.mainDescriptorSetFile = Optional.of(
+        Optional.fromNullable(protoOptions.descriptorSetFile)
+        .or(defaultMainDescriptorFile));
 
-    SettableFileSetIngredient protocExec =
-        planner.ingredients.namedFileSet("protocExec");
+    context.protoIO.testDescriptorSetFile = Optional.of(
+        Optional.fromNullable(protoOptions.testDescriptorSetFile)
+        .or(defaultTestDescriptorFile));
 
-    SerializedObjectIngredient<ProtoPackageMap> protoPackageMap;
-    try {
-      protoPackageMap = planner.ingredients.serializedObject(
-          "proto-package-map.ser", ProtoPackageMap.class);
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to locate intermediate object", ex);
-    }
+    context.protoIO.protocFinder = Optional.of(this.protocFinder);
 
-    DirScanFileSetIngredient protoSources =
-        planner.ingredients.fileset(protoOptions.sources);
+    joinNodes.follows(new CopyProtosToJar(context), FileExt.PD);
 
-    planner.addStep(new GenerateProtoPackageMap(
-        protoSources, protoPackageMap));
-
-    planner.addStep(new FindProtoFilesAndProtoc(
-        planner.processRunner, protocFinder, planner.ingredients,
-        protoOptionsIng, planner.genfiles, protoPackageMap,
-        protoIO, protoSources, protocExec));
-
-    planner.addStep(new CopyProtosToJar(
-        planner.closureOutputDirectory,
-        protoIO));
+    GenerateProtoPackageMap gppm = new GenerateProtoPackageMap(
+        context, protoOptions);
+    joinNodes.pipeline(
+        ImmutableSortedSet.of(FileExt.PROTO),
+        gppm,
+        RunProtoc.FOLLOWER_EXTS);
+    return gppm;
   }
-
 }

@@ -29,4 +29,14 @@ public final class Extracts extends Options {
   protected void createLazyDefaults() {
     // Done
   }
+
+  @Override
+  public Extracts clone() {
+    Extracts clone = new Extracts();
+    clone.id = id;
+    for (Extract e : this.extract) {
+      clone.extract.add(e.clone());
+    }
+    return clone;
+  }
 }

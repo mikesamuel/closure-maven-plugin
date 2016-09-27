@@ -1,19 +1,20 @@
 package com.google.closure.plugin;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.model.io.DefaultModelWriter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -23,30 +24,33 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.repository.ComponentDependency;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import com.comoyo.maven.plugins.protoc.ProtocBundledMojo;
-import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.closure.plugin.common.Cheats;
 import com.google.closure.plugin.common.StableCssSubstitutionMapProvider;
-import com.google.closure.plugin.common.CommonPlanner;
+import com.google.closure.plugin.common.DefaultProcessRunner;
 import com.google.closure.plugin.common.GenfilesDirs;
-import com.google.closure.plugin.common.Ingredients;
-import com.google.closure.plugin.common.Ingredients
-    .SettableFileSetIngredient;
+import com.google.closure.plugin.common.SrcfilesDirs;
 import com.google.closure.plugin.common.ToolFinder;
-import com.google.closure.plugin.plan.HashStore;
-import com.google.closure.plugin.plan.Plan;
+import com.google.closure.plugin.plan.Hash;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraph;
 import com.google.closure.plugin.proto.ProtoFinalOptions;
 import com.google.closure.plugin.soy.SoyOptions;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 
 abstract class AbstractClosureMojo extends AbstractMojo {
+  @Component
+  private BuildContext buildContext;
+
   @Parameter(
       defaultValue="${project.basedir}",
       required=true,
@@ -188,32 +192,6 @@ abstract class AbstractClosureMojo extends AbstractMojo {
       outputDir.mkdirs();
     }
     Log log = this.getLog();
-    Ingredients ingredients = new Ingredients(outputDir);
-
-    File hashStoreFile = new File(
-        ingredients.getCacheDir(),
-        (CaseFormat.UPPER_CAMEL.to(
-              CaseFormat.LOWER_UNDERSCORE, getClass().getSimpleName())
-           .replace('_', '-'))
-        + "-hash-store.json");
-
-    HashStore hashStore = null;
-    if (hashStoreFile.exists()) {
-      try {
-        try (InputStream hashStoreIn = new FileInputStream(hashStoreFile)) {
-          try (Reader hashStoreReader = new InputStreamReader(
-                  hashStoreIn, Charsets.UTF_8)) {
-            hashStore = HashStore.read(hashStoreReader, log);
-          }
-        }
-      } catch (IOException ex) {
-        log.warn("Failed to read hash store", ex);
-      }
-    }
-    if (hashStore == null) {
-      log.debug("Creating empty hash store");
-      hashStore = new HashStore();
-    }
 
     File cssRenameMapFile = new File(
         new File(closureOutputDirectory, "css"), "css-rename-map.json");
@@ -227,34 +205,72 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           "Failed to read CSS rename map " + cssRenameMapFile, ex);
     }
 
+    SrcfilesDirs srcfilesDirs;
+    try {
+      srcfilesDirs = new SrcfilesDirs(project);
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to find src directories", ex);
+    }
+
     GenfilesDirs genfilesDirs = new GenfilesDirs(
         outputDir,
         javaGenfiles, javaTestGenfiles,
         jsGenfiles, jsTestGenfiles);
 
-    CommonPlanner planner = new CommonPlanner(
-        log, baseDir, outputDir, outputClassesDir, closureOutputDirectory,
-        substitutionMapProvider, hashStore, ingredients, genfilesDirs);
+    ImmutableList<Artifact> allArtifacts = ImmutableList.<Artifact>builder()
+        .addAll(project.getDependencyArtifacts())
+        .add(pluginDescriptor.getPluginArtifact())
+        .build();
 
-    formulatePlan(planner);
-
-    Plan plan = planner.toPlan();
-    log.debug("Finished plan.  Executing plan");
-    while (!plan.isComplete()) {
-      plan.executeOneStep();
+    Hash projectHash;
+    {
+      try (StringWriter sw = new StringWriter()) {
+        new DefaultModelWriter().write(
+            sw, ImmutableMap.<String, Object>of(), project.getModel());
+        projectHash = Hash.hashString(sw.toString());
+      } catch (IOException ex) {
+        log.warn(ex);
+        projectHash = null;
+      }
     }
 
-    log.debug("Writing hash store to " + hashStoreFile);
-    try {
-      hashStoreFile.getParentFile().mkdirs();
-      try (OutputStream hashStoreOut = new FileOutputStream(hashStoreFile)) {
-        try (Writer hashStoreWriter = new OutputStreamWriter(
-                hashStoreOut, Charsets.UTF_8)){
-          hashStore.write(hashStoreWriter);
+    PlanContext context = new PlanContext(
+        DefaultProcessRunner.INSTANCE, pluginDescriptor, buildContext, log,
+        srcfilesDirs, genfilesDirs, allArtifacts,
+        outputDir, outputClassesDir, closureOutputDirectory,
+        substitutionMapProvider);
+
+    File planGraphFile = new File(
+        context.outputDir, ".closure-plan-graph.ser");
+    PlanGraph planGraph = new PlanGraph(context);
+    boolean buildPlanGraph = true;
+    if (projectHash != null) {
+      try (InputStream pgIn =
+           Files.asByteSource(planGraphFile).openBufferedStream()) {
+        try (ObjectInputStream pgObjIn = new ObjectInputStream(pgIn)) {
+          Hash storedHash = (Hash) pgObjIn.readObject();
+          if (projectHash.equals(storedHash)) {
+            planGraph.readFrom(pgObjIn);
+            buildPlanGraph = false;
+          }
+        } catch (ClassNotFoundException ex) {
+          throw new MojoExecutionException("Failed to load plan graph", ex);
         }
+      } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
+        // Ok.
+      } catch (IOException ex) {
+        throw new MojoExecutionException("Failed to load plan graph", ex);
       }
+    }
+
+    if (buildPlanGraph) {
+      formulatePlan(planGraph);
+    }
+
+    try {
+      planGraph.execute();
     } catch (IOException ex) {
-      log.warn("Problem writing hash store", ex);
+      throw new MojoExecutionException("Closure plan execution failed", ex);
     }
 
     log.debug("Writing rename map to " + cssRenameMapFile);
@@ -268,15 +284,25 @@ abstract class AbstractClosureMojo extends AbstractMojo {
     } catch (IOException ex) {
       log.warn("Problem writing CSS rename map", ex);
     }
+
+
+    try (OutputStream pgOut =
+             Files.asByteSink(planGraphFile).openBufferedStream()) {
+      try (ObjectOutputStream pgObjOut = new ObjectOutputStream(pgOut)) {
+        pgObjOut.writeObject(projectHash);
+        planGraph.writeTo(pgObjOut);
+      }
+    } catch (IOException ex) {
+      throw new MojoExecutionException("Failed to store plan graph", ex);
+    }
   }
 
-  protected abstract void formulatePlan(CommonPlanner planner)
+  protected abstract void formulatePlan(PlanGraph planGraph)
   throws MojoExecutionException;
 
 
 
   // For protoc support.
-
   @Parameter(defaultValue="${plugin}", required=true, readonly=true)
   protected PluginDescriptor pluginDescriptor;
 
@@ -297,11 +323,8 @@ abstract class AbstractClosureMojo extends AbstractMojo {
 
       @Override
       public void find(
-          Log log, ProtoFinalOptions options, Ingredients ingredients,
-          SettableFileSetIngredient protocPathOut) {
-        find(
-            log, options.protobufVersion, options.protocExec,
-            ingredients, protocPathOut);
+          Log log, ProtoFinalOptions options, ToolFinder.Sink out) {
+        find(log, options.protobufVersion, options.protocExec, out);
       }
 
       @SuppressWarnings("synthetic-access")
@@ -309,8 +332,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           Log log,
           Optional<String> protobufVersionOpt,
           Optional<File> protocExecOpt,
-          Ingredients ingredients,
-          SettableFileSetIngredient protocPathOut) {
+          Sink out) {
         ProtocBundledMojo protocBundledMojo = new ProtocBundledMojo();
 
         String protocPluginVersion = null;
@@ -361,8 +383,7 @@ abstract class AbstractClosureMojo extends AbstractMojo {
           File protocFile = Cheats.cheatGet(
               ProtocBundledMojo.class, protocBundledMojo,
               File.class, "protocExec");
-          protocPathOut.setFiles(
-              ImmutableList.of(ingredients.file(protocFile)));
+          out.set(protocFile);
         } catch (InvocationTargetException ex) {
           Throwable targetException = ex.getTargetException();
           if (targetException instanceof MojoExecutionException
@@ -388,14 +409,11 @@ abstract class AbstractClosureMojo extends AbstractMojo {
                   log,
                   Optional.of(pluginProtobufVersion),
                   protocExecOpt,
-                  ingredients,
-                  protocPathOut);
+                  out);
             }
           } else {
-            protocPathOut.setProblem(targetException);
+            out.setProblem(targetException);
           }
-        } catch (IOException ex) {
-          protocPathOut.setProblem(ex);
         }
       }
     };

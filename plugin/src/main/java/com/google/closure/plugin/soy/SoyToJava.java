@@ -10,19 +10,15 @@ import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
-import com.google.closure.plugin.common.Ingredients.FileIngredient;
-import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
-import com.google.closure.plugin.plan.Ingredient;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.common.FileExt;
+import com.google.closure.plugin.plan.CompilePlanGraphNode;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.FileWriteMode;
@@ -30,47 +26,33 @@ import com.google.common.io.Files;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.SoyToJbcSrcCompiler;
 
-final class SoyToJava extends Step {
-  private final SoyFileSet sfs;
+final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
-  /**
-   * @param protoDescriptors the path to the .fd file.
-   */
+  final File outputJarPath;
+
   SoyToJava(
-      HashedInMemory<SoyOptions> options,
-      FileSetIngredient soySources,
-      FileIngredient protoDescriptors,
-      PathValue outputJar,
-      PathValue projectBuildOutputDirectory,
-      SoyFileSet sfs) {
-    super(
-        PlanKey.builder("soy-to-java").addInp(
-            options, soySources, protoDescriptors,
-            outputJar, projectBuildOutputDirectory)
-            .build(),
-        ImmutableList.<Ingredient>of(
-            options,
-            soySources,
-            protoDescriptors,
-            outputJar,
-            projectBuildOutputDirectory),
-        Sets.immutableEnumSet(
-            StepSource.PROTO_DESCRIPTOR_SET,
-            StepSource.SOY_SRC, StepSource.SOY_GENERATED),
-        Sets.immutableEnumSet(StepSource.JS_GENERATED));
-    this.sfs = sfs;
+      PlanContext context,
+      SoyOptions options,
+      SoyBundle bundle,
+      File outputJarPath) {
+    super(context, options, bundle);
+    this.outputJarPath = Preconditions.checkNotNull(outputJarPath);
+  }
+
+  private File getSrcJarPath() {
+    return new File(
+        outputJarPath.getParentFile(),
+        FilenameUtils.removeExtension(
+            outputJarPath.getName()) + "-src.jar");
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    PathValue outputJarPath = (PathValue) inputs.get(3);
-    PathValue projectBuildOutputDirectoryValue = (PathValue) inputs.get(4);
+  protected void processInputs() throws IOException, MojoExecutionException {
+    final File classJarOutFile = this.outputJarPath;
+    final File srcJarOutFile = getSrcJarPath();
 
-    final File classJarOutFile = outputJarPath.value;
-    final File srcJarOutFile = new File(
-        outputJarPath.value.getParentFile(),
-        FilenameUtils.removeExtension(
-            outputJarPath.value.getName()) + "-src.jar");
+    bundle.sfsSupplier.init(context, options, bundle.inputs);
+    SoyFileSet sfs = bundle.sfsSupplier.getSoyFileSet();
 
     // Compile To Jar
     final FileWriteMode[] writeModes = new FileWriteMode[0];
@@ -78,6 +60,7 @@ final class SoyToJava extends Step {
     Optional<ByteSink> srcJarOut = Optional.of(
         Files.asByteSink(srcJarOutFile, writeModes));
     try {
+      // TODO: relay errors and warnings via build context.
       SoyToJbcSrcCompiler.compile(sfs, classJarOut, srcJarOut);
     } catch (IOException ex) {
       throw new MojoExecutionException(
@@ -85,7 +68,7 @@ final class SoyToJava extends Step {
     }
 
     // Unpack JAR into classes directory.
-    File projectBuildOutputDirectory = projectBuildOutputDirectoryValue.value;
+    File projectBuildOutputDirectory = context.projectBuildOutputDirectory;
     try {
       try (InputStream in = new FileInputStream(classJarOutFile)) {
         try (ZipInputStream zipIn = new ZipInputStream(in)) {
@@ -96,7 +79,7 @@ final class SoyToJava extends Step {
             }
             String name = Files.simplifyPath(entry.getName());
             if (name.startsWith("META-INF")) { continue; }
-            log.debug("Unpacking " + name + " from soy generated jar");
+            context.log.debug("Unpacking " + name + " from soy generated jar");
             File outputFile = new File(FilenameUtils.concat(
                 projectBuildOutputDirectory.getPath(), name));
             outputFile.getParentFile().mkdirs();
@@ -112,15 +95,47 @@ final class SoyToJava extends Step {
           + " to " + projectBuildOutputDirectory,
           ex);
     }
+    this.outputs = Optional.of(ImmutableList.of(
+        outputJarPath, getSrcJarPath()));
   }
 
   @Override
-  public void skip(Log log) throws MojoExecutionException {
-    // All done.
+  protected
+  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
+  throws MojoExecutionException {
+    return Optional.of(jn.followersOf(FileExt.JAVA));
   }
 
   @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    return ImmutableList.of();
+  protected SV getStateVector() {
+    return new SV(options, bundle, outputs, outputJarPath);
+  }
+
+  static final class SV
+  extends CompilePlanGraphNode.CompileStateVector<SoyOptions, SoyBundle> {
+
+    private static final long serialVersionUID = 1L;
+
+    final File outputJarPath;
+
+    protected SV(
+        SoyOptions options, SoyBundle bundle,
+        Optional<ImmutableList<File>> outputs,
+        File outputJarPath) {
+      super(options, bundle, outputs);
+      this.outputJarPath = outputJarPath;
+    }
+
+    @SuppressWarnings("synthetic-access")
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext context, JoinNodes jn) {
+      SoyToJava node = new SoyToJava(
+          context, options, bundle,
+          // The first output is the class JAR file and the second is the
+          // source JAR file which is derived.
+          outputJarPath);
+      node.outputs = outputs;
+      return node;
+    }
   }
 }

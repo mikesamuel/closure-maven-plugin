@@ -1,31 +1,58 @@
 package com.google.closure.plugin.proto;
 
 import java.io.File;
-import java.io.Serializable;
 
-import com.google.closure.plugin.common.DirectoryScannerSpec;
+import org.apache.maven.plugin.MojoExecutionException;
+
+import com.google.closure.plugin.common.ToolFinder;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Protobuf compiler inputs and outputs derived from the proto options and
  * file-system.
  */
-public final class ProtoIO implements Serializable {
-  private static final long serialVersionUID = 4437802371961966065L;
+public final class ProtoIO {
 
-  /** Specifies how to find .proto files. */
-  public final DirectoryScannerSpec protoSources;
   /** Descriptor set output file. */
-  public final File mainDescriptorSetFile;
+  Optional<File> mainDescriptorSetFile = Optional.absent();
   /** Test-only descriptor set output file. */
-  public final File testDescriptorSetFile;
+  Optional<File> testDescriptorSetFile = Optional.absent();
+  /** Locates protoc lazily. */
+  Optional<ToolFinder<ProtoFinalOptions>> protocFinder = Optional.absent();
 
-  /** */
-  public ProtoIO(
-      DirectoryScannerSpec protoSources,
-      File mainDescriptorSetFile,
-      File testDescriptorSetFile) {
-    this.protoSources = protoSources;
-    this.mainDescriptorSetFile = mainDescriptorSetFile;
-    this.testDescriptorSetFile = testDescriptorSetFile;
+  final ToolFinder.Sink protoc = new ToolFinder.Sink();
+
+  /** Production descriptor set output file. */
+  public Optional<File> getMainDescriptorSetFile() {
+    return mainDescriptorSetFile;
+  }
+
+  /** Test-only descriptor set output file. */
+  public Optional<File> getTestDescriptorSetFile() {
+    return testDescriptorSetFile;
+  }
+
+  ImmutableList<File> getProtoc(
+      PlanContext context, ProtoFinalOptions options)
+  throws MojoExecutionException {
+    if (options.protocExec.isPresent()) {
+      return ImmutableList.of(options.protocExec.get());
+    }
+    Optional<File> pc;
+    synchronized (protoc) {
+      pc = protoc.get();
+      if (!pc.isPresent()) {
+        if (protocFinder.isPresent()) {
+          protocFinder.get().find(context.log, options, protoc);
+        }
+        pc = protoc.get();
+      }
+    }
+    if (pc.isPresent()) {
+      return ImmutableList.of(pc.get());
+    }
+    return ImmutableList.of();
   }
 }

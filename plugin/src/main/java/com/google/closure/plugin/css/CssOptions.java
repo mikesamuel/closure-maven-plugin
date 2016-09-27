@@ -26,9 +26,11 @@ import com.google.common.css.SubstitutionMapProvider;
 import com.google.common.css.Vendor;
 import com.google.common.css.JobDescription.OptimizeStrategy;
 import com.google.closure.plugin.common.Asplodable;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions;
 import com.google.closure.plugin.common.Sources;
+import com.google.closure.plugin.plan.PlanContext;
 import com.google.common.io.Files;
 
 /**
@@ -377,17 +379,11 @@ public final class CssOptions extends SourceOptions {
     /**
      * @param opts the options for the compilation job.
      * @param source the entry point source file.
-     * @param defaultCssOutputPathTemplate a path template with
-     *     <tt>{basename}</tt> style interpolations that specifies the
-     *     {@link #css output file}.
-     * @param defaultCssSourceMapPathTemplate a path template that specifies the
-     *     {@link #sourceMap source map file}.
      */
     public Outputs(
+        PlanContext context,
         CssOptions opts,
-        Sources.Source source,
-        String defaultCssOutputPathTemplate,
-        String defaultCssSourceMapPathTemplate) {
+        Sources.Source source) {
 
       String basename = FilenameUtils.removeExtension(
           source.relativePath.getName());
@@ -409,12 +405,9 @@ public final class CssOptions extends SourceOptions {
         if (vendor != null) { b.put("vendor", vendor); }
         ts = new PathTemplateSubstitutor(b.build());
       }
-      this.css = ts.substitute(
-          Optional.fromNullable(opts.output)
-          .or(defaultCssOutputPathTemplate));
-      this.sourceMap = ts.substitute(
-          Optional.fromNullable(opts.sourceMapFile)
-          .or(defaultCssSourceMapPathTemplate));
+      File cssOutputDir = context.closureOutputDirectoryForExt(FileExt.CSS);
+      this.css = ts.substitute(cssOutputDir, opts.output);
+      this.sourceMap = ts.substitute(cssOutputDir, opts.sourceMapFile);
     }
 
     /** All of the output files. */
@@ -459,8 +452,8 @@ public final class CssOptions extends SourceOptions {
 
 
   @Override
-  protected ImmutableList<String> sourceExtensions() {
-    return ImmutableList.of("css", "gss");
+  protected ImmutableList<FileExt> sourceExtensions() {
+    return ImmutableList.of(FileExt.CSS);
   }
 }
 
@@ -475,9 +468,10 @@ final class PathTemplateSubstitutor {
   private static final Pattern INTERPOLATION =
       Pattern.compile("[{]([^\\w{}]*)(\\w+)([^\\w{}]*)[}]");
 
-  File substitute(String templateText) {
+  File substitute(File outputDir, String templateText) {
     Matcher m = INTERPOLATION.matcher(templateText);
-    StringBuilder sb = new StringBuilder(templateText.length() * 2);
+    StringBuilder sb = new StringBuilder();
+    sb.append(outputDir.getPath()).append(File.separator);
     int written = 0;
     while (m.find()) {
       int start = m.start();
@@ -493,6 +487,6 @@ final class PathTemplateSubstitutor {
       }
     }
     sb.append(templateText, written, templateText.length());
-    return new File(sb.toString());
+    return new File(Files.simplifyPath(sb.toString()));
   }
 }

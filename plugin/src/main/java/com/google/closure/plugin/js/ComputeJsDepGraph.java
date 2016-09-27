@@ -1,6 +1,5 @@
 package com.google.closure.plugin.js;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +13,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
@@ -32,69 +32,35 @@ import com.google.closure.plugin.common.Words;
 import com.google.closure.plugin.js.Identifier.GoogNamespace;
 import com.google.closure.plugin.js.Identifier.ModuleName;
 import com.google.closure.plugin.js.JsDepInfo.DepInfo;
-import com.google.closure.plugin.common.CommonPlanner;
-import com.google.closure.plugin.common.Ingredients.FileIngredient;
-import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.common.SourceFileProperty;
-import com.google.closure.plugin.plan.Ingredient;
+import com.google.closure.plugin.plan.Hash;
+import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.Metadata;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.javascript.jscomp.Compiler;
 
-final class ComputeJsDepGraph extends Step {
-  private final JsPlanner planner;
-  private final SerializedObjectIngredient<Modules> modulesIng;
+final class ComputeJsDepGraph extends PlanGraphNode<ComputeJsDepGraph.SV> {
+  final JsOptions options;
+  final JsDepInfo depInfo;
+  private Optional<Modules> modules = Optional.absent();
 
   public ComputeJsDepGraph(
-      JsPlanner planner,
-      HashedInMemory<JsOptions> optionsIng,
-      SerializedObjectIngredient<JsDepInfo> depInfo,
-      SerializedObjectIngredient<Modules> modulesIng,
-      FileSetIngredient sources) {
-    super(
-        PlanKey.builder("js-module-graph")
-            .addInp(optionsIng, depInfo, sources)
-            .build(),
-        ImmutableList.<Ingredient>of(optionsIng, depInfo, sources),
-        Sets.immutableEnumSet(
-            StepSource.JS_GENERATED, StepSource.JS_SRC, StepSource.JS_DEP_INFO),
-        Sets.immutableEnumSet(
-            StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP,
-            StepSource.JS_MODULES));
-    this.planner = planner;
-    this.modulesIng = modulesIng;
+      PlanContext context,
+      JsOptions options,
+      JsDepInfo depInfo) {
+    super(context);
+    this.options = options;
+    this.depInfo = depInfo;
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    HashedInMemory<JsOptions> optionsIng =
-        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    SerializedObjectIngredient<JsDepInfo> depInfoIng =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
-        .asSuperType(JsDepInfo.class);
-    FileSetIngredient fs = (FileSetIngredient) inputs.get(2);
+  protected void processInputs() throws IOException, MojoExecutionException {
+    ImmutableSet<Source> sources = depInfo.depinfo.keySet();
 
-    JsOptions options = optionsIng.getValue();
-    JsDepInfo depInfo = depInfoIng.getStoredObject().get();
-
-    Iterable<? extends Source> sources = Lists.transform(
-        fs.sources(), FileIngredient.GET_SOURCE);
-
-    Modules modules = computeDepGraph(log, options, sources, depInfo);
-
-    try {
-      modulesIng.setStoredObject(modules);
-      modulesIng.write();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to store JS module graph", ex);
-    }
+    this.modules = Optional.of(computeDepGraph(
+        context.log, options, sources, depInfo));
   }
 
   static Modules computeDepGraph(
@@ -281,30 +247,6 @@ final class ComputeJsDepGraph extends Step {
     return new Modules(moduleList.build());
   }
 
-  @Override
-  public void skip(Log log) throws MojoExecutionException {
-    try {
-      modulesIng.read();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to load JS module graph", ex);
-    }
-  }
-
-  @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    HashedInMemory<JsOptions> optionsIng =
-        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    FileSetIngredient fs = (FileSetIngredient) inputs.get(2);
-
-    CommonPlanner commonPlanner = planner.planner;
-
-    PathValue jsOutputDir = commonPlanner.ingredients.pathValue(
-        new File(commonPlanner.closureOutputDirectory.value, "js"));
-
-    return ImmutableList.<Step>of(
-        new CompileJs(optionsIng, modulesIng, fs, jsOutputDir));
-  }
-
   private static
   ImmutableMap<ModuleName, ModuleInfo> buildModuleInfoMap(
       Iterable<? extends Source> sources, JsDepInfo depInfo) {
@@ -342,7 +284,7 @@ final class ComputeJsDepGraph extends Step {
       Multimap<ModuleName, SourceAndDepInfo> sourceFilesByModuleName,
       JsDepInfo depInfo) {
     for (Source s : sources) {
-      Metadata<DepInfo> mdi = depInfo.depinfo.get(s.canonicalPath);
+      Metadata<DepInfo> mdi = depInfo.depinfo.get(s);
       if (mdi == null) {
         throw new IllegalArgumentException(
             "Missing dependency info for " + s);
@@ -506,5 +448,62 @@ final class ComputeJsDepGraph extends Step {
             }
           });
     }
+  }
+
+  static final class SV implements PlanGraphNode.StateVector {
+    private static final long serialVersionUID = 1L;
+
+    final JsOptions options;
+    final JsDepInfo depInfo;
+    final Modules modules;
+
+    SV(JsOptions options, JsDepInfo depInfo, Modules modules) {
+      this.options = options;
+      this.depInfo = depInfo;
+      this.modules = modules;
+    }
+
+    @SuppressWarnings("synthetic-access")
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes joinNodes) {
+      ComputeJsDepGraph n = new ComputeJsDepGraph(c, options, depInfo);
+      n.modules = Optional.of(modules);
+      return n;
+    }
+  }
+
+  @Override
+  protected Optional<ImmutableList<CompileJs>> rebuildFollowersList(
+      JoinNodes joinNodes)
+  throws MojoExecutionException {
+    ImmutableList<PlanGraphNode<?>> oldFollowers = this.getFollowerList();
+    if (oldFollowers.size() == 1) {
+      PlanGraphNode<?> f0 = oldFollowers.get(0);
+      if (f0 instanceof CompileJs) {
+        CompileJs oldCompileJs = (CompileJs) f0;
+        if (Hash.same(options, oldCompileJs.options)
+            && Hash.same(modules.get(), oldCompileJs.bundle)) {
+          return Optional.absent();
+        }
+      }
+    }
+
+    return Optional.of(ImmutableList.of(
+        new CompileJs(context, options, modules.get())));
+  }
+
+  @Override
+  protected void markOutputs() {
+    // Done
+  }
+
+  @Override
+  protected SV getStateVector() {
+    return new SV(options, depInfo, modules.get());
+  }
+
+  @Override
+  protected boolean hasChangedInputs() throws IOException {
+    return !modules.isPresent();
   }
 }

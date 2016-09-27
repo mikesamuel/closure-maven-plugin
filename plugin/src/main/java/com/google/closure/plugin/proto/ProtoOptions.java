@@ -6,8 +6,9 @@ import java.util.Arrays;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.closure.plugin.common.GenfilesDirs;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.SourceOptions;
+import com.google.closure.plugin.plan.PlanContext;
 
 /**
  * Options for protoc.
@@ -78,16 +79,16 @@ public final class ProtoOptions extends SourceOptions {
   }
 
   @Override
-  protected ImmutableList<String> sourceExtensions() {
-    return ImmutableList.of("proto");
+  protected ImmutableList<FileExt> sourceExtensions() {
+    return ImmutableList.of(FileExt.PROTO);
   }
 
   ProtoFinalOptions freeze(
-      File defaultMainRoot, File defaultTestRoot, GenfilesDirs gfd,
+      PlanContext context,
       File defaultDescriptorSetFile, File defaultTestDescriptorSetFile) {
     return new ProtoFinalOptions(
         getId(),
-        toDirectoryScannerSpec(defaultMainRoot, defaultTestRoot, gfd),
+        toDirectoryScannerSpec(context),
         Optional.fromNullable(protobufVersion),
         Optional.fromNullable(protocExec),
         (descriptorSetFile != null

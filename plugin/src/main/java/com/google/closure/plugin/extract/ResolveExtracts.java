@@ -1,13 +1,15 @@
 package com.google.closure.plugin.extract;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -15,60 +17,49 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import com.google.closure.plugin.common.Ingredients;
-import com.google.closure.plugin.common.Ingredients.FileIngredient;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
-import com.google.closure.plugin.common.Ingredients
-    .SettableFileSetIngredient;
-import com.google.closure.plugin.common.TypedFile;
-import com.google.closure.plugin.extract.ResolvedExtractsList
-    .ResolvedExtract;
-import com.google.closure.plugin.plan.Ingredient;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.extract.ResolvedExtractsList.ResolvedExtract;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 
-final class ResolveExtracts extends Step {
-  private final Ingredients ingredients;
-  private final
-  SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList;
-  private final SettableFileSetIngredient archives;
+final class ResolveExtracts extends PlanGraphNode<ResolveExtracts.SV> {
+  final Extracts options;
+  private Optional<ResolvedExtractsList> resolvedExtracts = Optional.absent();
 
-  ResolveExtracts(
-      Ingredients ingredients,
-
-      SerializedObjectIngredient<ExtractsList> extractsList,
-      SerializedObjectIngredient<ResolvedExtractsList> dependenciesList,
-
-      SerializedObjectIngredient<ResolvedExtractsList> resolvedExtractsList,
-      SettableFileSetIngredient archives) {
-    super(
-        PlanKey.builder("resolve-extracts")
-            .addInp(extractsList, dependenciesList)
-            .build(),
-        ImmutableList.<Ingredient>of(extractsList, dependenciesList),
-        ImmutableSet.<StepSource>of(),
-        Sets.immutableEnumSet(StepSource.RESOLVED_EXTRACTS));
-    this.ingredients = ingredients;
-    this.resolvedExtractsList = resolvedExtractsList;
-    this.archives = archives;
+  ResolveExtracts(PlanContext context, Extracts options) {
+    super(context);
+    this.options = options;
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    SerializedObjectIngredient<ExtractsList> extractsList =
-        ((SerializedObjectIngredient<?>) inputs.get(0))
-        .asSuperType(ExtractsList.class);
-    SerializedObjectIngredient<ResolvedExtractsList> dependenciesList =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
-        .asSuperType(ResolvedExtractsList.class);
-
+  protected void processInputs() throws IOException, MojoExecutionException {
     ImmutableList.Builder<ResolvedExtract> resolvedBuilder =
         ImmutableList.builder();
 
-    ImmutableList<Extract> extracts =
-        extractsList.getStoredObject().get().extracts;
+    ResolvedExtractsList allDependencies;
+    {
+      ImmutableList.Builder<ResolvedExtract> deps =
+          ImmutableList.builder();
+      for (Artifact a : context.artifacts) {
+        File artFile = a.getFile();
+        if (artFile != null) {
+          deps.add(new ResolvedExtract(
+              a.getGroupId(),
+              a.getArtifactId(),
+              a.getVersion(),
+              ImmutableSet.<String>of(),
+              ("test".equals(a.getScope())
+                  ? Sets.immutableEnumSet(SourceFileProperty.TEST_ONLY)
+                  : ImmutableSet.<SourceFileProperty>of()),
+              artFile
+              ));
+        }
+      }
+      allDependencies = new ResolvedExtractsList(deps.build());
+    }
+
+    ImmutableList<Extract> extracts = this.options.getExtracts();
     if (!extracts.isEmpty()) {
       Multimap<String, ResolvedExtract> depDisambiguation =
           Multimaps.newSetMultimap(
@@ -79,8 +70,7 @@ final class ResolveExtracts extends Step {
                   return Sets.newLinkedHashSet();
                 }
               });
-      for (ResolvedExtract re
-           : dependenciesList.getStoredObject().get().extracts) {
+      for (ResolvedExtract re : allDependencies.extracts) {
         depDisambiguation.put(":" + re.artifactId, re);
         depDisambiguation.put(re.groupId + ":" + re.artifactId, re);
         depDisambiguation.put(
@@ -97,7 +87,7 @@ final class ResolveExtracts extends Step {
         artKey.append(':');
 
         if (!artId.isPresent()) {
-          log.error("Extract " + e + " is missing groupId");
+          context.log.error("Extract " + e + " is missing groupId");
           allUnambiguous = false;
           continue;
         }
@@ -107,10 +97,10 @@ final class ResolveExtracts extends Step {
           artKey.append(':').append(ver.get());
         }
 
-        Collection<ResolvedExtract> deps =
+        Collection<ResolvedExtract> depsForKey =
             depDisambiguation.get(artKey.toString());
-        if (deps.size() == 1) {
-          ResolvedExtract solution = deps.iterator().next();
+        if (depsForKey.size() == 1) {
+          ResolvedExtract solution = depsForKey.iterator().next();
           resolvedBuilder.add(new ResolvedExtract(
               solution.artifactId,
               solution.groupId,
@@ -120,11 +110,11 @@ final class ResolveExtracts extends Step {
               solution.archive
               ));
         } else {
-          log.error(
+          context.log.error(
               "Extract " + artKey +
-              (deps.isEmpty()
+              (depsForKey.isEmpty()
                ? " matches no dependencies"
-               : " is ambiguous : " + deps));
+               : " is ambiguous : " + depsForKey));
           allUnambiguous = false;
         }
       }
@@ -135,50 +125,56 @@ final class ResolveExtracts extends Step {
     }
 
     ImmutableList<ResolvedExtract> resolved = resolvedBuilder.build();
-    resolvedExtractsList.setStoredObject(new ResolvedExtractsList(resolved));
-    try {
-      resolvedExtractsList.write();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("failed to store resolved extracts", ex);
-    }
-
-    buildResolvedExtractsList(resolved);
+    this.resolvedExtracts = Optional.of(new ResolvedExtractsList(resolved));
   }
 
-  private void buildResolvedExtractsList(
-      ImmutableList<ResolvedExtract> resolved)
-  throws MojoExecutionException {
+  static final class SV implements PlanGraphNode.StateVector {
 
-    ImmutableList.Builder<FileIngredient> archivesBuilder =
-        ImmutableList.builder();
-    try {
-      for (ResolvedExtract re : resolved) {
-        archivesBuilder.add(ingredients.file(
-            new TypedFile(re.archive, re.props)));
+    private static final long serialVersionUID = -1303239773246232100L;
+
+    final Extracts options;
+
+    SV(Extracts options) {
+      this.options = options;
+    }
+
+    @Override
+    public ResolveExtracts reconstitute(PlanContext context, JoinNodes jn) {
+      return new ResolveExtracts(context, options);
+    }
+  }
+
+
+  @Override
+  protected boolean hasChangedInputs() throws IOException {
+    return true;
+  }
+
+  @Override
+  protected
+  Optional<ImmutableList<ExtractFiles>> rebuildFollowersList(JoinNodes jn) {
+    Preconditions.checkState(this.resolvedExtracts.isPresent());
+    ImmutableList<PlanGraphNode<?>> node = this.getFollowerList();
+    if (node.size() == 1) {
+      ExtractFiles ef = (ExtractFiles) node.get(0);
+      if (ef.resolvedExtractsList.equals(this.resolvedExtracts.get())) {
+        return Optional.absent();
       }
-      this.archives.setFiles(archivesBuilder.build());
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to build hashable file list of archives",
-          ex);
     }
+    return Optional.of(
+        ImmutableList.of(
+            new ExtractFiles(
+                context, this.resolvedExtracts.get())
+            ));
   }
 
   @Override
-  public void skip(Log log) throws MojoExecutionException {
-    try {
-      resolvedExtractsList.read();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("failed to load resolved extracts", ex);
-    }
-
-    buildResolvedExtractsList(
-        resolvedExtractsList.getStoredObject().get().extracts);
+  protected void markOutputs() {
+    // Done.
   }
 
   @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    return ImmutableList.of();
+  protected SV getStateVector() {
+    return new SV(options);
   }
-
 }

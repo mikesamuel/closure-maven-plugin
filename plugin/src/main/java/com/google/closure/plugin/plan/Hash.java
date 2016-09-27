@@ -149,7 +149,7 @@ public final class Hash implements Serializable {
   }
 
   /**
-   * A hash of the given hashes.
+   * A hash of the given hashables.
    * @param hashables order is significant to the resulting hash.
    * @throws IOException if any {@link Hashable#hash} call throws.
    */
@@ -163,6 +163,23 @@ public final class Hash implements Serializable {
       md.update(hash.get().bytes);
     }
     return Optional.of(new Hash(md.digest()));
+  }
+
+  /**
+   * A hash of the given serializable items.
+   * @param serializables order is significant to the resulting hash.
+   * @throws NotSerializableException if any {@link #hashSerializable}
+   *     call throws.
+   */
+  public static Hash hashAllSerializables(
+      Iterable<? extends Serializable> serializables)
+  throws NotSerializableException {
+    MessageDigest md = newDigest();
+    for (Serializable ser : serializables) {
+      Hash hash = hashSerializable(ser);
+      md.update(hash.bytes);
+    }
+    return new Hash(md.digest());
   }
 
   /**
@@ -194,6 +211,23 @@ public final class Hash implements Serializable {
     md.update(bytes);
     return new Hash(md.digest());
   }
+
+  /**
+   * True iff the two inputs hash to the same value.
+   */
+  public static <S extends Serializable>
+  boolean same(S a, S b) {
+    if (a == b) { return true; }
+    Hash ah, bh;
+    try {
+      ah = Hash.hashSerializable(a);
+      bh = Hash.hashSerializable(b);
+    } catch (NotSerializableException ex) {
+      throw (AssertionError) new AssertionError().initCause(ex);
+    }
+    return ah.equals(bh);
+  }
+
 
   private static MessageDigest newDigest() {
     MessageDigest md;

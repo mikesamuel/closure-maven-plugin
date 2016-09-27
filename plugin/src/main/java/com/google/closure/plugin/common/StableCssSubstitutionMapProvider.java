@@ -7,6 +7,7 @@ import java.io.Reader;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.OutputRenamingMapFormat;
@@ -26,6 +27,8 @@ implements SubstitutionMapProvider {
   private final RecordingSubstitutionMap substitutionMap;
   /** The file used to persist this substitution map. */
   private final File backingFile;
+  /** The original mappings loaded from the file. */
+  private final ImmutableMap<String, String> originalMappings;
 
   /**
    * @param backingFile a file that need not exist, but if it does, contains
@@ -39,16 +42,20 @@ implements SubstitutionMapProvider {
         new RecordingSubstitutionMap.Builder()
         .withSubstitutionMap(
             new MinimalSubstitutionMap());
+    ImmutableMap<String, String> mappings = ImmutableMap.of();
     try {
       try (Reader reader = renameMapJson.openBufferedStream()) {
-        substitutionMapBuilder.withMappings(
-            OutputRenamingMapFormat.JSON.readRenamingMap(reader));
+        mappings = OutputRenamingMapFormat.JSON.readRenamingMap(reader);
       }
     } catch (@SuppressWarnings("unused") FileNotFoundException ex) {
-      // Ok.  Fallthrough to below.
+      // Ok.  Start with an empty map.
     }
+
+    substitutionMapBuilder.withMappings(mappings);
+
     this.substitutionMap = substitutionMapBuilder.build();
     this.backingFile = backingFile;
+    this.originalMappings = mappings;
   }
 
   @Override
@@ -59,6 +66,11 @@ implements SubstitutionMapProvider {
   /** The file used to persist this substitution map. */
   public File getBackingFile() {
     return this.backingFile;
+  }
+
+  /** True if the mappings have changed. */
+  public boolean hasChanged() {
+    return !this.originalMappings.equals(substitutionMap.getMappings());
   }
 }
 

@@ -1,29 +1,32 @@
 package com.google.closure.plugin.proto;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.CStyleLexer;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
 import com.google.closure.plugin.plan.Hash;
 import com.google.closure.plugin.plan.Metadata;
 
 /** Relates proto input files to their package declarations. */
-public final class ProtoPackageMap implements Serializable {
+public final class ProtoPackageMap implements Bundle {
   private static final long serialVersionUID = 7002905141041309585L;
 
   /** Empty instance. */
   public static final ProtoPackageMap EMPTY = new ProtoPackageMap(
-      ImmutableMap.<File, Metadata<Optional<String>>>of());
+      ImmutableMap.<Source, Metadata<Optional<String>>>of());
 
   /** Relates proto input files to their package declarations. */
-  public final ImmutableMap<File, Metadata<Optional<String>>> protoPackages;
+  public final ImmutableMap<Source, Metadata<Optional<String>>> protoPackages;
 
   ProtoPackageMap(
-      Map<? extends File, ? extends Metadata<Optional<String>>> protoPackages) {
+      Map<? extends Source, ? extends Metadata<Optional<String>>>
+          protoPackages) {
     this.protoPackages = ImmutableMap.copyOf(protoPackages);
   }
 
@@ -72,5 +75,10 @@ public final class ProtoPackageMap implements Serializable {
       this.hash = hash;
       this.packageName = packageName;
     }
+  }
+
+  @Override
+  public ImmutableSet<Source> getInputs() {
+    return protoPackages.keySet();
   }
 }

@@ -6,9 +6,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import com.google.closure.plugin.common.CommonPlanner;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
 import com.google.closure.plugin.css.CssOptions;
 import com.google.closure.plugin.css.CssPlanner;
 import com.google.closure.plugin.extract.ExtractPlanner;
@@ -16,14 +13,14 @@ import com.google.closure.plugin.extract.Extracts;
 import com.google.closure.plugin.genjava.GenSymbolsPlanner;
 import com.google.closure.plugin.js.JsOptions;
 import com.google.closure.plugin.js.JsPlanner;
-import com.google.closure.plugin.proto.ProtoIO;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraph;
 import com.google.closure.plugin.proto.ProtoOptions;
 import com.google.closure.plugin.proto.ProtoPlanner;
 import com.google.closure.plugin.soy.SoyOptions;
 import com.google.closure.plugin.soy.SoyPlanner;
 import com.google.common.collect.ImmutableList;
-
-import java.io.IOException;
 
 /**
  * Generates .js and .java sources from .proto and .soy and compiles
@@ -81,58 +78,41 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
   }
 
   @Override
-  protected void formulatePlan(CommonPlanner planner)
+  protected void formulatePlan(PlanGraph planGraph)
   throws MojoExecutionException {
-    try {
-      new ExtractPlanner(planner, project, pluginDescriptor)
-          .plan(extracts != null ? extracts : new Extracts());
-    } catch (IOException ex) {
-      throw new MojoExecutionException(
-          "Failed to plan source file extraction", ex);
-    }
+    PlanContext context = planGraph.getContext();
+    JoinNodes joinNodes = planGraph.getJoinNodes();
 
-    try {
-      new CssPlanner(planner)
-          .cssRenameMap(planner.substitutionMapProvider.getBackingFile())
-          .defaultCssSource(defaultCssSource)
-          .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
-          .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
-          .plan(css.build());
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to plan CSS compile", ex);
-    }
+    planGraph.addRoot(
+        new ExtractPlanner(context, joinNodes)
+            .plan(extracts != null ? extracts : new Extracts()));
 
-    SerializedObjectIngredient<ProtoIO> protoIO;
-    try {
-      ProtoPlanner pp = new ProtoPlanner(planner, protocExecutable())
-          .defaultProtoSource(defaultProtoSource)
-          .defaultProtoTestSource(defaultProtoTestSource)
-          .defaultMainDescriptorFile(defaultMainDescriptorFile)
-          .defaultTestDescriptorFile(defaultTestDescriptorFile);
-      pp.plan(proto != null ? proto : new ProtoOptions());
+    planGraph.addRoot(
+        new CssPlanner(context, joinNodes)
+            .defaultCssSource(defaultCssSource)
+            .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
+            .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
+            .plan(css.build()));
 
-      protoIO = pp.getProtoIO();
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to plan proto compile", ex);
-    }
+    planGraph.addRoot(
+        new ProtoPlanner(context, joinNodes, protocExecutable())
+            .defaultMainDescriptorFile(defaultMainDescriptorFile)
+            .defaultTestDescriptorFile(defaultTestDescriptorFile)
+            .plan(proto != null ? proto : new ProtoOptions()));
 
     SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-    new SoyPlanner(planner, protoIO)
-        .defaultSoySource(defaultSoySource)
-        .plan(soyOptions);
+    planGraph.addRoot(
+        new SoyPlanner(context, joinNodes)
+            .plan(soyOptions));
 
-    try {
-      new JsPlanner(planner)
-          .defaultJsSource(defaultJsSource)
-          .defaultJsTestSource(defaultJsTestSource)
-          .plan(js.build());
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to plan js compile", ex);
-    }
+    planGraph.addRoot(
+        new JsPlanner(context, joinNodes)
+            .plan(js.build()));
 
-    new GenSymbolsPlanner(planner)
-        .genJavaPackageName(genJavaPackageName)
-        .plan();
+    planGraph.addRoot(
+        new GenSymbolsPlanner(context, joinNodes)
+            .genJavaPackageName(genJavaPackageName)
+            .plan());
 
     // TODO: figure out how to thread externs through.
   }

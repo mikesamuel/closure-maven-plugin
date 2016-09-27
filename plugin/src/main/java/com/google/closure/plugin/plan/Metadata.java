@@ -20,4 +20,9 @@ public final class Metadata<T extends Serializable> implements Serializable {
     this.hash = Preconditions.checkNotNull(hash);
     this.metadata = metadata;
   }
+
+  @Override
+  public String toString() {
+    return metadata.toString();
+  }
 }

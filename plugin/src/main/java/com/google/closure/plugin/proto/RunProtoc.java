@@ -12,123 +12,87 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
-import com.google.common.base.Preconditions;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.closure.plugin.common.Ingredients.Bundle;
-import com.google.closure.plugin.common.Ingredients
-    .DirScanFileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.FileIngredient;
-import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.common.ProcessRunner;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.common.TypedFile;
-import com.google.closure.plugin.plan.Ingredient;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.CompilePlanGraphNode;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 
-final class RunProtoc extends Step {
-  final ProcessRunner processRunner;
-  final RootSet rootSet;
-  final LangSet langSet;
+final class RunProtoc
+extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
 
   RunProtoc(
-      ProcessRunner processRunner,
-      RootSet rootSet,
-      LangSet langSet,
-      HashedInMemory<ProtoFinalOptions> options,
-      DirScanFileSetIngredient protoSources,
-      FileSetIngredient protocSet,
-      Bundle<FileIngredient> inputs,
-      PathValue javaGenfilesPath,
-      PathValue jsGenfilesPath,
-      PathValue descriptorSetFile) {
-    super(
-        PlanKey.builder("run-protoc")
-            .addString(rootSet.name())
-            .addString(langSet.name())
-            .addInp(options, protoSources)
-            .build(),
-        ImmutableList.<Ingredient>builder()
-            .add(options, protoSources, protocSet,
-                 javaGenfilesPath, jsGenfilesPath, descriptorSetFile, inputs)
-            .build(),
-        Sets.immutableEnumSet(
-            StepSource.PROTO_SRC, StepSource.PROTO_GENERATED,
-            StepSource.PROTOC, StepSource.PROTO_PACKAGE_MAP),
-        Sets.immutableEnumSet(
-            StepSource.PROTO_DESCRIPTOR_SET,
-            // Compiles .proto to .js and .java
-            StepSource.JAVA_GENERATED,
-            StepSource.JS_GENERATED));
-    this.processRunner = processRunner;
-    this.rootSet = Preconditions.checkNotNull(rootSet);
-    this.langSet = langSet;
+      PlanContext context,
+      ProtoFinalOptions options,
+      ProtoBundle bundle) {
+    super(context, options, bundle);
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    @SuppressWarnings("unused")
-    HashedInMemory<ProtoFinalOptions> options =
-        ((HashedInMemory<?>) inputs.get(0))
-        .asSuperType(ProtoFinalOptions.class);
-    DirScanFileSetIngredient protoSources =
-        (DirScanFileSetIngredient) inputs.get(1);
-    FileSetIngredient protocSet = (FileSetIngredient) inputs.get(2);
-    PathValue javaGenfilesPath = (PathValue) inputs.get(3);
-    PathValue jsGenfilesPath = (PathValue) inputs.get(4);
-    PathValue descriptorSetFile = (PathValue) inputs.get(5);
-    Bundle<FileIngredient> inputFileBundle = ((Bundle<?>) inputs.get(6))
-        .asSuperType(FileIngredient.class);
-
-    ImmutableList<FileIngredient> sources = inputFileBundle.ings;
+  protected void processInputs() throws IOException, MojoExecutionException {
+    ImmutableList<Source> sources = bundle.inputs;
 
     if (Iterables.isEmpty(sources)) {
       // We're done.
       // TODO: Is it a problem that we will not generate
       // an empty descriptor set file?
+      this.outputs = Optional.of(ImmutableList.<File>of());
       return;
     }
 
-    ImmutableList<FileIngredient> protocs = protocSet.sources();
+    ImmutableList<File> protocs = context.protoIO.getProtoc(context, options);
     if (protocs.isEmpty()) {
       throw new MojoExecutionException(
           "No protoc executable found."
           + "  Maybe specify <configuration><proto><protocExecutable>..."
           + " or make sure you have a dependency on protobuf-java");
     }
-    Source protoc = protocs.get(0).source;
+    File protoc = protocs.get(0);
 
     ImmutableList.Builder<String> argv = ImmutableList.builder();
     ProtoPathBuilder protoPathBuilder = new ProtoPathBuilder(argv);
-    argv.add(protoc.canonicalPath.getPath());
+    argv.add(protoc.getPath());
 
-    if (langSet == LangSet.ALL) {
+    ImmutableList.Builder<File> allOutputs = ImmutableList.builder();
+
+    if (bundle.langSet == LangSet.ALL && bundle.descriptorSetFile.isPresent()) {
+      File descriptorSetFile = bundle.descriptorSetFile.get();
       argv.add("--include_imports");
       argv.add("--descriptor_set_out")
-          .add(descriptorSetFile.value.getPath());
-      File descriptorSetDir = descriptorSetFile.value.getParentFile();
+          .add(descriptorSetFile.getPath());
+      File descriptorSetDir = descriptorSetFile.getParentFile();
       if (descriptorSetDir != null) {
         descriptorSetDir.mkdirs();
       }
+      allOutputs.add(descriptorSetFile);
     }
+
+    File javaGenfilesPath = bundle.rootSet == RootSet.TEST
+        ? context.genfilesDirs.javaTestGenfiles
+        : context.genfilesDirs.javaGenfiles;
+    File jsGenfilesPath = bundle.rootSet == RootSet.TEST
+        ? context.genfilesDirs.jsTestGenfiles
+        : context.genfilesDirs.jsGenfiles;
 
     // Protoc is a little finicky about requiring that output directories
     // exist, though it will happily create directories for the packages.
-    if (langSet.emitJava) {
-      argv.add("--java_out").add(ensureDirExists(javaGenfilesPath.value));
+    if (bundle.langSet.emitJava) {
+      argv.add("--java_out").add(ensureDirExists(javaGenfilesPath));
+      allOutputs.add(javaGenfilesPath);  // TODO: narrow
     }
-    if (langSet.emitJs) {
+    if (bundle.langSet.emitJs) {
       String jsOutFlagPrefix = "";
-      switch (rootSet) {
+      switch (bundle.rootSet) {
         case MAIN:
           jsOutFlagPrefix = "--js_out=";
           break;
@@ -137,19 +101,20 @@ final class RunProtoc extends Step {
           jsOutFlagPrefix += "--js_out=testonly:";
           break;
       }
-      argv.add(jsOutFlagPrefix + ensureDirExists(jsGenfilesPath.value));
+      argv.add(jsOutFlagPrefix + ensureDirExists(jsGenfilesPath));
+      allOutputs.add(jsGenfilesPath);  // TODO: narrow
     }
 
     // Build a proto search path.
-    for (TypedFile root : protoSources.spec().roots) {
-      if (rootSet == RootSet.TEST
+    for (TypedFile root : options.sources.roots) {
+      if (bundle.rootSet == RootSet.TEST
            || !root.ps.contains(SourceFileProperty.TEST_ONLY)) {
         protoPathBuilder.withRoot(root.f);
       }
     }
 
-    for (FileIngredient input : sources) {
-      TypedFile root = input.source.root;
+    for (Source input : bundle.inputs) {
+      TypedFile root = input.root;
       if (root.f.exists()) {
         protoPathBuilder.withRoot(root.f);
         // We're not guarding against ambiguity here.
@@ -165,27 +130,27 @@ final class RunProtoc extends Step {
     // paths resolved by `import "<relative-path>";` directives are still
     // a potential source of ambiguity.
     Map<File, Source> relPathToSource = Maps.newHashMap();
-    for (FileIngredient input : sources) {
-      Source inputSource = input.source;
-      Source ambig = relPathToSource.put(inputSource.relativePath, inputSource);
+    for (Source input : bundle.inputs) {
+      Source ambig = relPathToSource.put(input.relativePath, input);
       if (ambig == null) {
         argv.add(
             // Instead of using canonicalPath, we concat these two paths
             // because protoc insists that each input appear under a
             // search path element as determined by string comparison.
             FilenameUtils.concat(
-                inputSource.root.f.getPath(),
-                inputSource.relativePath.getPath()));
+                input.root.f.getPath(),
+                input.relativePath.getPath()));
       } else {
-        log.warn(
-            "Ambiguous proto input " + inputSource.relativePath
+        context.log.warn(
+            "Ambiguous proto input " + input.relativePath
             + " appears on search path twice: "
-            + ambig.root + " and " + inputSource.root);
+            + ambig.root + " and " + input.root);
       }
     }
 
-    Future<Integer> exitCodeFuture = processRunner.run(
-        log, "protoc", argv.build());
+    // TODO: Feed errors and warnings back to the buildContext
+    Future<Integer> exitCodeFuture = context.processRunner.run(
+        context.log, "protoc", argv.build());
     try {
       Integer exitCode = exitCodeFuture.get(30, TimeUnit.SECONDS);
 
@@ -202,21 +167,13 @@ final class RunProtoc extends Step {
     } catch (CancellationException ex) {
       throw new MojoExecutionException("protoc execution was cancelled", ex);
     }
+
+    this.outputs = Optional.of(allOutputs.build());
   }
 
   private static String ensureDirExists(File dirPath) {
     dirPath.mkdirs();
     return dirPath.getPath();
-  }
-
-  @Override
-  public void skip(Log log) {
-    // Ok.
-  }
-
-  @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    return ImmutableList.of();
   }
 
   enum RootSet {
@@ -271,5 +228,41 @@ final class RunProtoc extends Step {
         }
       }
     }
+  }
+
+  static final ImmutableSortedSet<FileExt> FOLLOWER_EXTS =
+      ImmutableSortedSet.of(FileExt.JAVA, FileExt.JS, FileExt.PD);
+
+  @Override
+  protected
+  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
+  throws MojoExecutionException {
+    return Optional.of(jn.followersOf(FOLLOWER_EXTS));
+  }
+
+  @Override
+  protected SV getStateVector() {
+    return new SV(options, bundle, outputs);
+  }
+
+  static final class SV
+  extends CompileStateVector<ProtoFinalOptions, ProtoBundle> {
+
+    private static final long serialVersionUID = 6399733844048652746L;
+
+    protected SV(
+        ProtoFinalOptions options, ProtoBundle bundle,
+        Optional<ImmutableList<File>> outputs) {
+      super(options, bundle, outputs);
+    }
+
+    @SuppressWarnings("synthetic-access")
+    @Override
+    public RunProtoc reconstitute(PlanContext planContext, JoinNodes jn) {
+      RunProtoc runProtoc = new RunProtoc(planContext, options, bundle);
+      runProtoc.outputs = this.outputs;
+      return runProtoc;
+    }
+
   }
 }

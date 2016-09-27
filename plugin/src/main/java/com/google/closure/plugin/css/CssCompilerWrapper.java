@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.maven.plugin.logging.Log;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
@@ -51,7 +52,8 @@ final class CssCompilerWrapper {
     return this;
   }
 
-  boolean compileCss(final Log log) throws IOException {
+  boolean compileCss(final BuildContext buildContext, Log log)
+  throws IOException {
     if (inputs.isEmpty()) {
       log.info("No CSS files to compile");
       return true;
@@ -76,7 +78,7 @@ final class CssCompilerWrapper {
     OkUnlessNonzeroExitCodeHandler exitCodeHandler =
         new OkUnlessNonzeroExitCodeHandler();
 
-    ErrorManager errorManager = new MavenCssErrorManager(log);
+    ErrorManager errorManager = new MavenCssErrorManager(buildContext);
 
     ensureParentDirectoryFor(sourceMapFile);
     ensureParentDirectoryFor(renameFile);
@@ -109,21 +111,33 @@ final class CssCompilerWrapper {
 
 final class MavenCssErrorManager implements ErrorManager {
   private boolean hasErrors;
-  private final Log log;
+  private final BuildContext buildContext;
 
-  MavenCssErrorManager(Log log) {
-    this.log = log;
+  MavenCssErrorManager(BuildContext buildContext) {
+    this.buildContext = buildContext;
   }
 
   @Override
   public void report(GssError error) {
     hasErrors = true;
-    log.error(error.format());
+    buildContext.addMessage(
+        new File(error.getLocation().getSourceCode().getFileName()),
+        error.getLocation().getBeginLineNumber(),
+        error.getLocation().getBeginIndexInLine(),
+        error.getMessage(),
+        BuildContext.SEVERITY_ERROR,
+        null);
   }
 
   @Override
   public void reportWarning(GssError warning) {
-    log.warn(warning.format());
+    buildContext.addMessage(
+        new File(warning.getLocation().getSourceCode().getFileName()),
+        warning.getLocation().getBeginLineNumber(),
+        warning.getLocation().getBeginIndexInLine(),
+        warning.getMessage(),
+        BuildContext.SEVERITY_WARNING,
+        null);
   }
 
   @Override

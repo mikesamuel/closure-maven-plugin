@@ -177,6 +177,17 @@ public final class Extract implements Serializable {
   }
 
   @Override
+  protected Extract clone() {
+    Extract clone = new Extract();
+    clone.groupId = this.groupId;
+    clone.artifactId = this.artifactId;
+    clone.version = this.version;
+    clone.suffixes.addAll(this.suffixes);
+    clone.props.addAll(this.props);
+    return clone;
+  }
+
+  @Override
   public String toString() {
     return "{extract "
         + (groupId.isPresent() ? groupId.get() : "")

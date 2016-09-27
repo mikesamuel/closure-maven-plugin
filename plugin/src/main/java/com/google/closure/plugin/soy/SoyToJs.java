@@ -6,75 +6,52 @@ import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
-import com.google.closure.plugin.common.Ingredients.FileIngredient;
-import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.CompilePlanGraphNode;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.io.Files;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.jssrc.SoyJsSrcOptions;
 import com.google.template.soy.msgs.SoyMsgBundle;
 
-final class SoyToJs extends Step {
+final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
-  private final SoyFileSet sfs;
+  final File jsOutDir;
 
   SoyToJs(
-      HashedInMemory<SoyOptions> options,
-      FileSetIngredient soySources,
-      FileIngredient protoDescriptors,
-      PathValue jsOutDir,
-      SoyFileSet sfs) {
-    super(
-        PlanKey.builder("soy-to-js").addInp(
-            options, soySources, protoDescriptors, jsOutDir)
-            .build(),
-        ImmutableList.of(options, soySources, protoDescriptors, jsOutDir),
-        Sets.immutableEnumSet(
-            StepSource.PROTO_DESCRIPTOR_SET,
-            StepSource.SOY_SRC, StepSource.SOY_GENERATED),
-        Sets.immutableEnumSet(StepSource.JS_GENERATED));
-    this.sfs = sfs;
+      PlanContext context,
+      SoyOptions options,
+      SoyBundle bundle,
+      File jsOutDir) {
+    super(context, options, bundle);
+    this.jsOutDir = jsOutDir;
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    HashedInMemory<SoyOptions> optionsIng =
-        ((HashedInMemory<?>) inputs.get(0))
-        .asSuperType(SoyOptions.class);
-    FileSetIngredient soySources = (FileSetIngredient) inputs.get(1);
-    PathValue jsOutDir = (PathValue) inputs.get(3);
-
-    SoyOptions options = optionsIng.getValue();
+  protected void processInputs() throws IOException, MojoExecutionException {
+    bundle.sfsSupplier.init(context, options, bundle.inputs);
+    SoyFileSet sfs = bundle.sfsSupplier.getSoyFileSet();
 
     ImmutableList<Js> allJsSrc = ImmutableList.copyOf(options.getJs());
 
-    ImmutableList<Source> sources;
-    {
-      ImmutableList.Builder<Source> b = ImmutableList.builder();
-      for (FileIngredient f : soySources.sources()) {
-        b.add(f.source);
-      }
-      sources = b.build();
-    }
+    ImmutableList<Source> sources = bundle.inputs;
 
+    ImmutableList.Builder<File> allOutputFiles = ImmutableList.builder();
     for (Js js : allJsSrc) {
-      SoyJsSrcOptions jsSrcOptions = js.toSoyJsSrcOptions(log);
+      SoyJsSrcOptions jsSrcOptions = js.toSoyJsSrcOptions(context.log);
       SoyMsgBundle msgBundle = null;
 
+      // TODO: relay errors and warnings via build context.
       List<String> jsFileContent = sfs.compileToJsSrc(jsSrcOptions, msgBundle);
-      File outputDir = jsOutDir.value;
-      outputDir.mkdirs();
+      jsOutDir.mkdirs();
 
       int nOutputs = jsFileContent.size();
       Preconditions.checkState(nOutputs == sources.size());
@@ -92,7 +69,7 @@ final class SoyToJs extends Step {
           inputRelPath.getParentFile(),
           FilenameUtils.getBaseName(inputRelPath.getName()) + suffix);
         File outputPath = new File(FilenameUtils.concat(
-            outputDir.getPath(), outputRelPath.getPath()));
+            jsOutDir.getPath(), outputRelPath.getPath()));
         outputPath.getParentFile().mkdirs();
         try {
           Files.write(compiledJsContent, outputPath, Charsets.UTF_8);
@@ -102,17 +79,45 @@ final class SoyToJs extends Step {
               + " to " + outputPath,
               ex);
         }
+        allOutputFiles.add(outputPath);
       }
     }
+    outputs = Optional.of(allOutputFiles.build());
   }
 
   @Override
-  public void skip(Log log) throws MojoExecutionException {
-    // All done.
+  protected
+  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
+  throws MojoExecutionException {
+    return Optional.of(jn.followersOf(FileExt.JS));
   }
 
   @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    return ImmutableList.of();
+  protected SV getStateVector() {
+    return new SV(options, bundle, outputs, jsOutDir);
+  }
+
+  static final class SV
+  extends CompilePlanGraphNode.CompileStateVector<SoyOptions, SoyBundle> {
+
+    private static final long serialVersionUID = -5624818900455357167L;
+
+    final File jsOutDir;
+
+    protected SV(
+        SoyOptions options, SoyBundle bundle,
+        Optional<ImmutableList<File>> outputs,
+        File jsOutDir) {
+      super(options, bundle, outputs);
+      this.jsOutDir = jsOutDir;
+    }
+
+    @SuppressWarnings("synthetic-access")
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext context, JoinNodes jn) {
+      SoyToJs n = new SoyToJs(context, options, bundle, jsOutDir);
+      n.outputs = outputs;
+      return n;
+    }
   }
 }

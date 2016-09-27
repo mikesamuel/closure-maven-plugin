@@ -19,7 +19,9 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 /** A group of source files split into test and production files. */
-public final class Sources {
+public final class Sources implements Serializable {
+  private static final long serialVersionUID = 4866002356909250977L;
+
   /** Files that contribute source code to the artifact. */
   public final ImmutableList<Source> sources;
 

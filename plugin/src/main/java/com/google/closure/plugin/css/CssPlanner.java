@@ -1,19 +1,20 @@
 package com.google.closure.plugin.css;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
-import com.google.closure.plugin.common.CommonPlanner;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
+import com.google.closure.plugin.common.SourceOptions.SourceRootBuilder;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 
 /**
  * Builds a plan that scans for CSS source files, and invokes the
@@ -21,32 +22,16 @@ import com.google.closure.plugin.common.Ingredients
  */
 public final class CssPlanner {
 
-  final CommonPlanner planner;
-  private File cssRenameMap;
+  private final PlanContext context;
+  private final JoinNodes joinNodes;
   private File defaultCssSource;
   private String defaultCssOutputPathTemplate;
   private String defaultCssSourceMapPathTemplate;
 
   /** */
-  public CssPlanner(CommonPlanner planner) {
-    this.planner = planner;
-  }
-
-  /**
-   * @param f path to a file with the CSS rename map used to map IDs/CLASSes to
-   *     shorter names.
-   */
-  public CssPlanner cssRenameMap(File f) {
-    this.cssRenameMap = Preconditions.checkNotNull(f);
-    return this;
-  }
-
-  /**
-   * @return path to a file with the CSS rename map used to map IDs/CLASSes to
-   *     shorter names.
-   */
-  public File cssRenameMap() {
-    return this.cssRenameMap;
+  public CssPlanner(PlanContext context, JoinNodes joinNodes) {
+    this.context = context;
+    this.joinNodes = joinNodes;
   }
 
   /** @param f a default css source search path. */
@@ -82,14 +67,7 @@ public final class CssPlanner {
     return this.defaultCssSourceMapPathTemplate;
   }
 
-  /** Output directory for compiled CSS files. */
-  public PathValue cssOutputDir() {
-    return planner.ingredients.pathValue(
-        new File(planner.closureOutputDirectory.value, "css"));
-   }
-
-
-  private ImmutableList<HashedInMemory<CssOptions>> optionsIngredients(
+  ImmutableList<CssOptions> optionSets(
       Iterable<? extends CssOptions> options)
   throws MojoExecutionException {
     // Multiple the options out so that there is at most one output
@@ -102,31 +80,38 @@ public final class CssPlanner {
           }
         },
         options);
-    ImmutableList.Builder<HashedInMemory<CssOptions>> b =
-        ImmutableList.builder();
     for (CssOptions o : cssOptionSets) {
-      b.add(planner.ingredients.hashedInMemory(CssOptions.class, o));
+      if (o.source == null || o.source.length == 0) {
+        o.source = new SourceRootBuilder[] {
+          new SourceRootBuilder(),
+        };
+        o.source[0].set(this.defaultCssSource);
+      }
+      if (Strings.isNullOrEmpty(o.output)) {
+        o.output = this.defaultCssOutputPathTemplate;
+      }
+      if (Strings.isNullOrEmpty(o.sourceMapFile)) {
+        o.sourceMapFile = this.defaultCssSourceMapPathTemplate;
+      }
     }
-    return b.build();
+    return cssOptionSets;
   }
 
-  /**
-   * Adds steps related to CSS compilation to the master plan.
-   */
-  public void plan(Iterable<? extends CssOptions> css)
-  throws IOException, MojoExecutionException {
-    Preconditions.checkNotNull(cssRenameMap);
-    Preconditions.checkNotNull(defaultCssSource);
-    Preconditions.checkNotNull(defaultCssOutputPathTemplate);
-    Preconditions.checkNotNull(defaultCssSourceMapPathTemplate);
+  /** Builds an entry point to the CSS build chain. */
+  public PlanGraphNode<?> plan(Iterable<? extends CssOptions> unprepared)
+  throws MojoExecutionException {
+    ImmutableList<CssOptions> optionSets = optionSets(unprepared);
 
-    SerializedObjectIngredient<CssOptionsById> optionsListFile =
-        planner.ingredients.serializedObject(
-            "css-options.ser",
-            CssOptionsById.class);
+    ListOptions listOptionsNode = new ListOptions(context);
+    listOptionsNode.setOptionSets(optionSets);
 
-    planner.addStep(
-        new ListOptions(
-            this, optionsIngredients(css), planner.genfiles, optionsListFile));
+    // This pipeline takes in CSS files and produces CSS outputs along with a
+    // JSON and rename map.
+    joinNodes.pipeline(
+        ImmutableSortedSet.of(FileExt.CSS),
+        listOptionsNode,
+        CompileOneBundle.FOLLOWER_EXTS);
+
+    return listOptionsNode;
   }
 }

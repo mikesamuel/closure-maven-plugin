@@ -1,11 +1,11 @@
 package com.google.closure.plugin.js;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.js.Identifier.GoogNamespace;
 import com.google.closure.plugin.plan.Metadata;
 import com.google.javascript.jscomp.CompilerInput;
@@ -20,9 +20,9 @@ public final class JsDepInfo implements Serializable {
   /**
    * Maps source file canonical paths to dependency info.
    */
-  public final ImmutableMap<File, Metadata<DepInfo>> depinfo;
+  public final ImmutableMap<Source, Metadata<DepInfo>> depinfo;
 
-  JsDepInfo(Map<? extends File, ? extends Metadata<DepInfo>> depinfo) {
+  JsDepInfo(Map<? extends Source, ? extends Metadata<DepInfo>> depinfo) {
     this.depinfo = ImmutableMap.copyOf(depinfo);
   }
 

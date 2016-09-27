@@ -4,67 +4,79 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import com.google.closure.module.ClosureModule;
-import com.google.closure.plugin.common.Ingredients.PathValue;
-import com.google.closure.plugin.common.Ingredients.SerializedObjectIngredient;
-import com.google.closure.plugin.plan.Ingredient;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
-final class CopyProtosToJar extends Step {
+final class CopyProtosToJar extends PlanGraphNode<CopyProtosToJar.SV> {
 
   private static final String DESCRIPTORS_FILE_BASENAME =
       ClosureModule.PROTO_DESCRIPTORS_RESOURCE_PATH.substring(
           ClosureModule.PROTO_DESCRIPTORS_RESOURCE_PATH.lastIndexOf('/') + 1);
 
-  CopyProtosToJar(
-      PathValue closureOutputDirectory,
-      SerializedObjectIngredient<ProtoIO> protoIO) {
-    super(
-        PlanKey.builder("copy-pd-to-jar").build(),
-        ImmutableList.<Ingredient>of(closureOutputDirectory, protoIO),
-        Sets.immutableEnumSet(StepSource.PROTO_DESCRIPTOR_SET),
-        ImmutableSet.<StepSource>of());
+  private Optional<File> descriptorOutputFile = Optional.absent();
+
+  CopyProtosToJar(PlanContext context) {
+    super(context);
+  }
+
+  static final class SV implements PlanGraphNode.StateVector {
+    private static final long serialVersionUID = 1;
+
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes jn) {
+      return new CopyProtosToJar(c);
+    }
+  }
+
+
+  @Override
+  protected boolean hasChangedInputs() throws IOException {
+    return true;
   }
 
   @Override
-  public void execute(Log log) throws MojoExecutionException {
-    PathValue closureOutputDirectory = (PathValue) inputs.get(0);
-    SerializedObjectIngredient<ProtoIO> protoIO =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
-        .asSuperType(ProtoIO.class);
-
-    File descriptorSetFile =
-        protoIO.getStoredObject().get().mainDescriptorSetFile;
+  protected void processInputs() throws IOException, MojoExecutionException {
+    File descriptorSetFile = context.protoIO.mainDescriptorSetFile.get();
     if (descriptorSetFile.exists()) {
+      File outputFile = new File(
+          context.closureOutputDirectory,
+          DESCRIPTORS_FILE_BASENAME);
       // Not generated if protoc is not run.
       try {
-        closureOutputDirectory.value.mkdirs();
+        context.closureOutputDirectory.mkdirs();
         Files.copy(
             descriptorSetFile,
-            new File(closureOutputDirectory.value, DESCRIPTORS_FILE_BASENAME));
+            outputFile);
       } catch (IOException ex) {
         throw new MojoExecutionException(
             "Failed to copy proto descriptors to build output", ex);
       }
+
+      this.descriptorOutputFile = Optional.of(outputFile);
     }
   }
 
   @Override
-  public void skip(Log log) throws MojoExecutionException {
-    // Done
+  protected
+  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn) {
+    return Optional.absent();
   }
 
   @Override
-  public ImmutableList<Step> extraSteps(Log log) {
-    return ImmutableList.of();
+  protected void markOutputs() {
+    if (descriptorOutputFile.isPresent()) {
+      context.buildContext.refresh(descriptorOutputFile.get());
+    }
   }
 
+  @Override
+  protected SV getStateVector() {
+    return new SV();
+  }
 }

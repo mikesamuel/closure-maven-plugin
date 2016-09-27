@@ -1,6 +1,7 @@
 package com.google.closure.plugin.common;
 
 import java.io.File;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -8,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.google.closure.plugin.plan.PlanContext;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -63,35 +65,36 @@ public abstract class SourceOptions extends Options {
 
 
   /** Snapshots. */
-  public final DirectoryScannerSpec toDirectoryScannerSpec(
-      File defaultMainRoot, File defaultTestRoot,
-      GenfilesDirs genfilesDirs) {
-
+  public final DirectoryScannerSpec toDirectoryScannerSpec(PlanContext c) {
     ImmutableSet.Builder<TypedFile> allRoots = ImmutableSet.builder();
-    if (source != null && source.length != 0) {
+
+    if (source != null) {
       for (SourceRootBuilder oneSource : source) {
         allRoots.add(oneSource.build());
       }
-    } else {
-      allRoots.add(new TypedFile(defaultMainRoot));
     }
-    if (testSource != null && testSource.length != 0) {
+    if (testSource != null) {
       for (SourceRootBuilder oneSource : testSource) {
         allRoots.add(oneSource.build(SourceFileProperty.TEST_ONLY));
       }
-    } else {
-      allRoots.add(new TypedFile(
-          defaultTestRoot, SourceFileProperty.TEST_ONLY));
     }
 
-    ImmutableList<String> sourceExtensions = sourceExtensions();
-    for (String ext : sourceExtensions) {
-      Preconditions.checkState(!ext.startsWith("."));
+    ImmutableList<FileExt> sourceExtensions = sourceExtensions();
+    for (FileExt ext : sourceExtensions) {
+      if (source == null || source.length == 0) {
+        allRoots.add(c.srcfilesDirs.getDefaultProjectSourceDirectory(ext));
+      }
+      if (testSource == null || testSource.length == 0) {
+        allRoots.add(
+            c.srcfilesDirs.getDefaultProjectSourceDirectory(
+                ext, SourceFileProperty.TEST_ONLY));
+      }
+
       for (EnumSet<SourceFileProperty> subset
            : subsetsOf(EnumSet.allOf(SourceFileProperty.class))) {
         allRoots.add(
             new TypedFile(
-                genfilesDirs.getGeneratedSourceDirectory(ext, subset),
+                c.genfilesDirs.getGeneratedSourceDirectory(ext, subset),
                 subset));
       }
     }
@@ -100,8 +103,10 @@ public abstract class SourceOptions extends Options {
     if (!include.isEmpty()) {
       allIncludes.addAll(include);
     } else {
-      for (String ext : sourceExtensions) {
-        allIncludes.add("**/*." + ext);
+      for (FileExt sourceExtension : sourceExtensions) {
+        for (String suffix : sourceExtension.allSuffixes()) {
+          allIncludes.add("**/*." + suffix);
+        }
       }
     }
 
@@ -117,13 +122,13 @@ public abstract class SourceOptions extends Options {
    * For example, a source extension of {@code "js"} implies a default include
    * of <code>**<!---->/*.js</code>.
    */
-  protected abstract ImmutableList<String> sourceExtensions();
+  protected abstract ImmutableList<FileExt> sourceExtensions();
 
 
   /**
    * A plexus-configurable source root.
    */
-  public static final class SourceRootBuilder {
+  public static final class SourceRootBuilder implements Serializable {
     private File root;
     private final EnumSet<SourceFileProperty> props =
         EnumSet.noneOf(SourceFileProperty.class);

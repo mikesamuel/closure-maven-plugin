@@ -9,13 +9,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
 import com.google.javascript.jscomp.CommandLineRunner;
 
 /**
  * A list of JS modules with enough dependency information to generate
  * {@link CommandLineRunner} flags.
  */
-public final class Modules implements Serializable {
+public final class Modules implements Bundle {
   private static final long serialVersionUID = -6277668858371099203L;
 
   /** Modules in dependency order. */
@@ -129,5 +130,14 @@ public final class Modules implements Serializable {
       return null;
     }
     return new File(relativeToParent, f.getName());
+  }
+
+  @Override
+  public ImmutableList<Source> getInputs() {
+    ImmutableList.Builder<Source> inputs = ImmutableList.builder();
+    for (Module module : modules) {
+      inputs.addAll(module.sources);
+    }
+    return inputs.build();
   }
 }

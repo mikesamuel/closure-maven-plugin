@@ -9,6 +9,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.Options;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions;
@@ -99,7 +100,7 @@ public final class SoyOptions extends SourceOptions {
 
 
   @Override
-  protected ImmutableList<String> sourceExtensions() {
-    return ImmutableList.of("soy");
+  protected ImmutableList<FileExt> sourceExtensions() {
+    return ImmutableList.of(FileExt.SOY);
   }
 }

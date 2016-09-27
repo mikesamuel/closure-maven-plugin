@@ -15,60 +15,37 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import com.google.common.io.ByteSource;
-import com.google.closure.plugin.common.Ingredients.FileSetIngredient;
-import com.google.closure.plugin.common.Ingredients.HashedInMemory;
-import com.google.closure.plugin.common.Ingredients.PathValue;
-import com.google.closure.plugin.common.Ingredients
-    .SerializedObjectIngredient;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.plan.Ingredient;
-import com.google.closure.plugin.plan.PlanKey;
-import com.google.closure.plugin.plan.Step;
-import com.google.closure.plugin.plan.StepSource;
+import com.google.closure.plugin.plan.CompilePlanGraphNode;
+import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.PlanContext;
+import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.javascript.jscomp.CommandLineRunner;
 
-final class CompileJs extends Step {
+final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
 
-  public CompileJs(
-      HashedInMemory<JsOptions> optionsIng,
-      SerializedObjectIngredient<Modules> modulesIng,
-      FileSetIngredient inputs,
-      PathValue jsOutputDir) {
-    super(
-        PlanKey.builder("compile-js")
-            .addInp(optionsIng, modulesIng, jsOutputDir)
-            .build(),
-        ImmutableList.<Ingredient>of(
-            optionsIng, modulesIng, jsOutputDir, inputs),
-        Sets.immutableEnumSet(
-            StepSource.JS_SRC, StepSource.JS_GENERATED, StepSource.JS_MODULES),
-        Sets.immutableEnumSet(StepSource.JS_COMPILED, StepSource.JS_SOURCE_MAP)
-        );
+  public CompileJs(PlanContext context, JsOptions options, Modules modules) {
+    super(context, options, modules);
   }
 
   @Override
-  public void execute(final Log log) throws MojoExecutionException {
-    HashedInMemory<JsOptions> optionsIng =
-        ((HashedInMemory<?>) inputs.get(0)).asSuperType(JsOptions.class);
-    SerializedObjectIngredient<Modules> modulesIng =
-        ((SerializedObjectIngredient<?>) inputs.get(1))
-        .asSuperType(Modules.class);
-    PathValue jsOutputDir = (PathValue) inputs.get(2);
+  protected void processInputs() throws IOException, MojoExecutionException {
+    Modules modules = bundle;
+    final Log log = context.log;
+    File jsOutputDir = new File(context.closureOutputDirectory, "js");
 
-    Modules modules = modulesIng.getStoredObject().get();
     if (modules.modules.isEmpty()) {
       log.info("Skipping JS compilation -- zero modules");
       return;
     }
 
     ImmutableList.Builder<String> argvBuilder = ImmutableList.builder();
-    optionsIng.getValue().addArgv(log, argvBuilder);
+    options.addArgv(log, argvBuilder);
 
     argvBuilder.add("--module_output_path_prefix")
-        .add(jsOutputDir.value.getPath() + File.separator);
-    jsOutputDir.value.mkdirs();
+        .add(jsOutputDir.getPath() + File.separator);
+    jsOutputDir.mkdirs();
 
     argvBuilder.add("--create_renaming_reports");
     argvBuilder.add("--create_source_map").add("%outname%-source-map.json");
@@ -89,7 +66,8 @@ final class CompileJs extends Step {
     }
 
     // TODO: Fix jscompiler so I can thread MavenLogJSErrorManager
-    // through instead of mucking around with stdout, stderr.
+    // through instead of mucking around with stdout, stderr
+    // or intercept stdout and map it back to buildcontext.
     try {
       ByteSource streamableJson = new StreamableJsonByteSource(
           log, jsSources.build());
@@ -142,17 +120,45 @@ final class CompileJs extends Step {
     } catch (IOException ex) {
       throw new MojoExecutionException("JS compilation failed", ex);
     }
+
+    // TODO: use json_streams both and get the list of output files.
+    this.outputs = Optional.of(ImmutableList.of(jsOutputDir));
   }
 
   @Override
-  public void skip(Log log) throws MojoExecutionException {
-    // Done.
+  protected
+  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
+  throws MojoExecutionException {
+    return Optional.absent();
   }
 
   @Override
-  public ImmutableList<Step> extraSteps(Log log) throws MojoExecutionException {
-    return ImmutableList.of();
+  protected SV getStateVector() {
+    return new SV(options, bundle, outputs);
   }
+
+
+  static final class SV
+  extends CompilePlanGraphNode.CompileStateVector<JsOptions, Modules> {
+
+    private static final long serialVersionUID = 1L;
+
+    protected SV(
+        JsOptions options, Modules bundle,
+        Optional<ImmutableList<File>> outputs) {
+      super(options, bundle, outputs);
+    }
+
+    @SuppressWarnings("synthetic-access")
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes jn) {
+      CompileJs cjs = new CompileJs(c, options, bundle);
+      cjs.outputs = outputs;
+      return cjs;
+    }
+
+  }
+
 
   static abstract class PrefixingOutputStream extends FilterOutputStream {
     private final String prefix;
