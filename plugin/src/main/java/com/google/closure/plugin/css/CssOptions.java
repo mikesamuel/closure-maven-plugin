@@ -437,10 +437,8 @@ public final class CssOptions extends SourceOptions {
       if (getClass() != obj.getClass()) {
         return false;
       }
+
       Outputs other = (Outputs) obj;
-      if (!super.equals(other)) {
-        return false;
-      }
       if (css == null) {
         if (other.css != null) {
           return false;
