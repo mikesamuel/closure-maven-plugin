@@ -1,6 +1,10 @@
 **/target
+**/m2e-target
 **/*~
 **/*.bak
+**/*.iml
 .classpath
 .project
 .settings
+.idea
+out
