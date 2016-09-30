@@ -147,7 +147,7 @@ find . -type f -not -path ./.git/\* -exec rm '{}' \; -exec touch '{}' \;
 cp -r "$RELEASE_CLONE"/target/staging/* "$SITE_CLONE"/
 
 find . -type f -not -path ./.git/\* -exec git add '{}' \;
-find . -size 0 -not -path ./.git/\* -exec git rm '{}' \;
+find . -size 0 -not -path ./.git/\* -exec git rm -f '{}' \;
 
 git commit -m "publish site for $NEW_VERSION"
 git push origin gh-pages
