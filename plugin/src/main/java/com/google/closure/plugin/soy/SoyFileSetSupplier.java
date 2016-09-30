@@ -8,8 +8,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.StructurallyComparable;
+import com.google.closure.plugin.plan.OptionPlanGraphNode.OptionsAndInputs;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -29,31 +30,36 @@ import com.google.template.soy.types.proto.SoyProtoTypeProvider;
  * apply different backends to the inputs.
  */
 final class SoyFileSetSupplier implements Serializable, StructurallyComparable {
-  private static final long serialVersionUID = -1120612669828338378L;
+  private static final long serialVersionUID = 1L;
 
-  private transient SoyFileSet sfs;
   private transient PlanContext context;
-  private transient SoyOptions options;
-  private transient ImmutableList<Source> sources;
+  private transient SoyFileSet sfs;
+  private final OptionsAndInputs<SoyOptions> optionsAndInputs;
 
-  @SuppressWarnings("hiding")
-  void init(
-      PlanContext context, SoyOptions options, ImmutableList<Source> sources) {
-    if (context != this.context
-        || options != this.options
-        || sources != this.sources) {
-      this.sfs = null;
-      this.context = context;
-      this.options = options;
-      this.sources = sources;
-    }
+  SoyFileSetSupplier(OptionsAndInputs<SoyOptions> optionsAndInputs) {
+    this.optionsAndInputs = optionsAndInputs;
   }
 
-  synchronized SoyFileSet getSoyFileSet()
+  @SuppressWarnings("hiding")
+  SoyFileSetSupplier init(PlanContext context) {
+    if (context != this.context) {
+      this.sfs = null;
+      this.context = context;
+    }
+    return this;
+  }
+
+  @SuppressWarnings("hiding")
+  synchronized SoyFileSet getSoyFileSet(PlanContext context)
   throws MojoExecutionException{
+    init(context);
+
     if (sfs != null) {
       return sfs;
     }
+
+    SoyOptions options = optionsAndInputs.options;
+    ImmutableList<Source> sources = optionsAndInputs.sources;
 
     SoyFileSet.Builder sfsBuilder = options.toSoyFileSetBuilder(context.log);
 
@@ -122,16 +128,14 @@ final class SoyFileSetSupplier implements Serializable, StructurallyComparable {
 
   @Override
   public int hashCode() {
-    return options.hashCode() + 31 * sources.hashCode();
+    return optionsAndInputs.hashCode();
   }
 
   @Override
   public boolean equals(Object o) {
     if (o == null || o.getClass() != getClass()) { return false; }
     SoyFileSetSupplier that = (SoyFileSetSupplier) o;
-    return this.context == that.context
-        // Ignore sfs which should be determinable from options & sources
-        && this.options.equals(that.options)
-        && this.sources.equals(that.options);
+    // Ignore sfs which should be determinable from optionsAndInputs
+    return this.optionsAndInputs.equals(that.optionsAndInputs);
   }
 }

@@ -7,7 +7,7 @@ import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedSet;
 
 /**
@@ -26,8 +26,7 @@ public final class ExtractPlanner {
   }
 
   /** Adds steps to do extraction to the common planner. */
-  public PlanGraphNode<?> plan(Extracts unpreparedExtracts)
-  throws MojoExecutionException {
+  public void plan(Extracts unpreparedExtracts) throws MojoExecutionException {
 
     Extracts extracts = OptionsUtils.prepareOne(unpreparedExtracts);
     extracts = extracts.clone();
@@ -42,12 +41,27 @@ public final class ExtractPlanner {
       extracts.setExtract(builtinExtract);
     }
 
-    ResolveExtracts re = new ResolveExtracts(context, extracts);
-    joinNodes.pipeline(
-        // Dependencies are outside the project.
-        ImmutableSortedSet.<FileExt>of(),
-        re,
-        ExtractFiles.extensionsFor(extracts));
-    return re;
+    ExtractRoot root = new ExtractRoot(context);
+    root.setOptionSets(ImmutableList.of(extracts));
+
+    ImmutableSortedSet<FileExt> allExtensions = extensionsFor(extracts);
+
+    joinNodes.pipeline()
+        .then(root)
+        .then(new ResolveExtracts(context))
+        .then(new ExtractFiles(context))
+        .provide(allExtensions)
+        .build();
   }
+
+  static ImmutableSortedSet<FileExt> extensionsFor(Extracts extracts) {
+    ImmutableSortedSet.Builder<FileExt> b = ImmutableSortedSet.naturalOrder();
+    for (Extract e : extracts.getExtracts()) {
+      for (String suffix : e.getSuffixes()) {
+        b.add(FileExt.valueOf(suffix));
+      }
+    }
+    return b.build();
+  }
+
 }

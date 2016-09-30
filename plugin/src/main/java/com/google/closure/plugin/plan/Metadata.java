@@ -2,6 +2,7 @@ package com.google.closure.plugin.plan;
 
 import java.io.Serializable;
 
+import com.google.closure.plugin.common.StructurallyComparable;
 import com.google.common.base.Preconditions;
 
 /**

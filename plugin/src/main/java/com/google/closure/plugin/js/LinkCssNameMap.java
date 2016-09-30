@@ -13,7 +13,6 @@ import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.css.OutputRenamingMapFormat;
 import com.google.common.io.Files;
@@ -26,12 +25,34 @@ final class LinkCssNameMap extends PlanGraphNode<LinkCssNameMap.SV> {
     super(context);
   }
 
+  private boolean changed = false;
+
   File getJsRenameMap() {
     return new File(context.genfilesDirs.jsGenfiles, "css-rename-map.js");
-   }
+  }
+
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
+  protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+    // Nop
+  }
+
+  @Override
+  protected void filterUpdates() throws IOException, MojoExecutionException {
+    changed = !context.buildContext.isIncremental()
+        || context.buildContext.hasDelta(getJsRenameMap());
+  }
+
+  @Override
+  protected Iterable<? extends File> changedOutputFiles() {
+    return changed
+        ? ImmutableList.of(getJsRenameMap())
+        : ImmutableList.<File>of();
+  }
+
+  @Override
+  protected void process() throws IOException, MojoExecutionException {
+    if (!changed) { return; }
     File jsRenameMap = getJsRenameMap();
 
     Files.createParentDirs(jsRenameMap);
@@ -51,26 +72,10 @@ final class LinkCssNameMap extends PlanGraphNode<LinkCssNameMap.SV> {
           "Failed to link CSS rename map to JS", ex);
     }
   }
-  @Override
-  protected boolean hasChangedInputs() throws IOException {
-    return context.substitutionMapProvider.hasChanged();
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
-  throws MojoExecutionException {
-    return Optional.absent();
-  }
-
-  @Override
-  protected void markOutputs() {
-    context.buildContext.refresh(getJsRenameMap());
-  }
 
   @Override
   protected SV getStateVector() {
-    return new SV();
+    return new SV(this);
   }
 
 
@@ -78,9 +83,19 @@ final class LinkCssNameMap extends PlanGraphNode<LinkCssNameMap.SV> {
 
     private static final long serialVersionUID = 1L;
 
+    final boolean changed;
+
+    @SuppressWarnings("synthetic-access")
+    SV(LinkCssNameMap node) {
+      this.changed = node.changed;
+    }
+
     @Override
+    @SuppressWarnings("synthetic-access")
     public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes jn) {
-      return new LinkCssNameMap(c);
+      LinkCssNameMap node = new LinkCssNameMap(c);
+      node.changed = changed;
+      return node;
     }
   }
 }

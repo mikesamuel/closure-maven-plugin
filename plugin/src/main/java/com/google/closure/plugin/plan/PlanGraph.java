@@ -6,21 +6,19 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.Writer;
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -54,16 +52,6 @@ public final class PlanGraph {
   /** The join nodes for this graph's nodes. */
   public JoinNodes getJoinNodes() {
     return joinNodes;
-  }
-
-  /**
-   * Adds a root node.
-   * A root is a node that reaches a large number of other
-   * nodes so is a natural place to start a traversal.
-   * A root is not necessarily executed before other nodes.
-   */
-  public void addRoot(PlanGraphNode<?> root) {
-    this.roots.add(Preconditions.checkNotNull(root));
   }
 
   /**
@@ -159,7 +147,25 @@ public final class PlanGraph {
    * Execute the plan.
    */
   public void execute() throws IOException, MojoExecutionException {
-    joinNodes.realizePipelineConstraints();
+    this.roots.addAll(joinNodes.realizePipelineConstraints());
+
+    ReverseAdjacencyMap reverse = new ReverseAdjacencyMap();
+    ImmutableList<PlanGraphNode<?>> executionOrder =
+        reverse.computeExecutionOrder();
+    if (context.log.isDebugEnabled()) {
+      context.log.info("Execution order");
+      for (int i = 0, n = executionOrder.size(); i < n; ++i) {
+        context.log.info(
+            ". " + i + ": " + executionOrder.get(i).getClass().getName()
+            .replaceFirst("^.*[.]([^.]*[.][^.]*)$", "$1"));
+      }
+    }
+
+    String dotOutput = System.getProperty("closure.plugin.dotout");
+    if (dotOutput != null) {
+      dumpDotGraph(
+          reverse.adj, Files.asCharSink(new File(dotOutput), Charsets.UTF_8));
+    }
 
     if (context.log.isDebugEnabled()) {
       if (requireNoCycles()) {
@@ -167,46 +173,25 @@ public final class PlanGraph {
       }
     }
 
-    // Create a reverse mapping from plan graph nodes to preceders.
-    ReverseAdjacencyMap reverseMap = new ReverseAdjacencyMap();
-
-    ImmutableSet.Builder<PlanGraphNode<?>> processedNodes =
-        ImmutableSet.builder();
-
-    // Now, we can pick nodes that have zero incoming edges.
-    // Each time through, we
-    // 1. Check whether it has updates.
-    // 2. If so, process it.
-    // 3. Rebuild the follower list.
-    // 4. If there are changes to the follower list, reflect them in reverseMap.
+    Set<File> changedOutputs = Sets.newLinkedHashSet();
     try {
-      for (PlanGraphNode<?> next; (next = reverseMap.getSatisfied()) != null;) {
+      for (PlanGraphNode<?> next : executionOrder) {
         context.log.debug("Executing " + next);
 
-        if (next.hasChangedInputs()) {
-          context.log.debug(". Processing " + next);
-          next.processInputs();
-          processedNodes.add(next);
+        next.preExecute(reverse.getPreceders(next));
+        next.filterUpdates();
+        // TODO: we need to systematically remove messages from files that are
+        // about to be processed.
+        next.process();
+        for (File changed : next.changedOutputFiles()) {
+          changedOutputs.add(changed);
         }
-
-        Optional<? extends Iterable<? extends PlanGraphNode<?>>> newFollowers;
-        newFollowers = next.rebuildFollowersList(joinNodes);
-
-        if (newFollowers.isPresent()) {
-          reverseMap.replaceFollowers(
-              next, ImmutableList.copyOf(newFollowers.get()));
-        }
-        reverseMap.markExecuted(next);
       }
     } finally {
       // Do this even on abnormal execution so that the IDE does not lose track
       // of changes that happened before a build failed suddenly.
-      for (PlanGraphNode<?> processedNode : processedNodes.build()) {
-        try {
-          processedNode.markOutputs();
-        } catch (Exception ex) {
-          context.log.warn("Exception during output marking", ex);
-        }
+      for (File changed : changedOutputs) {
+        context.buildContext.refresh(changed);
       }
     }
   }
@@ -242,15 +227,14 @@ public final class PlanGraph {
    * precede it, and which associates some metadata with each node.
    */
   final class ReverseAdjacencyMap {
+
     /**
      * A relationship x -> Y such that there is an (x,y) whenever and only when
      * x.getFollowerList().contains(y) and x is reachable from a root or
      * effective root (join node) of the plan graph.
      */
-    final IdentityHashMap<PlanGraphNode<?>, SatInfo> adj =
+    final IdentityHashMap<PlanGraphNode<?>, List<PlanGraphNode<?>>> adj =
         Maps.newIdentityHashMap();
-
-    final LinkedList<PlanGraphNode<?>> satisfied = Lists.newLinkedList();
 
     ReverseAdjacencyMap() {
       Set<PlanGraphNode<?>> traversed =
@@ -258,11 +242,10 @@ public final class PlanGraph {
       for (PlanGraphNode<?> root : effectiveRoots()) {
         build(root, traversed);
       }
-      for (Map.Entry<PlanGraphNode<?>, SatInfo> e : adj.entrySet()) {
-        if (e.getValue().unsatisfied == 0) {
-          maybeAddSatisfied(e.getKey());
-        }
-      }
+    }
+
+    Iterable<? extends PlanGraphNode<?>> getPreceders(PlanGraphNode<?> n) {
+      return ImmutableList.copyOf(this.adj.get(n));
     }
 
     void dump(Appendable out) throws IOException {
@@ -277,90 +260,18 @@ public final class PlanGraph {
 
       out.append("REVERSE MAP\n");
       for (PlanGraphNode<?> n : this.adj.keySet()) {
-        SatInfo si = adj.get(n);
-        Collection<PlanGraphNode<?>> adjToN = si.preceders;
-        out.append(". ").append(si.executed ? "* " : "").append(n.toString())
+        List<PlanGraphNode<?>> adjToN = adj.get(n);
+        out.append(". ").append(n.toString())
            .append(" => ").append(adjToN.toString())
            .append('\n');
       }
       out.append('\n');
-
-      out.append("SATISFIED\n");
-      for (PlanGraphNode<?> n : this.satisfied) {
-        out.append(". ").append(n.toString()).append('\n');
-      }
-    }
-
-    private void maybeAddSatisfied(PlanGraphNode<?> satNode) {
-      SatInfo si = adj.get(satNode);
-      Preconditions.checkState(si.unsatisfied == 0);
-      if (satNode instanceof JoinNodes.JoinPlanGraphNode) {
-        // join nodes tend to get created early before their preceders.
-        // We enqueue them after any other nodes.
-        satisfied.add(satNode);
-      } else {
-        // Enqueue before any join nodes.
-        ListIterator<PlanGraphNode<?>> li =
-            satisfied.listIterator(satisfied.size());
-        while (li.hasPrevious()
-               && li.previous() instanceof JoinNodes.JoinPlanGraphNode) {
-          // Go back
-        }
-        if (li.hasPrevious() && li.hasNext()) {
-          li.next();
-        }
-        li.add(satNode);
-      }
-    }
-
-    public void markExecuted(PlanGraphNode<?> node) {
-      SatInfo nodeSI = adj.get(node);
-      Preconditions.checkState(!nodeSI.executed);
-      nodeSI.executed = true;
-
-      for (PlanGraphNode<?> follower : node.getFollowerList()) {
-        SatInfo followerSI = adj.get(follower);
-        Preconditions.checkState(
-            !followerSI.executed && followerSI.unsatisfied > 0);
-        --followerSI.unsatisfied;
-        if (followerSI.unsatisfied == 0) {
-          maybeAddSatisfied(follower);
-        }
-      }
-    }
-
-    @SuppressWarnings("synthetic-access")
-    public PlanGraphNode<?> getSatisfied() {
-      PlanGraphNode<?> satisfiedNode = this.satisfied.poll();
-      if (satisfiedNode == null) {
-        boolean unexecuted = false;
-        for (Map.Entry<PlanGraphNode<?>, SatInfo> e : adj.entrySet()) {
-          if (!e.getValue().executed) {
-            context.log.warn(
-                "Unexecuted node " + e.getKey() + " is not satisfied");
-            unexecuted = true;
-          }
-        }
-        if (unexecuted && context.log.isDebugEnabled()) {
-          PlanGraph.this.requireNoCycles();
-          try {
-            File dotGraph = File.createTempFile("plan-graph", ".dot");
-            dumpDotGraph(adj, Files.asCharSink(dotGraph, Charsets.UTF_8));
-            context.log.info("Dumped graph to " + dotGraph);
-          } catch (IOException ex) {
-            context.log.warn("Failed to dump dot graph", ex);
-          }
-        }
-        Preconditions.checkState(!unexecuted);
-      }
-
-      return satisfiedNode;
     }
 
     void build(PlanGraphNode<?> node, Set<PlanGraphNode<?>> traversed) {
       if (!traversed.add(node)) { return; }
       if (!adj.containsKey(node)) {
-        adj.put(node, new SatInfo());
+        adj.put(node, Lists.<PlanGraphNode<?>>newArrayList());
       }
       for (PlanGraphNode<?> follower : node.getFollowerList()) {
         buildFollower(node, follower, traversed);
@@ -370,116 +281,66 @@ public final class PlanGraph {
     void buildFollower(
         PlanGraphNode<?> node, PlanGraphNode<?> follower,
         Set<PlanGraphNode<?>> traversed) {
-      SatInfo followerSI = adj.get(follower);
-      if (followerSI == null) {
-        adj.put(follower, followerSI = new SatInfo());
+      List<PlanGraphNode<?>> followerList = adj.get(follower);
+      if (followerList == null) {
+        adj.put(follower, followerList = Lists.newArrayList());
       }
 
-      boolean added = followerSI.preceders.add(node);
-      Preconditions.checkState(added);
-
-      if (!adj.get(node).executed) {
-        if (followerSI.preceders.size() > 1 && followerSI.unsatisfied == 0) {
-          // There was already something on the list, and unsatisfied is 0
-          // meaning we're in the middle of execution and we just found an
-          // unsatisfied prerequisite for follower.
-          Preconditions.checkState(!followerSI.executed);
-          satisfied.removeLastOccurrence(follower);
-        }
-        followerSI.unsatisfied += 1;
-      }
+      followerList.add(node);
 
       build(follower, traversed);
     }
 
-    void unbuildFollower(
-        PlanGraphNode<?> node, Set<PlanGraphNode<?>> unbuilt,
-        PlanGraphNode<?> follower) {
-      if (!unbuilt.add(follower)) {
-        // We can't remove the same node twice, so stop if we've seen follower
-        // before, which happens often with join nodes that join multiple
-        // followers that fan-out from node.
-        return;
-      }
 
-      SatInfo si = adj.get(follower);
+    ImmutableList<PlanGraphNode<?>> computeExecutionOrder() {
+      @SuppressWarnings("synthetic-access")
+      IdentityHashMap<PlanGraphNode<?>, Integer> nodeToIndex = findAllNodes();
+      int n = nodeToIndex.size();
+      PlanGraphNode<?>[] indexToNode = new PlanGraphNode[n];
 
-      // This should only have been called by traversing followers from a
-      // node that has not been marked satisfied, so sat count should be
-      // > 0 for all followers
-      Preconditions.checkState(
-          !satisfied.contains(follower)
-          && si.unsatisfied > 0);
-
-      boolean removed = si.preceders.remove(node);
-      Preconditions.checkState(removed);
-
-      if (!adj.get(node).executed) {
-        --si.unsatisfied;
-      }
-      if (si.preceders.isEmpty() && !isEffectiveRoot(follower)) {
-        // No longer part of the graph.
-        // Remove the rest of the graph that is only reachable from follower.
-        for (PlanGraphNode<?> f : follower.getFollowerList()) {
-          unbuildFollower(follower, unbuilt, f);
-        }
-        // Now that we don't need to query adj, we can remove entries.
-        adj.remove(follower);
-      } else {
-        // There are other preceders, so decrement the unsatisfied count and
-        // maybe add it to the satisfied list.
-        if (si.unsatisfied == 0) {
-          maybeAddSatisfied(follower);
+        // Count preceders and establish reverse map.
+      int[] precederCount = new int[nodeToIndex.size()];
+      for (Map.Entry<PlanGraphNode<?>, Integer> e : nodeToIndex.entrySet()) {
+        PlanGraphNode<?> node = e.getKey();
+        int index = e.getValue();
+        Preconditions.checkState(indexToNode[index] == null);
+        indexToNode[index] = node;
+        for (PlanGraphNode<?> follower : node.getFollowerList()) {
+          ++precederCount[nodeToIndex.get(follower)];
         }
       }
-    }
 
-    void replaceFollowers(
-        PlanGraphNode<?> node,
-        ImmutableList<PlanGraphNode<?>> newFollowerList) {
-      Set<PlanGraphNode<?>> newFollowerSet = Sets.newIdentityHashSet();
-      newFollowerSet.addAll(newFollowerList);
-      Preconditions.checkState(newFollowerSet.size() == newFollowerList.size());
-
-      ImmutableList<PlanGraphNode<?>> oldFollowerList = node.getFollowerList();
-      Set<PlanGraphNode<?>> oldFollowerSet = Sets.newIdentityHashSet();
-      oldFollowerSet.addAll(oldFollowerList);
-      Preconditions.checkState(oldFollowerSet.size() == oldFollowerList.size());
-
-      Set<PlanGraphNode<?>> unbuilt = Sets.newIdentityHashSet();
-      for (PlanGraphNode<?> oldFollower : oldFollowerList) {
-        if (newFollowerSet.contains(oldFollower)) { continue; }
-        unbuildFollower(node, unbuilt, oldFollower);
+      // Iteratively move items with zero unqueued preceders on a ready list,
+      // schedule a ready one, and then decrement the unsat count for its
+      // followers.
+      // This handles branching and joining properly.
+      int[] unsatCount = precederCount.clone();
+      ImmutableList.Builder<PlanGraphNode<?>> execOrder = ImmutableList.builder();
+      Deque<PlanGraphNode<?>> ready = new ArrayDeque<>();
+      for (int i = 0; i < n; ++i) {
+        if (unsatCount[i] == 0) {
+          ready.add(indexToNode[i]);
+        }
       }
 
-      node.setFollowerList(newFollowerList);
-
-      Set<PlanGraphNode<?>> traversed = Sets.newIdentityHashSet();
-      traversed.addAll(adj.keySet());
-      for (PlanGraphNode<?> newFollower : newFollowerList) {
-        if (oldFollowerSet.contains(newFollower)) { continue; }
-        buildFollower(node, newFollower, traversed);
+      for (PlanGraphNode<?> next; (next = ready.poll()) != null;) {
+        execOrder.add(next);
+        for (PlanGraphNode<?> follower : next.getFollowerList()) {
+          int followerIndex = nodeToIndex.get(follower);
+          Preconditions.checkState(unsatCount[followerIndex] > 0);
+          --unsatCount[followerIndex];
+          if (0 == unsatCount[followerIndex]) {
+            ready.add(follower);
+          }
+        }
       }
-    }
-  }
 
-  static final class SatInfo {
-    final List<PlanGraphNode<?>> preceders = Lists.newArrayList();
-    /**
-     * Count of preceders that have not been executed.  When this is zero, the
-     * key node is ready for execution.
-     */
-    int unsatisfied;
-    /**
-     * True iff the key node has been executed.
-     */
-    boolean executed;
+      ImmutableList<PlanGraphNode<?>> completeExecOrder = execOrder.build();
+      if (completeExecOrder.size() != n) {
+        // There's a cycle somewhere.
 
-    @Override
-    public String toString() {
-      return preceders
-          + (executed ? " executed" : "")
-          + (unsatisfied != 0 ? " unsatisfied=" + unsatisfied : "");
+      }
+      return completeExecOrder;
     }
   }
 
@@ -516,23 +377,28 @@ public final class PlanGraph {
     return false;
   }
 
-  private void dumpDotGraph(
-      IdentityHashMap<PlanGraphNode<?>, SatInfo> adj,
+  void dumpDotGraph(
+      IdentityHashMap<PlanGraphNode<?>, List<PlanGraphNode<?>>> adj,
       CharSink sink) {
     try (Writer out = sink.openBufferedStream()) {
       out.write("digraph planGraph {\n");
       Set<PlanGraphNode<?>> visited = Sets.newIdentityHashSet();
-      writeForwardGraph(effectiveRoots(), visited, out);
-      for (Map.Entry<PlanGraphNode<?>, SatInfo> e : adj.entrySet()) {
+      Iterable<PlanGraphNode<?>> effectiveRoots = effectiveRoots();
+      for (PlanGraphNode<?> root : effectiveRoots) {
+        out.write("  root -> " + dotName(root) + " [color=blue];\n");
+      }
+      writeForwardGraph(effectiveRoots, visited, out);
+      for (Map.Entry<PlanGraphNode<?>, List<PlanGraphNode<?>>> e
+           : adj.entrySet()) {
         PlanGraphNode<?> n = e.getKey();
-        SatInfo si = e.getValue();
+        List<PlanGraphNode<?>> preceders = e.getValue();
         String name = dotName(n);
-        if (si.preceders.isEmpty()) {
+        if (preceders.isEmpty()) {
           if (!visited.contains(n)) {
             out.write("  " + name + ";\n");
           }
         } else {
-          for (PlanGraphNode<?> p : si.preceders) {
+          for (PlanGraphNode<?> p : preceders) {
             out.write("  " + dotName(p) + " -> " + name + " [color=red];\n");
           }
         }
@@ -559,6 +425,7 @@ public final class PlanGraph {
           out.write("  " + nodeName + " -> " + dotName(f) + " [color=blue];\n");
         }
       }
+      writeForwardGraph(followers, visited, out);
     }
   }
 

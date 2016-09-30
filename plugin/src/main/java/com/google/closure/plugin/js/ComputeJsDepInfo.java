@@ -16,16 +16,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.closure.plugin.common.CStyleLexer;
-import com.google.closure.plugin.common.DirectoryScannerSpec;
-import com.google.closure.plugin.common.Sources;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.js.Identifier.GoogNamespace;
 import com.google.closure.plugin.js.JsDepInfo.DepInfo;
 import com.google.closure.plugin.plan.SourceMetadataMapBuilder;
 import com.google.closure.plugin.plan.SourceMetadataMapBuilder.Extractor;
-import com.google.closure.plugin.plan.SourceSpecedPlanGraphNode;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.Metadata;
+import com.google.closure.plugin.plan.OptionPlanGraphNode.OptionsAndInputs;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.io.ByteSource;
@@ -38,25 +37,28 @@ import com.google.javascript.jscomp.SourceFile;
  * parsing JS sources as much as possible.
  */
 final class ComputeJsDepInfo
-extends SourceSpecedPlanGraphNode<ComputeJsDepInfo.SV> {
+extends BundlingPlanGraphNode<JsOptions, JsDepInfo> {
 
-  final JsOptions options;
-  private Optional<JsDepInfo> depInfoOpt = Optional.absent();
-
-  ComputeJsDepInfo(PlanContext context, JsOptions options) {
+  ComputeJsDepInfo(PlanContext context) {
     super(context);
-    this.options = options;
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    ImmutableMap<Source, Metadata<DepInfo>> oldDepInfoMap =
-        depInfoOpt.isPresent()
-        ? depInfoOpt.get().depinfo
-        : ImmutableMap.<Source, Metadata<DepInfo>>of();
+  protected ImmutableList<JsDepInfo> bundlesFor(
+      Optional<ImmutableList<JsDepInfo>> prevDepInfo,
+      OptionsAndInputs<JsOptions> oi)
+  throws IOException, MojoExecutionException {
+    JsOptions options = oi.options;
+    ImmutableList<Source> sources = oi.sources;
 
-    ImmutableList<Source> sources =
-        Sources.scan(context.log, this.getSourceSpec()).sources;
+    ImmutableMap<Source, Metadata<DepInfo>> oldDepInfoMap;
+    if (prevDepInfo.isPresent()) {
+      ImmutableList<JsDepInfo> depInfos = prevDepInfo.get();
+      Preconditions.checkState(depInfos.size() == 1);
+      oldDepInfoMap = depInfos.get(0).depinfo;
+    } else {
+      oldDepInfoMap = ImmutableMap.<Source, Metadata<DepInfo>>of();
+    }
 
     ImmutableMap<Source, Metadata<DepInfo>> newDepInfo;
     try {
@@ -68,7 +70,7 @@ extends SourceSpecedPlanGraphNode<ComputeJsDepInfo.SV> {
       throw new MojoExecutionException("Failed to extract dependency info", ex);
     }
 
-    this.depInfoOpt = Optional.of(new JsDepInfo(newDepInfo));
+    return ImmutableList.of(new JsDepInfo(newDepInfo));
   }
 
   @VisibleForTesting
@@ -152,57 +154,23 @@ extends SourceSpecedPlanGraphNode<ComputeJsDepInfo.SV> {
     return Iterables.transform(symbols, TO_GOOG_NS);
   }
 
-  static final class SV implements PlanGraphNode.StateVector {
+  @Override
+  protected SV getStateVector() {
+    return new SV(this);
+  }
+
+  static final class SV extends BundleStateVector<JsOptions, JsDepInfo> {
 
     private static final long serialVersionUID = 1L;
 
-    final JsOptions opts;
-    final JsDepInfo depInfo;
-
-    SV(JsOptions opts, JsDepInfo depInfo) {
-      this.opts = opts;
-      this.depInfo = depInfo;
+    SV(ComputeJsDepInfo node) {
+      super(node);
     }
 
-    @SuppressWarnings("synthetic-access")
     @Override
     public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes joinNodes) {
-      ComputeJsDepInfo cdi = new ComputeJsDepInfo(c, opts);
-      cdi.depInfoOpt = Optional.of(depInfo);
-      return cdi;
+      return apply(new ComputeJsDepInfo(c));
     }
-  }
-
-  @Override
-  protected DirectoryScannerSpec getSourceSpec() {
-    return options.toDirectoryScannerSpec(context);
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<ComputeJsDepGraph>> rebuildFollowersList(JoinNodes jn)
-  throws MojoExecutionException {
-    ImmutableList<PlanGraphNode<?>> followers = this.getFollowerList();
-    if (!followers.isEmpty()) {
-      Preconditions.checkState(followers.size() == 1);
-      ComputeJsDepGraph cdg = (ComputeJsDepGraph) followers.get(0);
-      if (options.equals(cdg.options)
-          && depInfoOpt.get().equals(cdg.depInfo)) {
-        return Optional.absent();
-      }
-    }
-    return Optional.of(ImmutableList.of(new ComputeJsDepGraph(
-        context, options, depInfoOpt.get())));
-  }
-
-  @Override
-  protected void markOutputs() {
-    // Done
-  }
-
-  @Override
-  protected SV getStateVector() {
-    return new SV(options, depInfoOpt.get());
   }
 }
 

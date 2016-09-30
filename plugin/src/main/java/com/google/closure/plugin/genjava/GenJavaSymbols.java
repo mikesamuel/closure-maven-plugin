@@ -3,11 +3,15 @@ package com.google.closure.plugin.genjava;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.annotation.Generated;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.codehaus.plexus.util.Scanner;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.Sources;
@@ -16,22 +20,27 @@ import com.google.closure.plugin.common.TypedFile;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.closure.plugin.plan.Update;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.io.Files;
 
 final class GenJavaSymbols extends PlanGraphNode<GenJavaSymbols.SV> {
 
-  private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
   final DirectoryScannerSpec outputFileSpec;
   final File webFilesJava;
   final String packageName;
+  private Optional<Update<Source>> sourceUpdate = Optional.absent();
+  private final List<File> outputFiles = Lists.newArrayList();
 
   GenJavaSymbols(
       PlanContext context,
@@ -43,39 +52,74 @@ final class GenJavaSymbols extends PlanGraphNode<GenJavaSymbols.SV> {
     this.packageName = packageName;
   }
 
-
   @Override
-  protected boolean hasChangedInputs() throws IOException {
-    if (!context.buildContext.isIncremental()) {
-      return true;
-    }
-    for (TypedFile root : outputFileSpec.roots) {
-      Scanner s = context.buildContext.newScanner(root.f, false);
-      s.setExcludes(outputFileSpec.excludes.toArray(EMPTY_STRING_ARRAY));
-      s.setIncludes(outputFileSpec.includes.toArray(EMPTY_STRING_ARRAY));
-      s.scan();
-      if (s.getIncludedFiles() != null) {
-        return true;
-      }
-
-      s = context.buildContext.newDeleteScanner(root.f);
-      s.setExcludes(outputFileSpec.excludes.toArray(EMPTY_STRING_ARRAY));
-      s.setIncludes(outputFileSpec.includes.toArray(EMPTY_STRING_ARRAY));
-      s.scan();
-      if (s.getIncludedFiles() != null) {
-        return true;
-      }
-    }
-    return false;
+  protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+    // Nop
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    ImmutableList<Source> outputFiles =
-        Sources.scan(context.log, outputFileSpec).sources;
+  protected void filterUpdates() throws IOException, MojoExecutionException {
+    BuildContext bc = context.buildContext;
+
+    ImmutableSet.Builder<Source> unchanged = ImmutableSet.builder();
+    ImmutableSet.Builder<Source> changed = ImmutableSet.builder();
+    ImmutableSet.Builder<Source> defunct = ImmutableSet.builder();
+
+    if (sourceUpdate.isPresent() && bc.isIncremental()) {
+      Set<Source> unchangedSet = Sets.newLinkedHashSet();
+      unchangedSet.addAll(sourceUpdate.get().allExtant());
+      for (TypedFile root : outputFileSpec.roots) {
+        ImmutableList<Source> deltaPaths = outputFileSpec.scan(
+            bc.newScanner(root.f, false), root.ps);
+        ImmutableList<Source> deletedPaths = outputFileSpec.scan(
+            bc.newDeleteScanner(root.f), root.ps);
+        changed.addAll(deltaPaths);
+        defunct.addAll(deletedPaths);
+        unchangedSet.removeAll(deltaPaths);
+        unchangedSet.removeAll(deletedPaths);
+      }
+      unchanged.addAll(unchangedSet);
+    } else {
+      changed.addAll(Sources.scan(context.log, outputFileSpec).sources);
+    }
+
+    this.sourceUpdate = Optional.of(new Update<>(
+        unchanged.build(),
+        changed.build(),
+        defunct.build()));
+  }
+
+  @Override
+  protected Iterable<? extends File> changedOutputFiles() {
+    return ImmutableList.copyOf(outputFiles);
+  }
+
+  @Override
+  protected void process() throws IOException, MojoExecutionException {
+    this.outputFiles.clear();
+
+    if (context.buildContext.isIncremental()
+        && !sourceUpdate.get().hasChanges()) {
+      return;
+    }
+
+    ImmutableSortedSet<Source> buildOutputs = ImmutableSortedSet
+        .orderedBy(new Comparator<Source>() {
+          @Override
+          public int compare(Source a, Source b) {
+            int delta = a.root.f.compareTo(b.root.f);
+            if (delta == 0) {
+              delta = a.relativePath.compareTo(b.relativePath);
+            }
+            return delta;
+          }
+        })
+        .addAll(sourceUpdate.get().unchanged)
+        .addAll(sourceUpdate.get().changed)
+        .build();
 
     Multimap<String, File> constantNameToRelPaths = TreeMultimap.create();
-    for (Source s : outputFiles) {
+    for (Source s : buildOutputs) {
       File relativePath = s.relativePath;
       String name = bestEffortIdentifier(relativePath);
       constantNameToRelPaths.put(name, relativePath);
@@ -147,6 +191,7 @@ final class GenJavaSymbols extends PlanGraphNode<GenJavaSymbols.SV> {
     } catch (IOException ex) {
       throw new MojoExecutionException("Failed to write symbols file", ex);
     }
+    this.outputFiles.add(webFilesJava);
   }
 
   private static String bestEffortIdentifier(File f) {
@@ -177,18 +222,6 @@ final class GenJavaSymbols extends PlanGraphNode<GenJavaSymbols.SV> {
         sb.append('_');
       }
     }
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
-  throws MojoExecutionException {
-    return Optional.absent();
-  }
-
-  @Override
-  protected void markOutputs() {
-    context.buildContext.refresh(webFilesJava);
   }
 
   @Override

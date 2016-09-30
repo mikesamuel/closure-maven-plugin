@@ -6,13 +6,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.ToolFinder;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
 
 /**
  * Adds steps that feed .proto files to protoc.
@@ -72,15 +71,22 @@ public final class ProtoPlanner {
   }
 
   /** Adds steps to the plan graph. */
-  public PlanGraphNode<?> plan(ProtoFinalOptions protoOptions) {
-    joinNodes.follows(new CopyProtosToJar(context), FileExt.PD);
+  public void plan(ProtoFinalOptions protoOptions) {
+    joinNodes.pipeline()
+         .require(FileExt.PD)
+         .then(new CopyProtosToJar(context))
+         .build();
 
-    GenerateProtoPackageMap gppm = new GenerateProtoPackageMap(
-        context, protoOptions);
-    joinNodes.pipeline(
-        ImmutableSortedSet.of(FileExt.PROTO),
-        gppm,
-        RunProtoc.FOLLOWER_EXTS);
-    return gppm;
+    ProtoRoot pr = new ProtoRoot(context);
+    pr.setOptionSets(ImmutableList.of(protoOptions));
+
+    joinNodes.pipeline()
+        .require(FileExt.PROTO)
+        .then(pr)
+        .then(new GenerateProtoPackageMap(context))
+        .then(new ProtoBundler(context))
+        .then(new RunProtoc(context))
+        .provide(FileExt.JAVA, FileExt.JS, FileExt.PD)
+        .build();
   }
 }

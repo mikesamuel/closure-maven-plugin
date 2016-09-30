@@ -1,6 +1,5 @@
 package com.google.closure.plugin.css;
 
-import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.OptionPlanGraphNode;
 import com.google.closure.plugin.plan.PlanContext;
@@ -16,37 +15,21 @@ final class ListOptions extends OptionPlanGraphNode<CssOptions> {
   }
 
   @Override
-  protected FindEntryPoints fanOutTo(CssOptions options) {
-    return new FindEntryPoints(context, options);
-  }
-
-  @Override
-  protected CssOptions getOptionsForFollower(PlanGraphNode<?> follower) {
-    FindEntryPoints f = (FindEntryPoints) follower;
-    return f.getOptions();
-  }
-
-  @Override
   protected SV getStateVector() {
-    return new SV(this.getOptionSets());
+    return new SV(this);
   }
 
   static final class SV
-  extends OptionPlanGraphNode.OptionStateVector<CssOptions> {
-    private static final long serialVersionUID = -5821057253659715417L;
+  extends OptionStateVector<CssOptions> {
+    private static final long serialVersionUID = 1L;
 
-    SV(Iterable<CssOptions> optionSets) {
-      super(ImmutableList.copyOf(optionSets));
+    SV(ListOptions lo) {
+      super(lo);
     }
 
-    @SuppressWarnings("synthetic-access")
     @Override
     public PlanGraphNode<?> reconstitute(PlanContext context, JoinNodes jn) {
-      ListOptions lo = new ListOptions(context);
-      for (CssOptions optionSet : optionSets) {
-        lo.addOptionSet(optionSet);
-      }
-      return lo;
+      return apply(new ListOptions(context));
     }
   }
 }

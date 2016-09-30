@@ -1,5 +1,6 @@
 package com.google.closure.plugin.plan;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -133,28 +134,30 @@ public final class JoinNodes {
   }
 
   /**
-   * Declares that the pipeline requires all inputs of prerequisite kinds,
-   * starts with the given node, and produces sources of postrequisite kinds.
+   * A fresh pipeline builder that allows chaining together a sequence of
+   * nodes and the kinds of files that the pipeline needs and the kinds
+   * it produces which allows the plan graph to slot it into the right place.
    */
-  public void pipeline(
-      Iterable<? extends FileExt> prerequisites,
-      PlanGraphNode<?> node,
-      Iterable<? extends FileExt> postrequisites) {
-    // Instead of adding followers now, we wait until all the pipeline
-    // constraints have been declared.
-    pipelineConstraints.add(
-        new PipelineConstraint(prerequisites, node, postrequisites));
+  public PipelineBuilder pipeline() {
+    return new PipelineBuilder();
   }
 
   /**
    * Must be called to realize lazy pipeline constraints after all the
    * plan graph is created but before it is executed.
+   *
+   * @return Any added roots.
    */
-  public void realizePipelineConstraints() {
+  public ImmutableList<PlanGraphNode<?>> realizePipelineConstraints() {
+    ImmutableList.Builder<PlanGraphNode<?>> newRoots = ImmutableList.builder();
     for (PipelineConstraint pc : this.pipelineConstraints) {
-      pc.realize();
+      Optional<ImmutableList<PlanGraphNode<?>>> newRoot = pc.realize();
+      if (newRoot.isPresent()) {
+        newRoots.addAll(newRoot.get());
+      }
     }
     this.pipelineConstraints.clear();
+    return newRoots.build();
   }
 
 
@@ -191,28 +194,6 @@ public final class JoinNodes {
     }
 
     @Override
-    protected boolean hasChangedInputs() {
-      return false;
-    }
-
-    @Override
-    protected void processInputs() throws IOException, MojoExecutionException {
-      throw new AssertionError("Not dirty");
-    }
-
-    @Override
-    protected
-    Optional<ImmutableList<PlanGraphNode<?>>>
-        rebuildFollowersList(JoinNodes jn) {
-      return Optional.absent();
-    }
-
-    @Override
-    protected void markOutputs() {
-      // Done
-    }
-
-    @Override
     protected JoinStateVector getStateVector() {
       return new JoinStateVector(extensions);
     }
@@ -221,22 +202,43 @@ public final class JoinNodes {
     public String toString() {
       return "{JoinPlanGraphNode " + extensions + "}";
     }
+
+    @Override
+    protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+      // Nop
+    }
+
+    @Override
+    protected void filterUpdates() throws IOException, MojoExecutionException {
+      // Nop
+    }
+
+    @Override
+    protected void process() throws IOException, MojoExecutionException {
+      // Nop
+    }
+
+    @Override
+    protected Iterable<? extends File> changedOutputFiles() {
+      return ImmutableList.of();
+    }
   }
 
   final class PipelineConstraint {
     final Optional<JoinPlanGraphNode> preReqNode;
-    final PlanGraphNode<?> node;
+    final ImmutableList<ImmutableList<PlanGraphNode<?>>> layers;
     final Optional<JoinPlanGraphNode> postReqNode;
 
     PipelineConstraint(
         Iterable<? extends FileExt> prerequisites,
-        PlanGraphNode<?> node,
+        Iterable<? extends ImmutableList<PlanGraphNode<?>>> nodes,
         Iterable<? extends FileExt> postrequisites) {
       this.preReqNode = Iterables.isEmpty(prerequisites)
           ? Optional.<JoinPlanGraphNode>absent()
           : Optional.of(
               joinNodeThatJoins(ImmutableSortedSet.copyOf(prerequisites)));
-      this.node = node;
+      this.layers = ImmutableList.copyOf(nodes);
+      Preconditions.checkArgument(!this.layers.isEmpty());
       // We need to make the joiner node even when prerequisites is empty so
       // that pipelines can declare all the multi-extension sets used and
       // to allow followersOf to establish proper sub-set/super-set
@@ -247,16 +249,108 @@ public final class JoinNodes {
               joinNodeThatJoins(ImmutableSortedSet.copyOf(postrequisites)));
     }
 
-    void realize() {
+    Optional<ImmutableList<PlanGraphNode<?>>> realize() {
+      Optional<ImmutableList<PlanGraphNode<?>>> newRoots = Optional.absent();
+      ImmutableList<PlanGraphNode<?>> previous = ImmutableList.of();
       if (preReqNode.isPresent()) {
-        if (postReqNode.isPresent()) {
-          for (PlanGraphNode<?> postreq
-               : followersOf(postReqNode.get().extensions)) {
-            preReqNode.get().addFollower(postreq);
+        previous = ImmutableList.<PlanGraphNode<?>>of(preReqNode.get());
+      } else if (!layers.isEmpty()) {
+        // Assumes no empty layers at front.
+        newRoots = Optional.of(layers.get(0));
+      }
+
+      for (ImmutableList<PlanGraphNode<?>> layer : layers) {
+        for (PlanGraphNode<?> p : previous) {
+          for (PlanGraphNode<?> node : layer) {
+            p.addFollower(node);
           }
         }
-        preReqNode.get().addFollower(node);
+        previous = layer;
       }
+
+      if (postReqNode.isPresent()) {
+        for (PlanGraphNode<?> p : previous) {
+          for (PlanGraphNode<?> postreq
+              : followersOf(postReqNode.get().extensions)) {
+            p.addFollower(postreq);
+          }
+        }
+      }
+      return newRoots;
+    }
+  }
+
+
+  /**
+   * Allows chaining together a sequence of
+   * nodes and the kinds of files that the pipeline needs and the kinds
+   * it produces which allows the plan graph to slot it into the right place.
+   */
+  public final class PipelineBuilder {
+    private final ImmutableSortedSet.Builder<FileExt> requires =
+        ImmutableSortedSet.naturalOrder();
+    private final ImmutableList.Builder<ImmutableList<PlanGraphNode<?>>>
+        pipeline = ImmutableList.builder();
+    private final ImmutableSortedSet.Builder<FileExt> provides =
+        ImmutableSortedSet.naturalOrder();
+
+    /**
+     * Specify that the first stage in the pipeline need to have all source
+     * files with the given extensions available.
+     */
+    public PipelineBuilder require(FileExt... exts) {
+      return require(Arrays.asList(exts));
+    }
+
+    /**
+     * Specify that the first stage in the pipeline need to have all source
+     * files with the given extensions available.
+     */
+    public PipelineBuilder require(Iterable<? extends FileExt> exts) {
+      requires.addAll(exts);
+      return this;
+    }
+
+    /**
+     * Specify that the pipeline may produce generated sources with the given
+     * extensions.  Terminal stages in the pipeline have to happen before
+     * any that require any of the given extensions
+     */
+    public PipelineBuilder provide(FileExt... exts) {
+      return provide(Arrays.asList(exts));
+    }
+
+    /**
+     * Specify that the pipeline may produce generated sources with the given
+     * extensions.  Terminal stages in the pipeline have to happen before
+     * any that require any of the given extensions
+     */
+    public PipelineBuilder provide(Iterable<? extends FileExt> exts) {
+      provides.addAll(exts);
+      return this;
+    }
+
+    /**
+     * Specify that the given node happens after any previous calls to then
+     * in a way that allows {@link PlanGraphNode#preExecute} inspection.
+     * If this is the first call to this method for this builder, then node is
+     * the root of the pipeline.
+     */
+    public PipelineBuilder then(PlanGraphNode<?>... nodes) {
+      pipeline.add(ImmutableList.copyOf(nodes));
+      return this;
+    }
+
+    /**
+     * Adds a completed pipline constraint which will be added to the graph
+     * when it calls {@link JoinNodes#realizePipelineConstraints()}.
+     */
+    @SuppressWarnings("synthetic-access")
+    public void build() {
+      JoinNodes.this.pipelineConstraints.add(new PipelineConstraint(
+          requires.build(),
+          pipeline.build(),
+          provides.build()));
     }
   }
 }

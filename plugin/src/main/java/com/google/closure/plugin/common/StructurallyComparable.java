@@ -1,4 +1,4 @@
-package com.google.closure.plugin.plan;
+package com.google.closure.plugin.common;
 
 /**
  * Equals and hashCode based on recursive comparison of fields.

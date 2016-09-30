@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -21,44 +20,58 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.CStyleLexer;
 import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.GenfilesDirs;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.extract.ResolvedExtractsList
     .ResolvedExtract;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
+import com.google.closure.plugin.plan.CompilePlanGraphNode;
 import com.google.closure.plugin.plan.Hash;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.closure.plugin.proto.ProtoPackageMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-final class ExtractFiles extends PlanGraphNode<ExtractFiles.SV> {
+final class ExtractFiles
+extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
 
-  final ResolvedExtractsList resolvedExtractsList;
-  /** We need to re-extract if files are mucked with. */
-  private SortedSet<File> extractedFiles = Sets.newTreeSet();
   /** Hash of archives so we know whether we need to re-extract. */
   private Map<File, Hash> archiveHash = Maps.newLinkedHashMap();
 
-
-  ExtractFiles(
-      PlanContext context,
-      ResolvedExtractsList resolvedExtractsList) {
+  ExtractFiles(PlanContext context) {
     super(context);
-    this.resolvedExtractsList = resolvedExtractsList;
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    archiveHash.clear();
-    extractedFiles.clear();
-    for (ResolvedExtract e : resolvedExtractsList.extracts) {
+  protected void process() throws IOException, MojoExecutionException {
+    outputFiles.clear();
+
+    // Since changed vs. unchanged vs. defunct is triaged based on input files
+    // and dependencies are not part of the project, everything ends up in
+    // a single unchanged/changed bundle (depending on whether the build is
+    // incremental) associated with an empty input list.
+
+    // For this reason, we don't retain entries for unchanged artifacts in
+    // the archive hash.
+    // We just process everything and rehash.
+    // We also don't clear the archiveHash.  Instead of passing in an old copy
+    // we just modify in place.
+
+    // TODO: some way to find defunct entries and remove files extracted from
+    // those.
+    for (OptionsAndBundles<Extracts, ResolvedExtract> ob
+         : this.optionsAndBundles.get().allExtant()) {
+      processOne(ob.bundles);
+    }
+  }
+
+  protected void processOne(ImmutableList<ResolvedExtract> extracts)
+  throws MojoExecutionException {
+    for (ResolvedExtract e : extracts) {
       try {
         extract(e);
       } catch (IOException ex) {
@@ -105,7 +118,7 @@ final class ExtractFiles extends PlanGraphNode<ExtractFiles.SV> {
                   java.nio.file.Files.move(
                       tmpFile.toPath(), outFile.toPath(),
                       StandardCopyOption.REPLACE_EXISTING);
-                  this.extractedFiles.add(outFile);
+                  this.outputFiles.add(outFile);
                 }
               } else {
                 log.warn("Cannot find location for extract " + name);
@@ -145,82 +158,32 @@ final class ExtractFiles extends PlanGraphNode<ExtractFiles.SV> {
       ImmutableMap.<FileExt, PathChooser>of(
           FileExt.PROTO, new FindProtoPackageStmt());
 
-  static final class SV implements PlanGraphNode.StateVector {
-    final ResolvedExtractsList resolvedExtractsList;
-    /** We need to re-extract if files are mucked with. */
-    final ImmutableSortedSet<File> extractedFiles;
+  static final class SV
+  extends CompilePlanGraphNode.CompileStateVector<Extracts, ResolvedExtract> {
     /** Hash of archives so we know whether we need to re-extract. */
     final ImmutableMap<File, Hash> archiveHash;
 
-    private static final long serialVersionUID = -7963994192492879020L;
+    private static final long serialVersionUID = 1L;
 
-    SV(ResolvedExtractsList resolvedExtractsList,
-       SortedSet<File> extractedFiles,
-       Map<File, Hash> archiveHash) {
-      this.resolvedExtractsList = resolvedExtractsList;
-      this.extractedFiles = ImmutableSortedSet.copyOfSorted(extractedFiles);
-      this.archiveHash = ImmutableMap.copyOf(archiveHash);
+    @SuppressWarnings("synthetic-access")
+    SV(ExtractFiles node) {
+      super(node);
+      this.archiveHash = ImmutableMap.copyOf(node.archiveHash);
     }
 
     @SuppressWarnings("synthetic-access")
     @Override
     public ExtractFiles reconstitute(PlanContext context, JoinNodes jn) {
-      ExtractFiles ef = new ExtractFiles(context, resolvedExtractsList);
+      ExtractFiles ef = apply(new ExtractFiles(context));
       ef.archiveHash.putAll(archiveHash);
-      ef.extractedFiles.addAll(extractedFiles);
       return ef;
     }
 
   }
 
   @Override
-  protected boolean hasChangedInputs() throws IOException {
-    return true;  // TODO: we could hash jars
-  }
-
-  static ImmutableSortedSet<FileExt> extensionsFor(
-      ResolvedExtractsList extracts) {
-    ImmutableSortedSet.Builder<FileExt> b = ImmutableSortedSet.naturalOrder();
-    for (ResolvedExtract e : extracts.extracts) {
-      for (String suffix : e.suffixes) {
-        Optional<FileExt> ext = FileExt.forFile(suffix);
-        if (ext.isPresent()) {
-          b.add(ext.get());
-        }
-      }
-    }
-    return b.build();
-  }
-
-  static ImmutableSortedSet<FileExt> extensionsFor(Extracts extracts) {
-    ImmutableSortedSet.Builder<FileExt> b = ImmutableSortedSet.naturalOrder();
-    for (Extract e : extracts.getExtracts()) {
-      for (String suffix : e.getSuffixes()) {
-        Optional<FileExt> ext = FileExt.forFile(suffix);
-        if (ext.isPresent()) {
-          b.add(ext.get());
-        }
-      }
-    }
-    return b.build();
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn) {
-    return Optional.of(jn.followersOf(extensionsFor(resolvedExtractsList)));
-  }
-
-  @Override
-  protected void markOutputs() {
-    for (File f : this.extractedFiles) {
-      context.buildContext.refresh(f);
-    }
-  }
-
-  @Override
   protected SV getStateVector() {
-    return new SV(resolvedExtractsList, extractedFiles, archiveHash);
+    return new SV(this);
   }
 }
 

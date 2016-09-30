@@ -7,15 +7,16 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.DirectoryScannerSpec;
+import com.google.closure.plugin.common.Identifiable;
 import com.google.closure.plugin.common.Options;
-import com.google.closure.plugin.plan.StructurallyComparable;
+import com.google.closure.plugin.common.StructurallyComparable;
 
 /**
  * An immutable representation of the same data as {@link ProtoOptions} that
  * includes default path information derived from the project configuration.
  */
 public final class ProtoFinalOptions
-implements Serializable, StructurallyComparable {
+implements Serializable, StructurallyComparable, Identifiable {
 
   private static final long serialVersionUID = -8936056156839617489L;
 
@@ -169,5 +170,10 @@ implements Serializable, StructurallyComparable {
       return false;
     }
     return true;
+  }
+
+  @Override
+  public String getId() {
+    return id;
   }
 }

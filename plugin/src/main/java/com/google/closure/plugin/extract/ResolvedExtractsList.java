@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.Serializable;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.closure.plugin.common.SourceFileProperty;
+import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
 
 /**
  * A list like {@link Extracts#getExtracts} but after all the extracts have been
@@ -17,7 +20,7 @@ public final class ResolvedExtractsList implements Serializable {
   private static final long serialVersionUID = -584345869897976296L;
 
   /** Like {@link Extract} but with all the optional parts filled in. */
-  public static final class ResolvedExtract implements Serializable {
+  public static final class ResolvedExtract implements Bundle {
     private static final long serialVersionUID = 3301199272591625007L;
 
     /** @see Extract#getGroupId() */
@@ -77,6 +80,11 @@ public final class ResolvedExtractsList implements Serializable {
     public String toString() {
       return "{" + groupId + ":" + artifactId + ":" + version
           + " => " + archive + "}";
+    }
+
+    @Override
+    public ImmutableCollection<Source> getInputs() {
+      return ImmutableList.of();  // Dependency JARs are outside the project.
     }
   }
 

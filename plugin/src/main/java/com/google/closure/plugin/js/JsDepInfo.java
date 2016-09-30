@@ -3,18 +3,20 @@ package com.google.closure.plugin.js;
 import java.io.Serializable;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.closure.plugin.common.StructurallyComparable;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.js.Identifier.GoogNamespace;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
 import com.google.closure.plugin.plan.Metadata;
-import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.javascript.jscomp.CompilerInput;
 
 /**
  * Maps source file canonical paths to dependency info.
  */
-public final class JsDepInfo implements Serializable {
+public final class JsDepInfo implements Bundle {
 
   private static final long serialVersionUID = 1926393541882375428L;
 
@@ -25,6 +27,42 @@ public final class JsDepInfo implements Serializable {
 
   JsDepInfo(Map<? extends Source, ? extends Metadata<DepInfo>> depinfo) {
     this.depinfo = ImmutableMap.copyOf(depinfo);
+  }
+
+
+  @Override
+  public ImmutableCollection<Source> getInputs() {
+    return depinfo.keySet();
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((depinfo == null) ? 0 : depinfo.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    JsDepInfo other = (JsDepInfo) obj;
+    if (depinfo == null) {
+      if (other.depinfo != null) {
+        return false;
+      }
+    } else if (!depinfo.equals(other.depinfo)) {
+      return false;
+    }
+    return true;
   }
 
   /**

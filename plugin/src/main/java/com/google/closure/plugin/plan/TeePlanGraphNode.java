@@ -1,11 +1,12 @@
 package com.google.closure.plugin.plan;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 
 /**
  * A plan graph node that does no works but which may have multiple followers.
@@ -31,34 +32,13 @@ public class TeePlanGraphNode extends PlanGraphNode<TeePlanGraphNode.SV> {
 
   static final class SV implements PlanGraphNode.StateVector {
 
-    private static final long serialVersionUID = -2180358632428004843L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public
     PlanGraphNode<?> reconstitute(PlanContext planContext, JoinNodes jn) {
       return new TeePlanGraphNode(planContext);
     }
-  }
-
-  @Override
-  protected boolean hasChangedInputs() throws IOException {
-    return false;
-  }
-
-  @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    // Done
-  }
-
-  @Override
-  protected
-  Optional<Iterable<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn) {
-    return Optional.absent();
-  }
-
-  @Override
-  protected void markOutputs() {
-    // Done
   }
 
   @Override
@@ -69,5 +49,25 @@ public class TeePlanGraphNode extends PlanGraphNode<TeePlanGraphNode.SV> {
   @Override
   public String toString() {
     return "{" + getClass().getSimpleName() + " " + getFollowerList() + "}";
+  }
+
+  @Override
+  protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+    // Nop
+  }
+
+  @Override
+  protected void filterUpdates() throws IOException, MojoExecutionException {
+    // Nop
+  }
+
+  @Override
+  protected void process() throws IOException, MojoExecutionException {
+    // Nop
+  }
+
+  @Override
+  protected Iterable<? extends File> changedOutputFiles() {
+    return ImmutableList.of();
   }
 }

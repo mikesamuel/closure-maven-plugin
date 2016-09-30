@@ -8,13 +8,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions.SourceRootBuilder;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
 
 /**
  * Builds a plan that scans for CSS source files, and invokes the
@@ -83,20 +81,25 @@ public final class CssPlanner {
   }
 
   /** Builds an entry point to the CSS build chain. */
-  public PlanGraphNode<?> plan(Iterable<? extends CssOptions> unprepared)
+  public void plan(Iterable<? extends CssOptions> unprepared)
   throws MojoExecutionException {
     ImmutableList<CssOptions> optionSets = optionSets(unprepared);
 
     ListOptions listOptionsNode = new ListOptions(context);
     listOptionsNode.setOptionSets(optionSets);
 
+    FindEntryPoints findEntryPoints = new FindEntryPoints(context);
+
+    CompileOneBundle compileBundles = new CompileOneBundle(context);
+
     // This pipeline takes in CSS files and produces CSS outputs along with a
     // JSON and rename map.
-    joinNodes.pipeline(
-        ImmutableSortedSet.of(FileExt.CSS),
-        listOptionsNode,
-        CompileOneBundle.FOLLOWER_EXTS);
-
-    return listOptionsNode;
+    joinNodes.pipeline()
+        .require(FileExt.CSS)
+        .then(listOptionsNode)
+        .then(findEntryPoints)
+        .then(compileBundles)
+        .provide(FileExt.JSON)
+        .build();
   }
 }

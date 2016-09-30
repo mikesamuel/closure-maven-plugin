@@ -30,8 +30,8 @@ import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.OptionsUtils;
 import com.google.closure.plugin.common.SourceOptions;
 import com.google.closure.plugin.common.Sources;
+import com.google.closure.plugin.common.StructurallyComparable;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.io.Files;
 
 /**

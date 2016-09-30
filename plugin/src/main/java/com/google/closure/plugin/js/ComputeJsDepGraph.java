@@ -34,33 +34,30 @@ import com.google.closure.plugin.js.Identifier.ModuleName;
 import com.google.closure.plugin.js.JsDepInfo.DepInfo;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.common.SourceFileProperty;
-import com.google.closure.plugin.plan.Hash;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.Metadata;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.closure.plugin.plan.RebundlingPlanGraphNode;
 import com.google.javascript.jscomp.Compiler;
 
-final class ComputeJsDepGraph extends PlanGraphNode<ComputeJsDepGraph.SV> {
-  final JsOptions options;
-  final JsDepInfo depInfo;
-  private Optional<Modules> modules = Optional.absent();
 
-  public ComputeJsDepGraph(
-      PlanContext context,
-      JsOptions options,
-      JsDepInfo depInfo) {
+final class ComputeJsDepGraph
+extends RebundlingPlanGraphNode<JsOptions, JsDepInfo, Modules> {
+
+  public ComputeJsDepGraph(PlanContext context) {
     super(context);
-    this.options = options;
-    this.depInfo = depInfo;
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    ImmutableSet<Source> sources = depInfo.depinfo.keySet();
-
-    this.modules = Optional.of(computeDepGraph(
-        context.log, options, sources, depInfo));
+  protected ImmutableList<Modules> bundlesFor(
+      Optional<ImmutableList<Modules>> oldBundles,
+      OptionsAndBundles<JsOptions, JsDepInfo> ob)
+  throws IOException, MojoExecutionException {
+    return ImmutableList.of(
+        computeDepGraph(
+            context.log, ob.optionsAndInputs.options,
+            ob.optionsAndInputs.sources, ob.bundles.get(0)));
   }
 
   static Modules computeDepGraph(
@@ -444,60 +441,22 @@ final class ComputeJsDepGraph extends PlanGraphNode<ComputeJsDepGraph.SV> {
     }
   }
 
-  static final class SV implements PlanGraphNode.StateVector {
-    private static final long serialVersionUID = 1L;
-
-    final JsOptions options;
-    final JsDepInfo depInfo;
-    final Modules modules;
-
-    SV(JsOptions options, JsDepInfo depInfo, Modules modules) {
-      this.options = options;
-      this.depInfo = depInfo;
-      this.modules = modules;
-    }
-
-    @SuppressWarnings("synthetic-access")
-    @Override
-    public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes joinNodes) {
-      ComputeJsDepGraph n = new ComputeJsDepGraph(c, options, depInfo);
-      n.modules = Optional.of(modules);
-      return n;
-    }
-  }
-
-  @Override
-  protected Optional<ImmutableList<CompileJs>> rebuildFollowersList(
-      JoinNodes joinNodes)
-  throws MojoExecutionException {
-    ImmutableList<PlanGraphNode<?>> oldFollowers = this.getFollowerList();
-    if (oldFollowers.size() == 1) {
-      PlanGraphNode<?> f0 = oldFollowers.get(0);
-      if (f0 instanceof CompileJs) {
-        CompileJs oldCompileJs = (CompileJs) f0;
-        if (Hash.same(options, oldCompileJs.options)
-            && Hash.same(modules.get(), oldCompileJs.bundle)) {
-          return Optional.absent();
-        }
-      }
-    }
-
-    return Optional.of(ImmutableList.of(
-        new CompileJs(context, options, modules.get())));
-  }
-
-  @Override
-  protected void markOutputs() {
-    // Done
-  }
-
   @Override
   protected SV getStateVector() {
-    return new SV(options, depInfo, modules.get());
+    return new SV(this);
   }
 
-  @Override
-  protected boolean hasChangedInputs() throws IOException {
-    return !modules.isPresent();
+  static final class SV
+  extends RebundleStateVector<JsOptions, JsDepInfo, Modules> {
+    private static final long serialVersionUID = 1L;
+
+    SV(ComputeJsDepGraph node) {
+      super(node);
+    }
+
+    @Override
+    public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes joinNodes) {
+      return apply(new ComputeJsDepGraph(c));
+    }
   }
 }

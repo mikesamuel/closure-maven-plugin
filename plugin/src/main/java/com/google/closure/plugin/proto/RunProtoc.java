@@ -13,41 +13,54 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.common.TypedFile;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
 import com.google.closure.plugin.plan.CompilePlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.closure.plugin.plan.Update;
 
 final class RunProtoc
 extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
 
-  RunProtoc(
-      PlanContext context,
-      ProtoFinalOptions options,
-      ProtoBundle bundle) {
-    super(context, options, bundle);
+  RunProtoc(PlanContext context) {
+    super(context);
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
+  protected void process() throws IOException, MojoExecutionException {
+    outputFiles.clear();
+
+    Update<OptionsAndBundles<ProtoFinalOptions, ProtoBundle>> u =
+        this.optionsAndBundles.get();
+
+    for (@SuppressWarnings("unused")
+         OptionsAndBundles<ProtoFinalOptions, ProtoBundle> d : u.defunct) {
+      // TODO: delete defunct outputs
+    }
+
+    for (OptionsAndBundles<ProtoFinalOptions, ProtoBundle> c : u.changed) {
+      for (ProtoBundle b : c.bundles) {
+        processOne(c.optionsAndInputs.options, b);
+      }
+    }
+  }
+
+  protected void processOne(ProtoFinalOptions options, ProtoBundle bundle)
+  throws IOException, MojoExecutionException {
     ImmutableList<Source> sources = bundle.inputs;
 
     if (Iterables.isEmpty(sources)) {
       // We're done.
       // TODO: Is it a problem that we will not generate
       // an empty descriptor set file?
-      this.outputs = Optional.of(ImmutableList.<File>of());
       return;
     }
 
@@ -64,15 +77,13 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     ProtoPathBuilder protoPathBuilder = new ProtoPathBuilder(argv);
     argv.add(protoc.getPath());
 
-    ImmutableList.Builder<File> allOutputs = ImmutableList.builder();
-
     if (bundle.langSet == LangSet.ALL && bundle.descriptorSetFile.isPresent()) {
       File descriptorSetFile = bundle.descriptorSetFile.get();
       argv.add("--include_imports");
       argv.add("--descriptor_set_out")
           .add(descriptorSetFile.getPath());
       Files.createParentDirs(descriptorSetFile);
-      allOutputs.add(descriptorSetFile);
+      outputFiles.add(descriptorSetFile);
     }
 
     File javaGenfilesPath = bundle.rootSet == RootSet.TEST
@@ -86,7 +97,7 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     // exist, though it will happily create directories for the packages.
     if (bundle.langSet.emitJava) {
       argv.add("--java_out").add(ensureDirExists(javaGenfilesPath));
-      allOutputs.add(javaGenfilesPath);  // TODO: narrow
+      outputFiles.add(javaGenfilesPath);  // TODO: narrow
     }
     if (bundle.langSet.emitJs) {
       String jsOutFlagPrefix = "";
@@ -100,7 +111,7 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
           break;
       }
       argv.add(jsOutFlagPrefix + ensureDirExists(jsGenfilesPath));
-      allOutputs.add(jsGenfilesPath);  // TODO: narrow
+      outputFiles.add(jsGenfilesPath);  // TODO: narrow
     }
 
     // Build a proto search path.
@@ -165,8 +176,6 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     } catch (CancellationException ex) {
       throw new MojoExecutionException("protoc execution was cancelled", ex);
     }
-
-    this.outputs = Optional.of(allOutputs.build());
   }
 
   private static String ensureDirExists(File dirPath) throws IOException {
@@ -228,19 +237,9 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     }
   }
 
-  static final ImmutableSortedSet<FileExt> FOLLOWER_EXTS =
-      ImmutableSortedSet.of(FileExt.JAVA, FileExt.JS, FileExt.PD);
-
-  @Override
-  protected
-  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
-  throws MojoExecutionException {
-    return Optional.of(jn.followersOf(FOLLOWER_EXTS));
-  }
-
   @Override
   protected SV getStateVector() {
-    return new SV(options, bundle, outputs);
+    return new SV(this);
   }
 
   static final class SV
@@ -248,19 +247,13 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
 
     private static final long serialVersionUID = 6399733844048652746L;
 
-    protected SV(
-        ProtoFinalOptions options, ProtoBundle bundle,
-        Optional<ImmutableList<File>> outputs) {
-      super(options, bundle, outputs);
+    protected SV(RunProtoc node) {
+      super(node);
     }
 
-    @SuppressWarnings("synthetic-access")
     @Override
-    public RunProtoc reconstitute(PlanContext planContext, JoinNodes jn) {
-      RunProtoc runProtoc = new RunProtoc(planContext, options, bundle);
-      runProtoc.outputs = this.outputs;
-      return runProtoc;
+    public RunProtoc reconstitute(PlanContext c, JoinNodes jn) {
+      return apply(new RunProtoc(c));
     }
-
   }
 }

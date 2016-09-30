@@ -3,81 +3,101 @@ package com.google.closure.plugin.plan;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
-import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.StructurallyComparable;
+import com.google.closure.plugin.common.Identifiable;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
- * A plan node that compiles one bundle.
+ * A plan node that receives bundles from a {@link BundlingPlanGraphNode} and
+ * compiles them to produce outputs.
+ * <p>
+ * The choice of whether to compile one at a time or all at once is left up to
+ * the subclass.
  */
 public abstract class CompilePlanGraphNode<
-    O extends Serializable & StructurallyComparable,
+    O extends Serializable & StructurallyComparable & Identifiable,
     B extends BundlingPlanGraphNode.Bundle>
 extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
 
   /** Options for compiler. */
-  public final O options;
+  public Optional<Update<OptionsAndBundles<O, B>>> optionsAndBundles;
   /** The bundle to compile. */
-  public final B bundle;
+  public final List<File> outputFiles = Lists.newArrayList();
 
-  protected Optional<ImmutableList<File>> outputs = Optional.absent();
-
-  protected CompilePlanGraphNode(PlanContext context, O options, B bundle) {
+  protected CompilePlanGraphNode(PlanContext context) {
     super(context);
-    this.options = options;
-    this.bundle = bundle;
   }
 
-
+  /** Called with preceders to allow. */
   @Override
-  protected boolean hasChangedInputs() throws IOException {
-    if (!context.buildContext.isIncremental()) {
-      return true;
-    }
-    if (!outputs.isPresent()) {
-      return false;
-    }
-    for (File f : outputs.get()) {
-      if (!f.exists() || context.buildContext.hasDelta(f)) {
-        return true;
+  protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+    this.optionsAndBundles = Optional.absent();
+    for (PlanGraphNode<?> p : preceders) {
+      if (p instanceof BundlingPlanGraphNode<?, ?>) {
+        @SuppressWarnings("unchecked")  // TODO: unsound
+        BundlingPlanGraphNode<O, B> bundler = (BundlingPlanGraphNode<O, B>) p;
+        Preconditions.checkState(!optionsAndBundles.isPresent());
+        this.optionsAndBundles = bundler.getOptionsAndBundles();
       }
     }
-    for (Source s : bundle.getInputs()) {
-      if (context.buildContext.hasDelta(s.canonicalPath)) {
-        return true;
-      }
-    }
-    return false;
+    Preconditions.checkState(optionsAndBundles.isPresent());
   }
 
+  /**
+   * By default, nothing to do since the bundler has done the work of
+   * triaging bundles.
+   */
   @Override
-  protected void markOutputs() {
-    for (File f : outputs.get()) {
-      context.buildContext.refresh(f);
+  protected void filterUpdates() throws IOException {
+    // Done
+  }
+
+  /**
+   * After processing, the list of files that were changed.
+   */
+  @Override
+  protected Iterable<? extends File> changedOutputFiles() {
+    return ImmutableList.copyOf(outputFiles);
+  }
+
+  /** Deletes the file and notifies the build context of that. */
+  protected void deleteIfExists(File f) throws IOException {
+    if (f != null && f.exists()) {
+      if (!f.delete()) {
+        throw new IOException("Failed to delete " + f);
+      }
+      this.outputFiles.add(f);
     }
   }
+
 
   /** State vector for a compiler. */
   public static abstract class CompileStateVector<
-      O extends Serializable,
+      O extends Serializable & StructurallyComparable & Identifiable,
       B extends BundlingPlanGraphNode.Bundle>
   implements PlanGraphNode.StateVector {
     private static final long serialVersionUID = 1;
-    /** Options for the compiler. */
-    public final O options;
-    /** The bundle to compile. */
-    public final B bundle;
-    /** Compiler outputs. */
-    public final Optional<ImmutableList<File>> outputs;
 
-    protected CompileStateVector(
-        O options,
-        B bundle,
-        Optional<ImmutableList<File>> outputs) {
-      this.options = options;
-      this.bundle = bundle;
-      this.outputs = outputs;
+    final Optional<Update<OptionsAndBundles<O, B>>> optionsAndBundles;
+    final ImmutableList<File> outputFiles;
+
+    protected CompileStateVector(CompilePlanGraphNode<O, B> node) {
+      this.optionsAndBundles = node.optionsAndBundles;
+      this.outputFiles = ImmutableList.copyOf(node.outputFiles);
+    }
+
+    protected <N extends CompilePlanGraphNode<O, B>>
+    N apply(N node) {
+      node.outputFiles.clear();
+      node.outputFiles.addAll(outputFiles);
+      node.optionsAndBundles = optionsAndBundles;
+      return node;
     }
   }
 }

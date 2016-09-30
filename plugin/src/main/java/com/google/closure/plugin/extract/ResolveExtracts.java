@@ -9,7 +9,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -19,21 +18,25 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.extract.ResolvedExtractsList.ResolvedExtract;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
+import com.google.closure.plugin.plan.OptionPlanGraphNode.OptionsAndInputs;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
 
-final class ResolveExtracts extends PlanGraphNode<ResolveExtracts.SV> {
-  final Extracts options;
-  private Optional<ResolvedExtractsList> resolvedExtracts = Optional.absent();
+final class ResolveExtracts
+extends BundlingPlanGraphNode<Extracts, ResolvedExtract> {
 
-  ResolveExtracts(PlanContext context, Extracts options) {
+  ResolveExtracts(PlanContext context) {
     super(context);
-    this.options = options;
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
+  protected ImmutableList<ResolvedExtract> bundlesFor(
+      Optional<ImmutableList<ResolvedExtract>> oldBundles,
+      OptionsAndInputs<Extracts> oi)
+  throws IOException, MojoExecutionException {
+    Extracts options = oi.options;
+
     ImmutableList.Builder<ResolvedExtract> resolvedBuilder =
         ImmutableList.builder();
 
@@ -59,7 +62,7 @@ final class ResolveExtracts extends PlanGraphNode<ResolveExtracts.SV> {
       allDependencies = new ResolvedExtractsList(deps.build());
     }
 
-    ImmutableList<Extract> extracts = this.options.getExtracts();
+    ImmutableList<Extract> extracts = options.getExtracts();
     if (!extracts.isEmpty()) {
       Multimap<String, ResolvedExtract> depDisambiguation =
           Multimaps.newSetMultimap(
@@ -124,57 +127,26 @@ final class ResolveExtracts extends PlanGraphNode<ResolveExtracts.SV> {
       }
     }
 
-    ImmutableList<ResolvedExtract> resolved = resolvedBuilder.build();
-    this.resolvedExtracts = Optional.of(new ResolvedExtractsList(resolved));
-  }
-
-  static final class SV implements PlanGraphNode.StateVector {
-
-    private static final long serialVersionUID = -1303239773246232100L;
-
-    final Extracts options;
-
-    SV(Extracts options) {
-      this.options = options;
-    }
-
-    @Override
-    public ResolveExtracts reconstitute(PlanContext context, JoinNodes jn) {
-      return new ResolveExtracts(context, options);
-    }
-  }
-
-
-  @Override
-  protected boolean hasChangedInputs() throws IOException {
-    return true;
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<ExtractFiles>> rebuildFollowersList(JoinNodes jn) {
-    Preconditions.checkState(this.resolvedExtracts.isPresent());
-    ImmutableList<PlanGraphNode<?>> node = this.getFollowerList();
-    if (node.size() == 1) {
-      ExtractFiles ef = (ExtractFiles) node.get(0);
-      if (ef.resolvedExtractsList.equals(this.resolvedExtracts.get())) {
-        return Optional.absent();
-      }
-    }
-    return Optional.of(
-        ImmutableList.of(
-            new ExtractFiles(
-                context, this.resolvedExtracts.get())
-            ));
-  }
-
-  @Override
-  protected void markOutputs() {
-    // Done.
+    return resolvedBuilder.build();
   }
 
   @Override
   protected SV getStateVector() {
-    return new SV(options);
+    return new SV(this);
+  }
+
+  static final class SV
+  extends BundlingPlanGraphNode.BundleStateVector<Extracts, ResolvedExtract> {
+
+    private static final long serialVersionUID = -1303239773246232100L;
+
+    SV(ResolveExtracts node) {
+      super(node);
+    }
+
+    @Override
+    public ResolveExtracts reconstitute(PlanContext context, JoinNodes jn) {
+      return apply(new ResolveExtracts(context));
+    }
   }
 }

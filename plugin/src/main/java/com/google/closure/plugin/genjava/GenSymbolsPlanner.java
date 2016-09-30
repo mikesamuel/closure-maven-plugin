@@ -7,7 +7,6 @@ import com.google.closure.plugin.common.FileExt;
 import com.google.closure.plugin.common.TypedFile;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
-import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -34,7 +33,7 @@ public final class GenSymbolsPlanner {
   }
 
   /** Adds steps to the common planner. */
-  public PlanGraphNode<?> plan() {
+  public void plan() {
     DirectoryScannerSpec outputFilesSpec = new DirectoryScannerSpec(
         ImmutableList.of(new TypedFile(context.closureOutputDirectory)),
         ImmutableList.of("**"),
@@ -44,8 +43,11 @@ public final class GenSymbolsPlanner {
 
     GenJavaSymbols gjs = new GenJavaSymbols(
         context, outputFilesSpec, webFilesJava, genJavaPackageName);
-    joinNodes.follows(gjs, FileExt._ANY);
-    return gjs;
+
+    joinNodes.pipeline()
+        .require(FileExt._ANY)
+        .then(gjs)
+        .build();
   }
 
   private File javaSourcePath(String basename) {

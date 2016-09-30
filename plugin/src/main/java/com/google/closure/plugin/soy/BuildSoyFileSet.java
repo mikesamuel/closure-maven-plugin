@@ -5,87 +5,86 @@ import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.closure.plugin.common.DirectoryScannerSpec;
 import com.google.closure.plugin.common.Sources.Source;
-import com.google.closure.plugin.common.Sources;
-import com.google.closure.plugin.plan.CompilePlanGraphNode;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
-import com.google.closure.plugin.plan.OptionPlanGraphNode;
+import com.google.closure.plugin.plan.OptionPlanGraphNode.OptionsAndInputs;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
-import com.google.closure.plugin.plan.TeePlanGraphNode;
+import com.google.closure.plugin.plan.Update;
 
-final class BuildSoyFileSet extends OptionPlanGraphNode<SoyOptions> {
+
+final class BuildSoyFileSet
+extends BundlingPlanGraphNode<SoyOptions, SoyBundle> {
   BuildSoyFileSet(PlanContext context) {
     super(context);
   }
 
   @Override
-  protected PlanGraphNode<?> fanOutTo(SoyOptions options)
-  throws MojoExecutionException {
-    DirectoryScannerSpec spec = options.toDirectoryScannerSpec(context);
+  protected void preExecute(Iterable<? extends PlanGraphNode<?>> preceders) {
+    super.preExecute(preceders);
+  }
 
-    Sources soySources;
+  @Override
+  protected ImmutableList<SoyBundle> bundlesFor(
+      Optional<ImmutableList<SoyBundle>> oldBundles,
+      OptionsAndInputs<SoyOptions> oi)
+  throws IOException, MojoExecutionException {
 
-    try {
-      soySources = Sources.scan(context.log, spec);
-    } catch (IOException ex) {
-      throw new MojoExecutionException("Failed to find .soy sources", ex);
-    }
-    context.log.debug("Found " + soySources.sources.size() + " soy sources");
-
-    final ImmutableList<Source> sources = soySources.sources;
+    final ImmutableList<Source> sources = oi.sources;
+    final SoyOptions options = oi.options;
     if (sources.isEmpty()) {
-      return new TeePlanGraphNode(context);
+      return ImmutableList.of();
     }
 
-    SoyFileSetSupplier sfsSupplier = new SoyFileSetSupplier();
+    SoyFileSetSupplier sfsSupplier = new SoyFileSetSupplier(oi);
+    sfsSupplier.init(context);
+
 
     File outputJar = new File(
         context.outputDir, "closure-templates-" + options.getId() + ".jar");
     File jsOutDir = context.genfilesDirs.jsGenfiles;
 
-    SoyBundle soyBundle = new SoyBundle(sources, sfsSupplier);
-
-    return new TeePlanGraphNode(
-        context,
-        new SoyToJs(context, options, soyBundle, jsOutDir),
-        new SoyToJava(context, options, soyBundle, outputJar));
-  }
-
-
-
-  @Override
-  protected SoyOptions getOptionsForFollower(PlanGraphNode<?> follower) {
-    TeePlanGraphNode tee = (TeePlanGraphNode) follower;
-    for (PlanGraphNode<?> grandchild : tee.getFollowerList()) {
-      if (grandchild instanceof CompilePlanGraphNode<?, ?>) {
-        return (SoyOptions) ((CompilePlanGraphNode<?, ?>) grandchild).options;
-      }
-    }
-    return new SoyOptions();  // HACK
+    return ImmutableList.of(
+        new SoyBundle(
+            sources, sfsSupplier, outputJar, jsOutDir));
   }
 
   @Override
   protected SV getStateVector() {
-    return new SV(ImmutableList.copyOf(this.getOptionSets()));
+    return new SV(this);
   }
 
   static final class SV
-  extends OptionPlanGraphNode.OptionStateVector<SoyOptions> {
+  extends BundlingPlanGraphNode.BundleStateVector<SoyOptions, SoyBundle> {
 
-    private static final long serialVersionUID = 2873057577418329113L;
+    private static final long serialVersionUID = 1L;
 
-    protected SV(ImmutableList<SoyOptions> optionSets) {
-      super(optionSets);
+    protected SV(BuildSoyFileSet node) {
+      super(node);
     }
 
+    @SuppressWarnings("synthetic-access")
     @Override
     public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes jn) {
-      BuildSoyFileSet n = new BuildSoyFileSet(c);
-      n.setOptionSets(this.optionSets);
-      return n;
+      BuildSoyFileSet node = apply(new BuildSoyFileSet(c));
+      initSfss(node.optionsAndBundles, c);
+      return node;
+    }
+  }
+
+  static void initSfss(
+      Optional<Update<OptionsAndBundles<SoyOptions, SoyBundle>>> opt,
+      PlanContext c) {
+    if (opt.isPresent()) {
+      Update<OptionsAndBundles<SoyOptions, SoyBundle>> u = opt.get();
+      for (OptionsAndBundles<SoyOptions, SoyBundle> ob : u.all()) {
+        for (SoyBundle b : ob.bundles) {
+          b.sfsSupplier.init(c);
+        }
+      }
     }
 
   }

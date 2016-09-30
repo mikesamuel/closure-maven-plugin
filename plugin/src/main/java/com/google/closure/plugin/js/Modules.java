@@ -8,9 +8,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.closure.plugin.common.StructurallyComparable;
 import com.google.closure.plugin.common.Sources.Source;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode.Bundle;
-import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.javascript.jscomp.CommandLineRunner;
 
 /**

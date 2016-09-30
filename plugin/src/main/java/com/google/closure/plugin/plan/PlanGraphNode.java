@@ -1,12 +1,12 @@
 package com.google.closure.plugin.plan;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -14,12 +14,15 @@ import com.google.common.collect.Lists;
 /**
  * A plan graph node is a node in the builder graph.
  * <p>
- * The lifecycle of a plan graph node is
+ * The lifecycle of a node is
  * <ol>
- *   <li>Check inputs to see whether anything has changed.
- *   <li>Process input files.
- *   <li>Update the follower list.
- *   <li>Mark outputs that have changed.
+ *   <li>construct or reconstitute from state vector
+ *   <li>link to followers
+ *   <li>receive inputs from preceders and/or check the build context for
+ *       file-system updates
+ *   <li>process inputs that need processing
+ *   <li>advertise which output files changed so that the plan graph can
+ *       tell the build context which files changed.
  * </ol>
  *
  * <p>
@@ -40,20 +43,28 @@ public abstract class PlanGraphNode<V extends PlanGraphNode.StateVector> {
   }
 
   /**
-   * True if an input might have changed.
+   * Called with preceders to allow fetching intermediate inputs from earlier
+   * stages.
    */
-  protected abstract boolean hasChangedInputs() throws IOException;
+  protected abstract void preExecute(
+      Iterable<? extends PlanGraphNode<?>> preceders);
 
-  protected abstract void processInputs()
+  /**
+   * Filter inputs into those that need recompile and those that do not.
+   */
+  protected abstract void filterUpdates()
   throws IOException, MojoExecutionException;
 
   /**
-   * Make sure that the follower list is up-to-date.
+   * Process inputs to produce outputs.
    */
-  protected abstract
-  Optional<? extends Iterable<? extends PlanGraphNode<?>>>
-      rebuildFollowersList(JoinNodes joinNodes)
-  throws MojoExecutionException;
+  protected abstract void process()
+  throws IOException, MojoExecutionException;
+
+  /**
+   * After processing, the list of files that were changed.
+   */
+  protected abstract Iterable<? extends File> changedOutputFiles();
 
   /**
    * Bring the followers list up-to-date with any changes found in input files.
@@ -75,11 +86,6 @@ public abstract class PlanGraphNode<V extends PlanGraphNode.StateVector> {
   protected void addFollower(PlanGraphNode<?> n) {
     this.followers.add(Preconditions.checkNotNull(n));
   }
-
-  /**
-   * Alert the build context of any outputs that have changed.
-   */
-  protected abstract void markOutputs();
 
   protected abstract V getStateVector();
 

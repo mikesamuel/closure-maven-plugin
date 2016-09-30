@@ -85,4 +85,10 @@ implements BundlingPlanGraphNode.Bundle {
     }
     return true;
   }
+
+  @Override
+  public String toString() {
+    return "{CssBundle " + this.optionsId
+        + " entryPoint=" + this.entryPoint.relativePath + "}";
+  }
 }

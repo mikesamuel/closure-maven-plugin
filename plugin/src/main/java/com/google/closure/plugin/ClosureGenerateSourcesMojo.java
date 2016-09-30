@@ -83,33 +83,28 @@ public final class ClosureGenerateSourcesMojo extends AbstractClosureMojo {
     PlanContext context = planGraph.getContext();
     JoinNodes joinNodes = planGraph.getJoinNodes();
 
-    planGraph.addRoot(
-        new ExtractPlanner(context, joinNodes)
-            .plan(extracts != null ? extracts : new Extracts()));
+    new ExtractPlanner(context, joinNodes)
+        .plan(extracts != null ? extracts : new Extracts());
 
-    planGraph.addRoot(
-        new CssPlanner(context, joinNodes)
-            .defaultCssSource(defaultCssSource)
-            .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
-            .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
-            .plan(css.build()));
+    new CssPlanner(context, joinNodes)
+        .defaultCssSource(defaultCssSource)
+        .defaultCssOutputPathTemplate(defaultCssOutputPathTemplate)
+        .defaultCssSourceMapPathTemplate(defaultCssSourceMapPathTemplate)
+        .plan(css.build());
 
     ProtoPlanner protoPlanner = makeProtoPlanner(context, joinNodes);
-    planGraph.addRoot(protoPlanner.plan(protoPlanner.prepare(proto)));
+    protoPlanner.plan(protoPlanner.prepare(proto));
 
     SoyOptions soyOptions = soy != null ? soy : new SoyOptions();
-    planGraph.addRoot(
-        new SoyPlanner(context, joinNodes)
-            .plan(soyOptions));
+    new SoyPlanner(context, joinNodes)
+        .plan(soyOptions);
 
-    planGraph.addRoot(
-        new JsPlanner(context, joinNodes)
-            .plan(js.build()));
+    new JsPlanner(context, joinNodes)
+        .plan(js.build());
 
-    planGraph.addRoot(
-        new GenSymbolsPlanner(context, joinNodes)
-            .genJavaPackageName(genJavaPackageName)
-            .plan());
+    new GenSymbolsPlanner(context, joinNodes)
+        .genJavaPackageName(genJavaPackageName)
+        .plan();
 
     // TODO: figure out how to thread externs through.
   }

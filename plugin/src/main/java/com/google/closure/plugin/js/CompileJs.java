@@ -17,21 +17,36 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
 import com.google.closure.plugin.plan.CompilePlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
+import com.google.closure.plugin.plan.Update;
 import com.google.javascript.jscomp.CommandLineRunner;
 
 final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
 
-  public CompileJs(PlanContext context, JsOptions options, Modules modules) {
-    super(context, options, modules);
+  public CompileJs(PlanContext context) {
+    super(context);
   }
 
   @Override
-  protected void processInputs() throws IOException, MojoExecutionException {
-    Modules modules = bundle;
+  protected void process() throws IOException, MojoExecutionException {
+    this.outputFiles.clear();
+    Update<OptionsAndBundles<JsOptions, Modules>> u =
+        this.optionsAndBundles.get();
+    for (@SuppressWarnings("unused")
+         OptionsAndBundles<JsOptions, Modules> ob : u.defunct) {
+      // TODO: figure out path name of output files and delete them.
+    }
+    for (OptionsAndBundles<JsOptions, Modules> ob : u.changed) {
+      processOne(ob.optionsAndInputs.options, ob.bundles.get(0));
+    }
+  }
+
+  protected void processOne(JsOptions options, Modules modules)
+  throws IOException, MojoExecutionException {
     final Log log = context.log;
     File jsOutputDir = new File(context.closureOutputDirectory, "js");
     java.nio.file.Files.createDirectories(jsOutputDir.toPath());
@@ -122,19 +137,12 @@ final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
     }
 
     // TODO: use json_streams both and get the list of output files.
-    this.outputs = Optional.of(ImmutableList.of(jsOutputDir));
-  }
-
-  @Override
-  protected
-  Optional<ImmutableList<PlanGraphNode<?>>> rebuildFollowersList(JoinNodes jn)
-  throws MojoExecutionException {
-    return Optional.absent();
+    this.outputFiles.add(jsOutputDir);
   }
 
   @Override
   protected SV getStateVector() {
-    return new SV(options, bundle, outputs);
+    return new SV(this);
   }
 
 
@@ -143,20 +151,14 @@ final class CompileJs extends CompilePlanGraphNode<JsOptions, Modules> {
 
     private static final long serialVersionUID = 1L;
 
-    protected SV(
-        JsOptions options, Modules bundle,
-        Optional<ImmutableList<File>> outputs) {
-      super(options, bundle, outputs);
+    protected SV(CompileJs node) {
+      super(node);
     }
 
-    @SuppressWarnings("synthetic-access")
     @Override
     public PlanGraphNode<?> reconstitute(PlanContext c, JoinNodes jn) {
-      CompileJs cjs = new CompileJs(c, options, bundle);
-      cjs.outputs = outputs;
-      return cjs;
+      return apply(new CompileJs(c));
     }
-
   }
 
 

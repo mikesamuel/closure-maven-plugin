@@ -184,19 +184,6 @@ class CssDepGraph {
             return ImmutableList.copyOf(ls);
           }
         }));
-    if (log.isDebugEnabled()) {
-      StringBuilder sb = new StringBuilder();
-      sb.append("CSS dependencies\n");
-      for (Table.Cell<Source, DepType, ImmutableList<Dep>> c : deps.cellSet()) {
-        sb.append(c.getRowKey().relativePath)
-            .append('\t')
-            .append(c.getColumnKey())
-            .append('\t')
-            .append(c.getValue())
-            .append('\n');
-      }
-      log.debug(sb);
-    }
 
     try {
       this.topoSort = new TopoSort<>(

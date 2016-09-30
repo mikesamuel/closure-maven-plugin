@@ -11,7 +11,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.DirectoryScanner;
 
-import com.google.closure.plugin.plan.StructurallyComparable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
