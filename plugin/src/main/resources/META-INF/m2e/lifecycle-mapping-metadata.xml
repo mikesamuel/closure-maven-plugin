@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ - Eclipse/m2e integration per
+ - http://www.eclipse.org/m2e/documentation/m2e-making-maven-plugins-compat.html
+ -
+ - See https://github.com/antlr/antlr4/blob/master/antlr4-maven-plugin/
+ -     resources/META-INF/m2e/lifecycle-mapping-metadata.xml
+ -->
+<lifecycleMappingMetadata>
+  <pluginExecutions>
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <goals>
+          <goal>generate-closure-sources</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <execute>
+          <runOnIncremental>true</runOnIncremental>
+          <runOnConfiguration>true</runOnConfiguration>
+        </execute>
+      </action>
+    </pluginExecution>
+  </pluginExecutions>
+</lifecycleMappingMetadata>
