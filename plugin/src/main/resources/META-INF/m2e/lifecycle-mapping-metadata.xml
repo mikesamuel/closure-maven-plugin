@@ -10,6 +10,8 @@
   <pluginExecutions>
     <pluginExecution>
       <pluginExecutionFilter>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
         <goals>
           <goal>generate-closure-sources</goal>
         </goals>
