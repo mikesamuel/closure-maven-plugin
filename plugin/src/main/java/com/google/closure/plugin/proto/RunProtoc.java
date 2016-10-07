@@ -9,16 +9,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.closure.plugin.common.Sources.Source;
+import com.google.closure.plugin.common.ProcessRunner;
 import com.google.closure.plugin.common.SourceFileProperty;
 import com.google.closure.plugin.common.TypedFile;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
@@ -36,15 +42,11 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
 
   @Override
   protected void process() throws IOException, MojoExecutionException {
-    outputFiles.clear();
+    this.changedFiles.clear();
+    this.processDefunctBundles(this.optionsAndBundles);
 
     Update<OptionsAndBundles<ProtoFinalOptions, ProtoBundle>> u =
         this.optionsAndBundles.get();
-
-    for (@SuppressWarnings("unused")
-         OptionsAndBundles<ProtoFinalOptions, ProtoBundle> d : u.defunct) {
-      // TODO: delete defunct outputs
-    }
 
     for (OptionsAndBundles<ProtoFinalOptions, ProtoBundle> c : u.changed) {
       for (ProtoBundle b : c.bundles) {
@@ -83,22 +85,24 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
       argv.add("--descriptor_set_out")
           .add(descriptorSetFile.getPath());
       Files.createParentDirs(descriptorSetFile);
-      outputFiles.add(descriptorSetFile);
+      changedFiles.add(descriptorSetFile);
     }
 
-    File javaGenfilesPath = bundle.rootSet == RootSet.TEST
+    File javaDestDir = bundle.rootSet == RootSet.TEST
         ? context.genfilesDirs.javaTestGenfiles
         : context.genfilesDirs.javaGenfiles;
-    File jsGenfilesPath = bundle.rootSet == RootSet.TEST
+    File jsDestDir = bundle.rootSet == RootSet.TEST
         ? context.genfilesDirs.jsTestGenfiles
         : context.genfilesDirs.jsGenfiles;
 
+    File javaTempDir = null;
     // Protoc is a little finicky about requiring that output directories
     // exist, though it will happily create directories for the packages.
     if (bundle.langSet.emitJava) {
-      argv.add("--java_out").add(ensureDirExists(javaGenfilesPath));
-      outputFiles.add(javaGenfilesPath);  // TODO: narrow
+      javaTempDir = Files.createTempDir();
+      argv.add("--java_out").add(javaTempDir.getPath());
     }
+    File jsTempDir = null;
     if (bundle.langSet.emitJs) {
       String jsOutFlagPrefix = "";
       switch (bundle.rootSet) {
@@ -110,8 +114,8 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
           jsOutFlagPrefix += "--js_out=testonly:";
           break;
       }
-      argv.add(jsOutFlagPrefix + ensureDirExists(jsGenfilesPath));
-      outputFiles.add(jsGenfilesPath);  // TODO: narrow
+      jsTempDir = Files.createTempDir();
+      argv.add(jsOutFlagPrefix + ensureDirExists(jsTempDir));
     }
 
     // Build a proto search path.
@@ -142,13 +146,14 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     for (Source input : bundle.inputs) {
       Source ambig = relPathToSource.put(input.relativePath, input);
       if (ambig == null) {
-        argv.add(
-            // Instead of using canonicalPath, we concat these two paths
-            // because protoc insists that each input appear under a
-            // search path element as determined by string comparison.
-            FilenameUtils.concat(
-                input.root.f.getPath(),
-                input.relativePath.getPath()));
+        // Instead of using canonicalPath, we concat these two paths
+        // because protoc insists that each input appear under a
+        // search path element as determined by string comparison.
+        File inputFile = new File(FilenameUtils.concat(
+            input.root.f.getPath(),
+            input.relativePath.getPath()));
+        argv.add(inputFile.getPath());
+        context.buildContext.removeMessages(inputFile);
       } else {
         context.log.warn(
             "Ambiguous proto input " + input.relativePath
@@ -157,9 +162,10 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
       }
     }
 
-    // TODO: Feed errors and warnings back to the buildContext
+    // Feed errors and warnings back to the buildContext
     Future<Integer> exitCodeFuture = context.processRunner.run(
-        context.log, "protoc", argv.build());
+        context.log, "protoc", argv.build(),
+        new ProtocOutputReader(context.log, context.buildContext));
     try {
       Integer exitCode = exitCodeFuture.get(30, TimeUnit.SECONDS);
 
@@ -175,6 +181,25 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
       throw new MojoExecutionException("protoc execution failed", ex);
     } catch (CancellationException ex) {
       throw new MojoExecutionException("protoc execution was cancelled", ex);
+    }
+
+    ImmutableSet.Builder<File> filesForBundleBuilder = ImmutableSet.builder();
+    if (javaTempDir != null) {
+      copyFilesOver(javaTempDir, javaDestDir, filesForBundleBuilder);
+    }
+    if (jsTempDir != null) {
+      copyFilesOver(jsTempDir, jsDestDir, filesForBundleBuilder);
+    }
+
+    ImmutableSet<File> filesForBundle = filesForBundleBuilder.build();
+    ImmutableList<File> oldFiles = this.bundleToOutputs.put(
+        bundle, ImmutableList.copyOf(filesForBundle));
+    if (oldFiles != null) {
+      for (File f : oldFiles) {
+        if (!filesForBundle.contains(f)) {
+          this.deleteIfExists(f);
+        }
+      }
     }
   }
 
@@ -254,6 +279,57 @@ extends CompilePlanGraphNode<ProtoFinalOptions, ProtoBundle> {
     @Override
     public RunProtoc reconstitute(PlanContext c, JoinNodes jn) {
       return apply(new RunProtoc(c));
+    }
+  }
+
+  static final class ProtocOutputReader
+  implements ProcessRunner.OutputReceiver {
+
+    private static final Pattern MESSAGE = Pattern.compile(
+        "^([^:]+):(\\d+):(\\d+): "
+        // Message from libprotobuf
+        + "|No syntax specified for file: (.*?)[.] Please"
+        );
+
+    private final Log log;
+    private final BuildContext buildContext;
+
+    ProtocOutputReader(Log log, BuildContext buildContext) {
+      this.log = log;
+      this.buildContext = buildContext;
+    }
+
+    @Override
+    public void processLine(String line) {
+      Matcher m = MESSAGE.matcher(line);
+      if (m.find()) {
+        String file = m.group(1);
+        int lineno, column;
+        String message;
+        if (file != null) {
+          lineno = Integer.parseInt(m.group(2));
+          column = Integer.parseInt(m.group(3));
+          message = line.substring(m.end());
+        } else {
+          file = m.group(4);
+          lineno = column = 1;
+          message = line;
+        }
+        // Assumes buildContext is internally synchronized.
+        buildContext.addMessage(
+            new File(file), lineno, column, message,
+            BuildContext.SEVERITY_ERROR,
+            null);
+      } else {
+        log.info("protoc: " + line);
+      }
+    }
+
+    @Override
+    public void allProcessed() {
+      // No need to wait for output processing.
+      // TODO: maybe detect if we're running on the command line and gate on
+      // this so we get better log-locality.
     }
   }
 }

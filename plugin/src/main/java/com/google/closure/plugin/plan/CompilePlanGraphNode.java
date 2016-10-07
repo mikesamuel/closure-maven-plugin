@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 import com.google.closure.plugin.common.StructurallyComparable;
 import com.google.closure.plugin.common.Identifiable;
@@ -11,7 +12,11 @@ import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 /**
  * A plan node that receives bundles from a {@link BundlingPlanGraphNode} and
@@ -27,8 +32,9 @@ extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
 
   /** Options for compiler. */
   public Optional<Update<OptionsAndBundles<O, B>>> optionsAndBundles;
-  /** The bundle to compile. */
-  public final List<File> outputFiles = Lists.newArrayList();
+  protected final Map<B, ImmutableList<File>> bundleToOutputs =
+      Maps.newLinkedHashMap();
+  protected final List<File> changedFiles = Lists.newArrayList();
 
   protected CompilePlanGraphNode(PlanContext context) {
     super(context);
@@ -63,7 +69,28 @@ extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
    */
   @Override
   protected Iterable<? extends File> changedOutputFiles() {
-    return ImmutableList.copyOf(outputFiles);
+    return ImmutableList.copyOf(this.changedFiles);
+  }
+
+
+  protected void processDefunctBundles(
+      Optional<Update<OptionsAndBundles<O, B>>> obs) {
+    if (obs.isPresent()) {
+      for (OptionsAndBundles<O, B> ob : obs.get().defunct) {
+        for (B b : ob.bundles) {
+          ImmutableList<File> filesForBundle = this.bundleToOutputs.remove(b);
+          if (filesForBundle != null) {
+            for (File f : filesForBundle) {
+              try {
+                deleteIfExists(f);
+              } catch (IOException ex) {
+                context.log.error("Failed to delete " + f, ex);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   /** Deletes the file and notifies the build context of that. */
@@ -72,7 +99,42 @@ extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
       if (!f.delete()) {
         throw new IOException("Failed to delete " + f);
       }
-      this.outputFiles.add(f);
+      this.changedFiles.add(f);
+    }
+  }
+
+
+  /**
+   * Copy files from one directory root to another.
+   * Typically this is used to allow building files to a temp directory and,
+   * on success, copying over to the final output directory.
+   * <p>
+   * In addition to manipulating the file system, this updates
+   * {@link #changedFiles} list.
+   *
+   * @param from file or directory tree to copy from.
+   * @param to file or directory tree to copy to.
+   * @param out receives files that have changed.  May be used to rebuild
+   *     the relevant {@link #bundleToOutputs} entry.
+   */
+  protected void copyFilesOver(
+      File from, File to, ImmutableSet.Builder<File> out) throws IOException {
+    if (from.isDirectory()) {
+      java.nio.file.Files.createDirectories(to.toPath());
+      String[] children = from.list();
+      if (children != null) {
+        for (String child : children) {
+          File fromChild = new File(from, child);
+          File toChild = new File(to, child);
+          copyFilesOver(fromChild, toChild, out);
+        }
+      }
+    } else {
+      if (!(to.exists() && Files.equal(from, to))) {
+        java.nio.file.Files.move(from.toPath(), to.toPath());
+        changedFiles.add(to);
+      }
+      out.add(to);
     }
   }
 
@@ -85,17 +147,19 @@ extends PlanGraphNode<CompilePlanGraphNode.CompileStateVector<O, B>> {
     private static final long serialVersionUID = 1;
 
     final Optional<Update<OptionsAndBundles<O, B>>> optionsAndBundles;
-    final ImmutableList<File> outputFiles;
+    final ImmutableMap<B, ImmutableList<File>> bundleToOutputs;
+    final ImmutableList<File> changedFiles;
 
     protected CompileStateVector(CompilePlanGraphNode<O, B> node) {
       this.optionsAndBundles = node.optionsAndBundles;
-      this.outputFiles = ImmutableList.copyOf(node.outputFiles);
+      this.bundleToOutputs = ImmutableMap.copyOf(node.bundleToOutputs);
+      this.changedFiles = ImmutableList.copyOf(node.changedFiles);
     }
 
     protected <N extends CompilePlanGraphNode<O, B>>
     N apply(N node) {
-      node.outputFiles.clear();
-      node.outputFiles.addAll(outputFiles);
+      node.changedFiles.clear();
+      node.bundleToOutputs.putAll(bundleToOutputs);
       node.optionsAndBundles = optionsAndBundles;
       return node;
     }

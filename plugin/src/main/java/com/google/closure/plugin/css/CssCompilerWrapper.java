@@ -16,6 +16,7 @@ import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
 import com.google.common.css.compiler.commandline.ClosureCommandLineCompiler;
 import com.google.closure.plugin.common.Sources;
+import com.google.closure.plugin.common.Sources.Source;
 import com.google.common.io.Files;
 
 final class CssCompilerWrapper {
@@ -79,6 +80,9 @@ final class CssCompilerWrapper {
         new OkUnlessNonzeroExitCodeHandler();
 
     ErrorManager errorManager = new MavenCssErrorManager(buildContext);
+    for (Source input : inputs) {
+      buildContext.removeMessages(input.canonicalPath);
+    }
 
     ensureParentDirectoryFor(sourceMapFile);
     ensureParentDirectoryFor(renameFile);

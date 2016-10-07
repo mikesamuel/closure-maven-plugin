@@ -11,30 +11,23 @@ import com.google.closure.plugin.plan.JoinNodes;
 import com.google.closure.plugin.plan.PlanContext;
 import com.google.closure.plugin.plan.PlanGraphNode;
 import com.google.closure.plugin.plan.Update;
+import com.google.common.collect.ImmutableList;
 
-// TODO: rename since one bundle is no longer true
-final class CompileOneBundle
+final class CompileCss
 extends CompilePlanGraphNode<CssOptions, CssBundle> {
 
-  CompileOneBundle(PlanContext context) {
+  CompileCss(PlanContext context) {
     super(context);
   }
 
   @Override
   protected void process() throws IOException, MojoExecutionException {
-    this.outputFiles.clear();
+    this.changedFiles.clear();
+
+    this.processDefunctBundles(optionsAndBundles);
 
     Update<OptionsAndBundles<CssOptions, CssBundle>> u =
         optionsAndBundles.get();
-
-    for (OptionsAndBundles<CssOptions, CssBundle> ob : u.defunct) {
-      for (CssBundle bundle : ob.bundles) {
-        CssOptions.Outputs outputs = new CssOptions.Outputs(
-            context, ob.optionsAndInputs.options, bundle.entryPoint);
-        deleteIfExists(outputs.css);
-        deleteIfExists(outputs.sourceMap);
-      }
-    }
 
     for (OptionsAndBundles<CssOptions, CssBundle> ob : u.allExtant()) {
       for (CssBundle b : ob.bundles) {
@@ -67,8 +60,9 @@ extends CompilePlanGraphNode<CssOptions, CssBundle> {
           "Failed to compile CSS " + bundle.entryPoint.relativePath);
     }
 
-    this.outputFiles.add(cssFile);
-    this.outputFiles.add(sourceMapFile);
+    this.changedFiles.add(cssFile);
+    this.changedFiles.add(sourceMapFile);
+    this.bundleToOutputs.put(bundle, ImmutableList.of(cssFile, sourceMapFile));
   }
 
 
@@ -83,13 +77,13 @@ extends CompilePlanGraphNode<CssOptions, CssBundle> {
 
     private static final long serialVersionUID = -8223372981064559155L;
 
-    SV(CompileOneBundle node) {
+    SV(CompileCss node) {
       super(node);
     }
 
     @Override
     public PlanGraphNode<?> reconstitute(PlanContext context, JoinNodes jn) {
-      return apply(new CompileOneBundle(context));
+      return apply(new CompileCss(context));
     }
   }
 }

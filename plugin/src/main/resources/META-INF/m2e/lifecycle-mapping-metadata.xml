@@ -12,6 +12,7 @@
       <pluginExecutionFilter>
         <groupId>${project.groupId}</groupId>
         <artifactId>${project.artifactId}</artifactId>
+        <versionRange>${project.version}</versionRange>
         <goals>
           <goal>generate-closure-sources</goal>
         </goals>

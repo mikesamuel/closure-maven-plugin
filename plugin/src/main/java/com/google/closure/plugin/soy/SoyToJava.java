@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.closure.plugin.plan.BundlingPlanGraphNode.OptionsAndBundles;
 import com.google.closure.plugin.plan.CompilePlanGraphNode;
 import com.google.closure.plugin.plan.JoinNodes;
@@ -40,18 +41,12 @@ final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
   @Override
   protected void process() throws IOException, MojoExecutionException {
-    this.outputFiles.clear();
+    processDefunctBundles(optionsAndBundles);
 
     Update<OptionsAndBundles<SoyOptions, SoyBundle>> u =
         optionsAndBundles.get();
 
-    for (OptionsAndBundles<SoyOptions, SoyBundle> d : u.defunct) {
-      for (SoyBundle b : d.bundles) {
-        deleteIfExists(b.outputJar);
-        deleteIfExists(getSrcJarPath(b));
-      }
-    }
-
+    this.changedFiles.clear();
     for (OptionsAndBundles<SoyOptions, SoyBundle> c : u.changed) {
       for (SoyBundle b : c.bundles) {
         processOne(b);
@@ -79,6 +74,10 @@ final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
           "Failed to write compiled Soy output to a JAR", ex);
     }
 
+    ImmutableList.Builder<File> outputsThisBundleBuilder =
+        ImmutableList.builder();
+    outputsThisBundleBuilder.add(classJarOutFile).add(srcJarOutFile);
+
     // Unpack JAR into classes directory.
     File projectBuildOutputDirectory = context.projectBuildOutputDirectory;
     try {
@@ -89,12 +88,14 @@ final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
             if (entry.isDirectory()) {
               continue;
             }
-            String name = Files.simplifyPath(entry.getName());
+            String name = Files.simplifyPath(
+                entry.getName().replace('/', File.separatorChar));
             if (name.startsWith("META-INF")) { continue; }
             context.log.debug("Unpacking " + name + " from soy generated jar");
             File outputFile = new File(FilenameUtils.concat(
                 projectBuildOutputDirectory.getPath(), name));
             Files.createParentDirs(outputFile);
+            outputsThisBundleBuilder.add(outputFile);
             try (FileOutputStream dest = new FileOutputStream(outputFile)) {
               ByteStreams.copy(zipIn, dest);
             }
@@ -107,8 +108,11 @@ final class SoyToJava extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
           + " to " + projectBuildOutputDirectory,
           ex);
     }
-    this.outputFiles.add(classJarOutFile);
-    this.outputFiles.add(srcJarOutFile);
+
+    ImmutableList<File> outputsThisBundle = outputsThisBundleBuilder.build();
+    this.bundleToOutputs.put(bundle, outputsThisBundle);
+    // TODO: We could hash before compiling to filter this down.
+    this.changedFiles.addAll(outputsThisBundle);
   }
 
   @Override

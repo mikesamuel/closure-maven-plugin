@@ -48,7 +48,6 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
 
   @Override
   protected void process() throws IOException, MojoExecutionException {
-    outputFiles.clear();
 
     // Since changed vs. unchanged vs. defunct is triaged based on input files
     // and dependencies are not part of the project, everything ends up in
@@ -63,22 +62,26 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
 
     // TODO: some way to find defunct entries and remove files extracted from
     // those.
+
+    this.changedFiles.clear();
+    this.processDefunctBundles(this.optionsAndBundles);
+
     for (OptionsAndBundles<Extracts, ResolvedExtract> ob
          : this.optionsAndBundles.get().allExtant()) {
-      processOne(ob.bundles);
+      for (ResolvedExtract e : ob.bundles) {
+        processOne(e);
+      }
     }
   }
 
-  protected void processOne(ImmutableList<ResolvedExtract> extracts)
+  protected void processOne(ResolvedExtract e)
   throws MojoExecutionException {
-    for (ResolvedExtract e : extracts) {
-      try {
-        extract(e);
-      } catch (IOException ex) {
-        throw new MojoExecutionException(
-            "Failed to extract " + e.groupId + ":" + e.artifactId,
-            ex);
-      }
+    try {
+      extract(e);
+    } catch (IOException ex) {
+      throw new MojoExecutionException(
+          "Failed to extract " + e.groupId + ":" + e.artifactId,
+          ex);
     }
   }
 
@@ -86,6 +89,7 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
     GenfilesDirs gd = context.genfilesDirs;
     Log log = context.log;
 
+    ImmutableList.Builder<File> filesForBundle = ImmutableList.builder();
     byte[] archiveBytes = Files.toByteArray(e.archive);
     try (InputStream in = new ByteArrayInputStream(archiveBytes)) {
       try (ZipInputStream zipIn = new ZipInputStream(in)) {
@@ -101,6 +105,7 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
               if (extractedLocation.isPresent()) {
                 File outFile = extractedLocation.get();
                 Files.createParentDirs(outFile);
+                filesForBundle.add(outFile);
 
                 File tmpFile = File.createTempFile("extract", ext);
                 Files.write(bytes, tmpFile);
@@ -118,7 +123,7 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
                   java.nio.file.Files.move(
                       tmpFile.toPath(), outFile.toPath(),
                       StandardCopyOption.REPLACE_EXISTING);
-                  this.outputFiles.add(outFile);
+                  this.changedFiles.add(outFile);
                 }
               } else {
                 log.warn("Cannot find location for extract " + name);
@@ -130,6 +135,7 @@ extends CompilePlanGraphNode<Extracts, ResolvedExtract> {
       }
     }
     this.archiveHash.put(e.archive, Hash.hashBytes(archiveBytes));
+    this.bundleToOutputs.put(e, filesForBundle.build());
   }
 
   private static Optional<File> locationFor(

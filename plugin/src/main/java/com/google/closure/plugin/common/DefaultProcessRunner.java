@@ -1,12 +1,19 @@
 package com.google.closure.plugin.common;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.maven.plugin.logging.Log;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -30,7 +37,8 @@ public final class DefaultProcessRunner implements ProcessRunner{
 
   @Override
   public Future<Integer> run(
-      final Log log, final String logPrefix, Iterable<? extends String> argv) {
+      final Log log, final String logPrefix, Iterable<? extends String> argv,
+      final OutputReceiver receiver) {
     final ImmutableList<String> argumentList = ImmutableList.copyOf(argv);
 
     // Holder for a bit that tells whether execution was cancelled.
@@ -42,22 +50,33 @@ public final class DefaultProcessRunner implements ProcessRunner{
     final long[] startTime = new long[] { System.nanoTime() };
 
     Runnable runner = new Runnable() {
+      @SuppressWarnings("synthetic-access")
       @Override
       public void run() {
-        ProcessBuilder protocProcessBuilder = new ProcessBuilder(argumentList)
-            .inheritIO();
+        ProcessBuilder processBuilder = new ProcessBuilder(argumentList);
         if (log.isDebugEnabled()) {
           log.debug("Running " + logPrefix + ": " + argumentList);
         }
         try {
+          Process p = null;
           synchronized (exitCode) {
             startTime[0] = System.nanoTime();
             if (cancelled[0]) {
               exitCode[0] = CANCELLED_EXIT_STATUS;
             } else {
-              process[0] = protocProcessBuilder.start();
+              p = process[0] = processBuilder.start();
             }
             exitCode.notifyAll();
+          }
+          if (p != null) {
+            p.getOutputStream().close();
+            AtomicInteger watcherCounter = new AtomicInteger();
+            attachProcessOutputSink(
+                log, logPrefix, p.getInputStream(), receiver,
+                watcherCounter);
+            attachProcessOutputSink(
+                log, logPrefix, p.getErrorStream(), receiver,
+                watcherCounter);
           }
         } catch (IOException ex) {
           log.error("Process " + logPrefix + " did not start normally", ex);
@@ -179,4 +198,32 @@ public final class DefaultProcessRunner implements ProcessRunner{
     };
   }
 
+  private static final Executor executor = Executors.newFixedThreadPool(8);
+
+  private static void attachProcessOutputSink(
+      final Log log, final String prefix, final InputStream processOutput,
+      final OutputReceiver receiver, final AtomicInteger watcherCounter) {
+    watcherCounter.incrementAndGet();
+    executor.execute(new Runnable() {
+
+      @Override
+      public void run() {
+        try (InputStream in = processOutput) {
+          try (BufferedReader reader = new BufferedReader(
+                 new InputStreamReader(in, Charsets.UTF_8))) {
+            for (String line; (line = reader.readLine()) != null;) {
+              receiver.processLine(line);
+            }
+          }
+        } catch (IOException ex) {
+          log.error("Failed to read process output for " + prefix, ex);
+        } finally {
+          if (watcherCounter.decrementAndGet() == 0) {
+            receiver.allProcessed();
+          }
+        }
+      }
+
+    });
+  }
 }

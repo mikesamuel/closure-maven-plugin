@@ -90,7 +90,7 @@ public final class CssPlanner {
 
     FindEntryPoints findEntryPoints = new FindEntryPoints(context);
 
-    CompileOneBundle compileBundles = new CompileOneBundle(context);
+    CompileCss compileBundles = new CompileCss(context);
 
     // This pipeline takes in CSS files and produces CSS outputs along with a
     // JSON and rename map.

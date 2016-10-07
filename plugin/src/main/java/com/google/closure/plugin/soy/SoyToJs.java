@@ -30,13 +30,12 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
   @Override
   protected void process() throws IOException, MojoExecutionException {
-    this.outputFiles.clear();
+    this.processDefunctBundles(optionsAndBundles);
 
     Update<OptionsAndBundles<SoyOptions, SoyBundle>> u =
         optionsAndBundles.get();
 
-    // TODO: delete defunct.
-
+    this.changedFiles.clear();
     for (OptionsAndBundles<SoyOptions, SoyBundle> c : u.changed) {
       for (SoyBundle b : c.bundles) {
         processOne(c.optionsAndInputs.options, b);
@@ -52,11 +51,15 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
     ImmutableList<Source> sources = bundle.inputs;
 
+    ImmutableList.Builder<File> outputsThisBundleBuilder =
+        ImmutableList.builder();
+
     for (Js js : allJsSrc) {
       SoyJsSrcOptions jsSrcOptions = js.toSoyJsSrcOptions(context.log);
       SoyMsgBundle msgBundle = null;
 
       // TODO: relay errors and warnings via build context.
+      // TODO: can we get the source map for an input?
       List<String> jsFileContent = sfs.compileToJsSrc(jsSrcOptions, msgBundle);
       java.nio.file.Files.createDirectories(bundle.jsOutDir.toPath());
 
@@ -73,8 +76,8 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
 
         String compiledJsContent = jsFileContent.get(i);
         File outputRelPath = new File(
-          inputRelPath.getParentFile(),
-          FilenameUtils.getBaseName(inputRelPath.getName()) + suffix);
+            inputRelPath.getParentFile(),
+            FilenameUtils.getBaseName(inputRelPath.getName()) + suffix);
         File outputPath = new File(FilenameUtils.concat(
             bundle.jsOutDir.getPath(), outputRelPath.getPath()));
         Files.createParentDirs(outputPath);
@@ -86,9 +89,14 @@ final class SoyToJs extends CompilePlanGraphNode<SoyOptions, SoyBundle> {
               + " to " + outputPath,
               ex);
         }
-        outputFiles.add(outputPath);
+        outputsThisBundleBuilder.add(outputPath);
       }
     }
+
+    ImmutableList<File> outputsThisBundle = outputsThisBundleBuilder.build();
+    this.bundleToOutputs.put(bundle, outputsThisBundle);
+    // TODO: We could hash before compiling to filter this down.
+    this.changedFiles.addAll(outputsThisBundle);
   }
 
   @Override
