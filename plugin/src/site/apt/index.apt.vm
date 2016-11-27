@@ -45,7 +45,7 @@ Closure Maven Plugin
 
   processes web sources.  Specifically, it
 
-  * looks for <<<.css>>> and <<<.gss>>> files under <<<src/site/css>>>
+  * looks for <<<.css>>> and <<<.gss>>> files under <<<src/main/css>>>
     and, for every file that ends with <<<-main.{css,gss}>>> creates
     a compiled stylesheet.
 
